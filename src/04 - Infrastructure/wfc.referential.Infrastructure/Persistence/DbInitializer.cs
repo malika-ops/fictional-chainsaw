@@ -1,0 +1,393 @@
+﻿using BuildingBlocks.Application.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using wfc.referential.Domain.AgencyAggregate;
+using wfc.referential.Domain.AgencyTierAggregate;
+using wfc.referential.Domain.BankAggregate;
+using wfc.referential.Domain.CityAggregate;
+using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.MonetaryZoneAggregate;
+using wfc.referential.Domain.ParamTypeAggregate;
+using wfc.referential.Domain.PartnerAccountAggregate;
+using wfc.referential.Domain.RegionAggregate;
+using wfc.referential.Domain.TierAggregate;
+using wfc.referential.Domain.TypeDefinitionAggregate;
+
+namespace wfc.referential.Infrastructure.Data;
+public static class DbInitializer
+{
+    public static async Task SeedWithCache(ApplicationDbContext context, ICacheService cacheService)
+    {
+        // Appliquer les migrations
+        context.Database.Migrate();
+
+        if (!context.Countries.Any())
+        {
+            var monetaryzoneMA = MonetaryZone.Create(new MonetaryZoneId(Guid.NewGuid()), "MAR", "Maroc", "MA", []);
+            var monetaryzoneEU = MonetaryZone.Create(new MonetaryZoneId(Guid.NewGuid()), "EU", "Europe", "EU", []);
+
+            context.MonetaryZones.Add(monetaryzoneMA);
+            context.MonetaryZones.Add(monetaryzoneEU);
+            context.SaveChanges();
+
+
+            // ✅ 1️⃣ Ajouter les countries
+            var maroc = Country.Create(new CountryId(Guid.NewGuid()), "Maroc", "Maroc", "MAR", "MA", "MAR", "+212", "0", true, true, 2, true, monetaryzoneMA.Id);
+            var egypte = Country.Create(new CountryId(Guid.NewGuid()), "Egypte", "Egypte", "EGY", "EG", "EGY", "+20", "+2", false, false, 2, true, monetaryzoneMA.Id);
+            var senegal = Country.Create(new CountryId(Guid.NewGuid()), "Senegal", "Senegal", "SEN", "SE", "SEN", "+221", "0", false, false, 2, true, monetaryzoneMA.Id);
+            var france = Country.Create(new CountryId(Guid.NewGuid()), "France", "France", "FRA", "FR", "FRA", "+33", "+1", false, false, 2, true, monetaryzoneEU.Id);
+            var suisse = Country.Create(new CountryId(Guid.NewGuid()), "Suisse", "Suisse", "CHE", "CH", "CH", "+41", "+1", false, false, 2, true, monetaryzoneEU.Id);
+
+
+            context.Countries.Add(maroc);
+            context.Countries.Add(egypte);
+            context.Countries.Add(senegal);
+            context.Countries.Add(france);
+            context.Countries.Add(suisse);
+
+            context.SaveChanges();
+
+            // ✅ 2️⃣ Ajouter les régions officielles du Maroc
+            var regions = new List<Region>
+            {
+                Region.Create(new RegionId(Guid.NewGuid()), "10", "Tanger-Tétouan-Al Hoceïma", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "20", "L'Oriental", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "30", "Fès-Meknès", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "40", "Rabat-Salé-Kénitra", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "50", "Béni Mellal-Khénifra", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "60", "Casablanca-Settat", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "70", "Marrakech-Safi", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "80", "Drâa-Tafilalet", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "90", "Souss-Massa", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "100", "Guelmim-Oued Noun", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "110", "Laâyoune-Sakia El Hamra", maroc.Id),
+                Region.Create(new RegionId(Guid.NewGuid()), "120", "Dakhla-Oued Ed-Dahab", maroc.Id),
+            };
+
+            context.Regions.AddRange(regions);
+            context.SaveChanges();
+
+            // ✅ 3️⃣ Ajouter les villes principales de chaque région
+            var villes = new List<City>();
+
+            foreach (var region in regions)
+            {
+                switch (region.Name)
+{
+                        case "Tanger-Tétouan-Al Hoceïma":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(CityId.Of(Guid.NewGuid()), "code", "name", "timezone", "taxzone", region.Id, "abbreviation"),
+                                City.Create(new CityId(Guid.NewGuid()), "110101", "Tétouan", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "110102", "Al Hoceïma", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "L'Oriental":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "120100", "Oujda", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "120101", "Nador", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "120102", "Berkane", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Fès-Meknès":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "130100", "Fès", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "130101", "Meknès", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "130102", "Ifrane", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Rabat-Salé-Kénitra":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "140100", "Rabat", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "140101", "Salé", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "140102", "Kénitra", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Béni Mellal-Khénifra":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "150100", "Béni Mellal", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "150101", "Khénifra", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Casablanca-Settat":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "160100", "Casablanca", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "160101", "Mohammedia", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "160102", "El Jadida", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Marrakech-Safi":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "170100", "Marrakech", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "170101", "Safi", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "170102", "Essaouira", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Drâa-Tafilalet":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "180100", "Errachidia", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "180101", "Ouarzazate", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Souss-Massa":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "190100", "Agadir", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "190101", "Taroudant", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Guelmim-Oued Noun":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "1100100", "Guelmim", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "1100101", "Tan-Tan", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Laâyoune-Sakia El Hamra":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "1200100", "Laâyoune", "timezone", "taxzone",  region.Id, null),
+                                City.Create(new CityId(Guid.NewGuid()), "1200101", "Boujdour", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+
+                        case "Dakhla-Oued Ed-Dahab":
+                            villes.AddRange(new[]
+                            {
+                                City.Create(new CityId(Guid.NewGuid()), "1300100", "Dakhla", "timezone", "taxzone",  region.Id, null),
+                            });
+                            break;
+                    }
+
+            }
+
+            //Insérer toutes les villes
+            context.Cities.AddRange(villes);
+            context.SaveChanges();
+
+            // ✅ Add banks
+            var banks = new List<Bank>
+            {
+                Bank.Create(new BankId(Guid.NewGuid()), "AWB", "Attijariwafa Bank", "AWB"),
+                Bank.Create(new BankId(Guid.NewGuid()), "BMCE", "Banque Marocaine du Commerce Extérieur", "BMCE"),
+                Bank.Create(new BankId(Guid.NewGuid()), "SG", "Société Générale Maroc", "SG"),
+                Bank.Create(new BankId(Guid.NewGuid()), "BP", "Banque Populaire", "BP"),
+                Bank.Create(new BankId(Guid.NewGuid()), "BMCI", "Banque Marocaine pour le Commerce et l'Industrie", "BMCI"),
+                Bank.Create(new BankId(Guid.NewGuid()), "CAM", "Crédit Agricole du Maroc", "CAM"),
+                Bank.Create(new BankId(Guid.NewGuid()), "CDM", "Crédit du Maroc", "CDM"),
+                Bank.Create(new BankId(Guid.NewGuid()), "CIH", "Crédit Immobilier et Hôtelier", "CIH")
+            };
+
+            context.Banks.AddRange(banks);
+            context.SaveChanges();
+
+            // ✅ Add partner accounts for Casablanca
+            var casablancaCity = villes.FirstOrDefault(v => v.Name == "Casablanca");
+            if (casablancaCity != null)
+            {
+                var partnerAccounts = new List<PartnerAccount>
+                {
+                    PartnerAccount.Create(
+                        new PartnerAccountId(Guid.NewGuid()),
+                        "000123456789",
+                        "12345678901234567890123",
+                        "Casablanca Centre",
+                        "Wafa Cash Services",
+                        "WCS",
+                        50000.00m,
+                        banks.First(b => b.Code == "AWB"),
+                        AccountType.Activité
+                    ),
+                    PartnerAccount.Create(
+                        new PartnerAccountId(Guid.NewGuid()),
+                        "000987654321",
+                        "98765432109876543210987",
+                        "Casablanca Marina",
+                        "Transfert Express",
+                        "TE",
+                        75000.00m,
+                        banks.First(b => b.Code == "BMCE"),
+                        AccountType.Commission
+                    )
+                };
+
+                context.PartnerAccounts.AddRange(partnerAccounts);
+                context.SaveChanges();
+            }
+
+            //var agencies = new List<Agency>();
+
+            //foreach (var ville in villes)
+            //{
+            //    switch (ville.Name)
+            //    {
+            //        case "Casablanca":
+            //            agencies.AddRange(new[]
+            //            {
+            //                new Agency(new AgencyId(Guid.NewGuid()),1601001000, "Wafacash Bahmad","casavoyageur, 234 Bd Ba Hmad, Casablanca 20300", ville.Id),
+            //                new Agency(new AgencyId(Guid.NewGuid()),1601001001, "Wafacash Place Des Commerces","5 Bd Mohamed El Hansali, Casablanca 20030", ville.Id),
+            //                new Agency(new AgencyId(Guid.NewGuid()),1601001002, "Av de Dakhla","N 294, Av. de Dakhla, Casablanca 20000" ,ville.Id),
+            //            });
+            //            break;
+            //    }
+            //}
+
+            ////Insérer toutes les agencies
+            //context.Agencies.AddRange(agencies);
+            //context.SaveChanges();
+
+
+            ////ADD to Redis Cache 
+            //var key = $"agency:{agencies.First().CityId.Value.ToString()}";
+            //await cacheService.SetAsync<List<AgencyDto>>(key, agencies.Select(a => a.Adapt<AgencyDto>()).ToList(), TimeSpan.FromHours(24));
+
+
+            //Mettre en cache les données référentielles
+            var referentiel = context.Countries
+              .ToList();
+
+            //await cacheService.SetAsync("Referentiel", referentiel, new TimeSpan(24));
+
+            var casa = villes.First(v => v.Name == "Casablanca");
+            var rabat = villes.First(v => v.Name == "Rabat");
+
+
+            var agency1 = Agency.Create(
+                AgencyId.Of(Guid.NewGuid()),
+                code: "AGY-CAS-001",
+                name: "Wafacash Bahmad",
+                abbreviation: "BAHMAD",
+                address1: "234 Bd Ba Hmad, Casablanca",
+                address2: null,
+                phone: "+212522123456",
+                fax: "+212522654321",
+                accountingSheetName: "SHEET-001",
+                accountingAccountNumber: "401122",
+                moneyGramReferenceNumber: "MG-REF-1",
+                moneyGramPassword: "MG-PWD-1",
+                postalCode: "20300",
+                permissionOfficeChange: "AUTH-001",
+                latitude: 33.589886m,
+                longitude: -7.603869m,
+                isEnabled: true,
+                cityId: casa.Id,    
+                sectorId: null,
+                agencyTypeId: null,     
+                supportAccountId: null,
+                partnerId: null);
+
+            var agency2 = Agency.Create(
+                AgencyId.Of(Guid.NewGuid()),
+                code: "AGY-RAB-001",
+                name: "Wafacash Siège",
+                abbreviation: "SIEGE",
+                address1: "5 Av Mohamed Diouri, Rabat",
+                address2: null,
+                phone: "+212537987654",
+                fax: "+212537123987",
+                accountingSheetName: "SHEET-002",
+                accountingAccountNumber: "401123",
+                moneyGramReferenceNumber: "MG-REF-2",
+                moneyGramPassword: "MG-PWD-2",
+                postalCode: "10000",
+                permissionOfficeChange: "AUTH-002",
+                latitude: 34.020882m,
+                longitude: -6.841650m,
+                isEnabled: true,
+                cityId: rabat.Id,
+                sectorId: null,
+                agencyTypeId: null,
+                supportAccountId: null,
+                partnerId: null);
+
+            context.Agencies.AddRange(agency1, agency2);
+            context.SaveChanges();
+
+            //TIERS
+            var tierAMU = Tier.Create(
+                TierId.Of(Guid.NewGuid()),
+                name: "CodeAMU",
+                description: "Access multi-usage code");
+
+            var tierHB = Tier.Create(
+                TierId.Of(Guid.NewGuid()),
+                name: "CodeHissabBikhir",
+                description: "Hissab Bikhir access code");
+
+            context.Tiers.AddRange(tierAMU, tierHB);
+            context.SaveChanges();
+
+
+             // AGENCY-TIERS 
+            var at1 = AgencyTier.Create(
+                AgencyTierId.Of(Guid.NewGuid()),
+                agency1!.Id!, tierAMU!.Id!, "CAS-AMU-01", "CAS-AMU-01");
+
+            var at2 = AgencyTier.Create(
+                AgencyTierId.Of(Guid.NewGuid()),
+                agency1!.Id!, tierHB!.Id!, "CAS-HB-01", "CAS-AMU-01");
+
+            var at3 = AgencyTier.Create(
+                AgencyTierId.Of(Guid.NewGuid()),
+                agency2!.Id!, tierAMU!.Id!, "RAB-AMU-01", "CAS-AMU-01");
+
+            var at4 = AgencyTier.Create(
+                AgencyTierId.Of(Guid.NewGuid()),
+                agency2!.Id!, tierHB!.Id!, "RAB-HB-01", "CAS-AMU-01");
+
+            context.AgencyTiers.AddRange(at1, at2, at3, at4);
+            context.SaveChanges();
+
+             // TYPE-DEFINITION + PARAM-TYPES
+            var agencyTypeDef = TypeDefinition.Create(
+                TypeDefinitionId.Of(Guid.NewGuid()),
+                libelle: "AgencyType",
+                description: "Type of agency");
+
+            var paramValues = new[]
+            {
+                "3G", "Kiosque", "Mobile", "Siège",
+                "Siège partenaire", "Standard"
+            };
+
+            foreach (var v in paramValues)
+            {
+                var pt = ParamType.Create(
+                    ParamTypeId.Of(Guid.NewGuid()),
+                    agencyTypeDef!.Id!,
+                    v
+                    );
+
+                agencyTypeDef.AddParamType(pt);
+                context.ParamTypes.Add(pt);
+            }
+
+            context.TypeDefinitions.Add(agencyTypeDef);
+            context.SaveChanges();
+
+            var type3G = agencyTypeDef.ParamTypes.FirstOrDefault(p => p.Value == "3G");
+            var typeStandard = agencyTypeDef.ParamTypes.FirstOrDefault(p => p.Value == "Standard");
+
+            agency1.SetAgencyType(type3G!.Id!);
+            agency2.SetAgencyType(typeStandard!.Id!);
+            context.SaveChanges();
+
+        }
+    }
+}

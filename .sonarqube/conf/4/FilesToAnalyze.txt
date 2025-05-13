@@ -1,0 +1,13 @@
+﻿C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\tests\wfc.referential.UnitTests\Currencies\Application\CreateCurrencyValidatorTests.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\tests\wfc.referential.UnitTests\Currencies\Application\DeleteCurrencyCommandValidatorTests.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\tests\wfc.referential.UnitTests\Currencies\Application\PatchCurrencyValidatorTests.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\tests\wfc.referential.UnitTests\Currencies\Application\UpdateCurrencyValidatorTests.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\tests\wfc.referential.UnitTests\Currencies\Domain\CurrencyTests.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\tests\wfc.referential.UnitTests\MonetaryZones\Domain\MonetaryZoneTests.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\tests\wfc.referential.UnitTests\Regions\RegionTests.cs
+C:\Users\hp\.nuget\packages\microsoft.net.test.sdk\17.13.0\build\netcoreapp3.1\Microsoft.NET.Test.Sdk.Program.cs
+C:\Users\hp\.nuget\packages\microsoft.testplatform.testhost\17.13.0\build\netcoreapp3.1\x64\testhost.exe
+C:\Users\hp\.nuget\packages\microsoft.testplatform.testhost\17.13.0\build\netcoreapp3.1\x64\testhost.dll
+C:\Users\hp\.nuget\packages\xunit.runner.visualstudio\3.0.2\build\net6.0\xunit.abstractions.dll
+C:\Users\hp\.nuget\packages\xunit.runner.visualstudio\3.0.2\build\net6.0\xunit.runner.visualstudio.testadapter.dll
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\tests\wfc.referential.UnitTests\TestResults\coverage.xml
