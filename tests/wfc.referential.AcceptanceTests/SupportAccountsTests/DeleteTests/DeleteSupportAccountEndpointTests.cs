@@ -9,10 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.RegionAggregate;
-using wfc.referential.Domain.SectorAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
@@ -53,14 +50,7 @@ public class DeleteSupportAccountEndpointTests : IClassFixture<WebApplicationFac
     private static SupportAccount CreateTestSupportAccount(Guid id, string code, string name, decimal threshold, decimal limit, decimal balance)
     {
         var partnerId = Guid.NewGuid();
-
-
         var cityId = Guid.NewGuid();
-        var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(Guid.NewGuid()), null);
-
-        // Puis créer le secteur en passant la ville comme paramètre
-        var sectorId = Guid.NewGuid();
-        var sector = Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city);
 
         var partner = Partner.Create(
             PartnerId.Of(partnerId),
@@ -75,8 +65,10 @@ public class DeleteSupportAccountEndpointTests : IClassFixture<WebApplicationFac
             "AUX001",
             "ICE001",
             "/logos/logo.png",
-            sector,
-            city
+            null, // IdParent
+            null, // CommissionAccountId
+            null, // ActivityAccountId
+            null  // SupportAccountId
         );
 
         return SupportAccount.Create(

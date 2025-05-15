@@ -9,10 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.RegionAggregate;
-using wfc.referential.Domain.SectorAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
@@ -55,29 +52,24 @@ public class DeletePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
     // Helper to build dummy partners quickly
     private static Partner CreateTestPartner(Guid id, string code, string label, NetworkMode networkMode)
     {
-        // Créer la city d'abord
-        var cityId = Guid.NewGuid();
-        var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(Guid.NewGuid()), null);
-
-        // Ensuite créer le sector en passant la city
-        var sectorId = Guid.NewGuid();
-        var sector = Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city);
-
         return Partner.Create(
             new PartnerId(id),
             code,
             label,
             networkMode,
             PaymentMode.PrePaye,
-            "ID" + code,
+            "Test Type",
             Domain.SupportAccountAggregate.SupportAccountType.Commun,
             "IDNUM" + code,
             "Standard",
             "AUX" + code,
             "ICE" + code,
+            "10.5",
             "/logos/logo.png",
-            sector,
-            city
+            null, // IdParent
+            null, // CommissionAccountId
+            null, // ActivityAccountId
+            null  // SupportAccountId
         );
     }
 
@@ -170,7 +162,7 @@ public class DeletePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
             "SA001",
             "Support Account",
             10000.00m,
-            20000.00m, 
+            20000.00m,
             5000.00m,
             "ACC001",
             partner,

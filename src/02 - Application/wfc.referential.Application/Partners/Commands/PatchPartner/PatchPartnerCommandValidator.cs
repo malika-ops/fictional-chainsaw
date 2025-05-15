@@ -7,7 +7,7 @@ public class PatchPartnerCommandValidator : AbstractValidator<PatchPartnerComman
     public PatchPartnerCommandValidator()
     {
         RuleFor(x => x.PartnerId)
-            .NotEqual(Guid.Empty).WithMessage("PartnerId cannot be empty");
+           .NotEqual(Guid.Empty).WithMessage("PartnerId cannot be empty");
 
         // If code is provided, check not empty
         When(x => x.Code is not null, () => {
@@ -21,22 +21,34 @@ public class PatchPartnerCommandValidator : AbstractValidator<PatchPartnerComman
                 .NotEmpty().WithMessage("Label cannot be empty if provided");
         });
 
-        // If IdPartner is provided, check not empty
-        When(x => x.IdPartner is not null, () => {
-            RuleFor(x => x.IdPartner!)
-                .NotEmpty().WithMessage("IdPartner cannot be empty if provided");
+        // If type is provided, check not empty
+        When(x => x.Type is not null, () => {
+            RuleFor(x => x.Type!)
+                .NotEmpty().WithMessage("Type cannot be empty if provided");
         });
 
-        // If SectorId is provided, check not empty
-        When(x => x.SectorId.HasValue, () => {
-            RuleFor(x => x.SectorId!.Value)
-                .NotEqual(Guid.Empty).WithMessage("SectorId cannot be empty if provided");
+        // If IdParent is provided, check not empty
+        When(x => x.IdParent.HasValue, () => {
+            RuleFor(x => x.IdParent!.Value)
+                .NotEqual(Guid.Empty).WithMessage("IdParent cannot be empty if provided");
         });
 
-        // If CityId is provided, check not empty
-        When(x => x.CityId.HasValue, () => {
-            RuleFor(x => x.CityId!.Value)
-                .NotEqual(Guid.Empty).WithMessage("CityId cannot be empty if provided");
+        // If CommissionAccountId is provided, check not empty
+        When(x => x.CommissionAccountId.HasValue, () => {
+            RuleFor(x => x.CommissionAccountId!.Value)
+                .NotEqual(Guid.Empty).WithMessage("CommissionAccountId cannot be empty if provided");
+        });
+
+        // If ActivityAccountId is provided, check not empty
+        When(x => x.ActivityAccountId.HasValue, () => {
+            RuleFor(x => x.ActivityAccountId!.Value)
+                .NotEqual(Guid.Empty).WithMessage("ActivityAccountId cannot be empty if provided");
+        });
+
+        // If SupportAccountId is provided, check not empty
+        When(x => x.SupportAccountId.HasValue, () => {
+            RuleFor(x => x.SupportAccountId!.Value)
+                .NotEqual(Guid.Empty).WithMessage("SupportAccountId cannot be empty if provided");
         });
     }
 }

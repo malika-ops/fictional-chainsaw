@@ -11,10 +11,7 @@ using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
-using wfc.referential.Domain.CityAggregate;
-using wfc.referential.Domain.SectorAggregate;
 using Xunit;
-using wfc.referential.Domain.RegionAggregate;
 
 namespace wfc.referential.AcceptanceTests.SupportAccountsTests.CreateTests;
 
@@ -47,14 +44,6 @@ public class CreateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
 
                 // Set up partner mock to return valid entity
                 var partnerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-                var sectorId = Guid.NewGuid();
-                var cityId = Guid.NewGuid();
-
-                // Create city first
-                var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(Guid.NewGuid()), null);
-
-                // Create sector with city
-                var sector = Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city);
 
                 var partner = Partner.Create(
                     PartnerId.Of(partnerId),
@@ -62,15 +51,18 @@ public class CreateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
                     "Test Partner",
                     NetworkMode.Franchise,
                     PaymentMode.PrePaye,
-                    "ID001",
+                    "Test Type",
                     SupportAccountType.Commun,
                     "IDNUM001",
                     "Standard",
                     "AUX001",
                     "ICE001",
+                    "10.5",
                     "/logos/logo.png",
-                    sector,
-                    city
+                    null, // IdParent
+                    null, // CommissionAccountId
+                    null, // ActivityAccountId
+                    null  // SupportAccountId
                 );
 
                 _partnerRepoMock

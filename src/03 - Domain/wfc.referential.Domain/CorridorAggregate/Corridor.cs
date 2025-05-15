@@ -69,19 +69,8 @@ public class Corridor : Aggregate<CorridorId>
             isEnabled, DateTime.UtcNow
         ));
     }
-    public void Patch(CountryId? sourceCountry = null, CountryId? destCountry = null,
-       CityId? sourceCity = null, CityId? destCity = null,
-       AgencyId? sourceAgency = null, AgencyId? destAgency = null,
-       bool? isEnabled = null)
+    public void Patch()
     {
-        SourceCountryId = sourceCountry ?? SourceCountryId;
-        DestinationCountryId = destCountry ?? DestinationCountryId;
-        SourceCityId = sourceCity ?? SourceCityId;
-        DestinationCityId = destCity ?? DestinationCityId;
-        SourceAgencyId = sourceAgency ?? SourceAgencyId;
-        DestinationAgencyId = destAgency ?? DestinationAgencyId;
-        IsEnabled = isEnabled ?? IsEnabled;
-
         AddDomainEvent(new CorridorPatchedEvent(
             Id!.Value, SourceCountryId, DestinationCountryId,
             SourceCityId, DestinationCityId,

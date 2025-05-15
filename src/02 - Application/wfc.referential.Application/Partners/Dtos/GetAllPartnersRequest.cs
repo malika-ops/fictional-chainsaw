@@ -14,29 +14,35 @@ public record GetAllPartnersRequest
     /// <summary>Optional filter by label.</summary>
     public string? Label { get; init; }
 
+    /// <summary>Optional filter by type.</summary>
+    public string? Type { get; init; }
+
     /// <summary>Optional filter by network mode.</summary>
     public string? NetworkMode { get; init; }
 
     /// <summary>Optional filter by payment mode.</summary>
     public string? PaymentMode { get; init; }
 
-    /// <summary>Optional filter by partner ID.</summary>
-    public string? IdPartner { get; init; }
+    /// <summary>Optional filter by parent partner ID.</summary>
+    public Guid? IdParent { get; init; }
 
     /// <summary>Optional filter by support account type.</summary>
     public string? SupportAccountType { get; init; }
 
     /// <summary>Optional filter by identification number.</summary>
-    public string? IdentificationNumber { get; init; }
+    public string? TaxIdentificationNumber { get; init; }
 
     /// <summary>Optional filter by ICE.</summary>
     public string? ICE { get; init; }
 
-    /// <summary>Optional filter by Sector ID.</summary>
-    public Guid? SectorId { get; init; }
+    /// <summary>Optional filter by Commission Account ID.</summary>
+    public Guid? CommissionAccountId { get; init; }
 
-    /// <summary>Optional filter by City ID.</summary>
-    public Guid? CityId { get; init; }
+    /// <summary>Optional filter by Activity Account ID.</summary>
+    public Guid? ActivityAccountId { get; init; }
+
+    /// <summary>Optional filter by Support Account ID.</summary>
+    public Guid? SupportAccountId { get; init; }
 
     /// <summary>Optional filter by enabled status.</summary>
     public bool? IsEnabled { get; init; } = true;

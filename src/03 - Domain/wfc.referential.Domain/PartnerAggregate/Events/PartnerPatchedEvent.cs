@@ -18,8 +18,6 @@ public record PartnerPatchedEvent : IDomainEvent
     public string ICE { get; }
     public bool IsEnabled { get; }
     public string Logo { get; }
-    public Guid SectorId { get; }
-    public Guid CityId { get; }
     public DateTime OccurredOn { get; }
 
     public PartnerPatchedEvent(
@@ -36,8 +34,6 @@ public record PartnerPatchedEvent : IDomainEvent
         string ice,
         bool isEnabled,
         string logo,
-        Guid sectorId,
-        Guid cityId,
         DateTime occurredOn)
     {
         PartnerId = partnerId;
@@ -53,8 +49,6 @@ public record PartnerPatchedEvent : IDomainEvent
         ICE = ice;
         IsEnabled = isEnabled;
         Logo = logo;
-        SectorId = sectorId;
-        CityId = cityId;
         OccurredOn = occurredOn;
     }
 }

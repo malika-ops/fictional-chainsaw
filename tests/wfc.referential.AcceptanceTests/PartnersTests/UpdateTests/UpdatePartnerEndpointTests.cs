@@ -9,10 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.RegionAggregate;
-using wfc.referential.Domain.SectorAggregate;
+using wfc.referential.Domain.PartnerAccountAggregate;
+using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnersTests.UpdateTests;
@@ -21,8 +20,8 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
 {
     private readonly HttpClient _client;
     private readonly Mock<IPartnerRepository> _repoMock = new();
-    private readonly Mock<ISectorRepository> _sectorRepoMock = new();
-    private readonly Mock<ICityRepository> _cityRepoMock = new();
+    private readonly Mock<IPartnerAccountRepository> _partnerAccountRepoMock = new();
+    private readonly Mock<ISupportAccountRepository> _supportAccountRepoMock = new();
 
     public UpdatePartnerEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -35,8 +34,8 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IPartnerRepository>();
-                services.RemoveAll<ISectorRepository>();
-                services.RemoveAll<ICityRepository>();
+                services.RemoveAll<IPartnerAccountRepository>();
+                services.RemoveAll<ISupportAccountRepository>();
                 services.RemoveAll<ICacheService>();
 
                 // Default noop for Update
@@ -45,27 +44,9 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
                                                    It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
-                // Set up sector and city mocks to return valid entities
-                var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-                var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-                var regionId = Guid.NewGuid();
-
-                
-                var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(regionId), null);
-
-        
-                _sectorRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<SectorId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city));
-
-                // Corriger le mock pour utiliser la valeur Guid au lieu de l'objet CityId
-                _cityRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(city);
-
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_sectorRepoMock.Object);
-                services.AddSingleton(_cityRepoMock.Object);
+                services.AddSingleton(_partnerAccountRepoMock.Object);
+                services.AddSingleton(_supportAccountRepoMock.Object);
                 services.AddSingleton(cacheMock.Object);
             });
         });
@@ -76,31 +57,24 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
     // Helper to create a test partner
     private static Partner CreateTestPartner(Guid id, string code, string label, NetworkMode networkMode)
     {
-        var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var regionId = Guid.NewGuid();
-
-        
-        var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(regionId), null);
-
-
-        var sector = Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city);
-
         return Partner.Create(
             new PartnerId(id),
             code,
             label,
             networkMode,
             PaymentMode.PrePaye,
-            "ID" + code,
+            "Test Type",
             Domain.SupportAccountAggregate.SupportAccountType.Commun,
             "IDNUM" + code,
             "Standard",
             "AUX" + code,
             "ICE" + code,
+            "10.5",
             "/logos/logo.png",
-            sector,
-            city
+            null, // IdParent
+            null, // CommissionAccountId
+            null, // ActivityAccountId
+            null  // SupportAccountId
         );
     }
 
@@ -109,8 +83,6 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         // Arrange
         var id = Guid.NewGuid();
-        var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
         var oldPartner = CreateTestPartner(id, "PTN001", "Old Partner", NetworkMode.Franchise);
 
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
@@ -136,17 +108,20 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
             PartnerId = id,
             Code = "PTN002",
             Label = "New Partner Name",
+            Type = "3G - Kiosque - Mobile",
             NetworkMode = "Succursale",
             PaymentMode = "PostPaye",
-            IdPartner = "ID002",
             SupportAccountType = "Individuel",
-            IdentificationNumber = "IDNUM002",
+            TaxIdentificationNumber = "IDNUM002",
             TaxRegime = "Simplified",
             AuxiliaryAccount = "AUX002",
             ICE = "ICE002",
+            RASRate = "12.3",
             Logo = "/logos/new-logo.png",
-            SectorId = sectorId,
-            CityId = cityId,
+            IdParent = (Guid?)null,
+            CommissionAccountId = (Guid?)null,
+            ActivityAccountId = (Guid?)null,
+            SupportAccountId = (Guid?)null,
             IsEnabled = true
         };
 
@@ -160,13 +135,14 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         updated!.Code.Should().Be("PTN002");
         updated.Label.Should().Be("New Partner Name");
+        updated.Type.Should().Be("3G - Kiosque - Mobile");
         updated.NetworkMode.Should().Be(NetworkMode.Succursale);
         updated.PaymentMode.Should().Be(PaymentMode.PostPaye);
-        updated.IdPartner.Should().Be("ID002");
-        updated.IdentificationNumber.Should().Be("IDNUM002");
+        updated.TaxIdentificationNumber.Should().Be("IDNUM002");
         updated.TaxRegime.Should().Be("Simplified");
         updated.AuxiliaryAccount.Should().Be("AUX002");
         updated.ICE.Should().Be("ICE002");
+        updated.RASRate.Should().Be("12.3");
         updated.Logo.Should().Be("/logos/new-logo.png");
         updated.SupportAccountType.Should().Be(Domain.SupportAccountAggregate.SupportAccountType.Individuel);
         updated.IsEnabled.Should().BeTrue();
@@ -181,8 +157,6 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         // Arrange
         var id = Guid.NewGuid();
-        var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
         var oldPartner = CreateTestPartner(id, "PTN001", "Test Partner", NetworkMode.Franchise);
 
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
@@ -208,17 +182,20 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
             PartnerId = id,
             Code = "PTN001",
             Label = "Test Partner",
+            Type = "Test Type",
             NetworkMode = "Franchise",
             PaymentMode = "PrePaye",
-            IdPartner = "IDPTN001",
             SupportAccountType = "Commun",
-            IdentificationNumber = "IDNUMPTN001",
+            TaxIdentificationNumber = "IDNUMPTN001",
             TaxRegime = "Standard",
             AuxiliaryAccount = "AUXPTN001",
             ICE = "ICEPTN001",
+            RASRate = "10.5",
             Logo = "/logos/logo.png",
-            SectorId = sectorId,
-            CityId = cityId,
+            IdParent = (Guid?)null,
+            CommissionAccountId = (Guid?)null,
+            ActivityAccountId = (Guid?)null,
+            SupportAccountId = (Guid?)null,
             IsEnabled = false // Changed from true to false
         };
 
@@ -242,25 +219,26 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         // Arrange
         var id = Guid.NewGuid();
-        var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         var payload = new
         {
             PartnerId = id,
             // Code intentionally omitted
             Label = "New Partner Name",
+            Type = "3G - Kiosque - Mobile",
             NetworkMode = "Succursale",
             PaymentMode = "PostPaye",
-            IdPartner = "ID002",
             SupportAccountType = "Individuel",
-            IdentificationNumber = "IDNUM002",
+            TaxIdentificationNumber = "IDNUM002",
             TaxRegime = "Simplified",
             AuxiliaryAccount = "AUX002",
             ICE = "ICE002",
+            RASRate = "12.3",
             Logo = "/logos/new-logo.png",
-            SectorId = sectorId,
-            CityId = cityId,
+            IdParent = (Guid?)null,
+            CommissionAccountId = (Guid?)null,
+            ActivityAccountId = (Guid?)null,
+            SupportAccountId = (Guid?)null,
             IsEnabled = true
         };
 
@@ -285,8 +263,6 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         // Arrange
         var id = Guid.NewGuid();
-        var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Partner?)null);
@@ -296,17 +272,20 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
             PartnerId = id,
             Code = "PTN002",
             Label = "New Partner",
+            Type = "3G - Kiosque - Mobile",
             NetworkMode = "Succursale",
             PaymentMode = "PostPaye",
-            IdPartner = "ID002",
             SupportAccountType = "Individuel",
-            IdentificationNumber = "IDNUM002",
+            TaxIdentificationNumber = "IDNUM002",
             TaxRegime = "Simplified",
             AuxiliaryAccount = "AUX002",
             ICE = "ICE002",
+            RASRate = "12.3",
             Logo = "/logos/new-logo.png",
-            SectorId = sectorId,
-            CityId = cityId,
+            IdParent = (Guid?)null,
+            CommissionAccountId = (Guid?)null,
+            ActivityAccountId = (Guid?)null,
+            SupportAccountId = (Guid?)null,
             IsEnabled = true
         };
 

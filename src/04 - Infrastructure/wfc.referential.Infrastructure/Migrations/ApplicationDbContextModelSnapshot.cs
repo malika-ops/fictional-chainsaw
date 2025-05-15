@@ -710,16 +710,19 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ActivityAccountId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("AuxiliaryAccount")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("CityId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("CommissionAccountId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -731,13 +734,8 @@ namespace wfc.referential.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("IdPartner")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("IdentificationNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid?>("IdParent")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsEnabled")
                         .ValueGeneratedOnAdd()
@@ -766,10 +764,18 @@ namespace wfc.referential.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("SectorId")
+                    b.Property<string>("RASRate")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("SupportAccountId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("SupportAccountType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TaxIdentificationNumber")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -777,9 +783,11 @@ namespace wfc.referential.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.HasIndex("CityId");
+                    b.HasKey("Id");
 
                     b.HasIndex("Code")
                         .IsUnique();
@@ -787,12 +795,48 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.HasIndex("ICE")
                         .IsUnique();
 
-                    b.HasIndex("IdentificationNumber")
+                    b.HasIndex("TaxIdentificationNumber")
                         .IsUnique();
 
-                    b.HasIndex("SectorId");
-
                     b.ToTable("Partners");
+                });
+
+            modelBuilder.Entity("wfc.referential.Domain.PartnerCountryAggregate.PartnerCountry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CountryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastModified")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PartnerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
+
+                    b.HasIndex("PartnerId", "CountryId")
+                        .IsUnique();
+
+                    b.ToTable("PartnerCountries", (string)null);
                 });
 
             modelBuilder.Entity("wfc.referential.Domain.ProductAggregate.Product", b =>
@@ -1362,23 +1406,21 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Navigation("Bank");
                 });
 
-            modelBuilder.Entity("wfc.referential.Domain.PartnerAggregate.Partner", b =>
+            modelBuilder.Entity("wfc.referential.Domain.PartnerCountryAggregate.PartnerCountry", b =>
                 {
-                    b.HasOne("wfc.referential.Domain.CityAggregate.City", "City")
+                    b.HasOne("wfc.referential.Domain.Countries.Country", "Country")
                         .WithMany()
-                        .HasForeignKey("CityId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasForeignKey("CountryId")
                         .IsRequired();
 
-                    b.HasOne("wfc.referential.Domain.SectorAggregate.Sector", "Sector")
+                    b.HasOne("wfc.referential.Domain.PartnerAggregate.Partner", "Partner")
                         .WithMany()
-                        .HasForeignKey("SectorId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasForeignKey("PartnerId")
                         .IsRequired();
 
-                    b.Navigation("City");
+                    b.Navigation("Country");
 
-                    b.Navigation("Sector");
+                    b.Navigation("Partner");
                 });
 
             modelBuilder.Entity("wfc.referential.Domain.RegionAggregate.Region", b =>

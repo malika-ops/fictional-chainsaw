@@ -10,10 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Partners.Queries.GetAllPartners;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.RegionAggregate;
-using wfc.referential.Domain.SectorAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnersTests.GetAllTests;
@@ -45,31 +42,26 @@ public class GetAllPartnersEndpointTests : IClassFixture<WebApplicationFactory<P
     }
 
     // Helper to build dummy partners quickly
-    private static Partner CreateTestPartner(string code, string label, NetworkMode networkMode, string identificationNumber)
+    private static Partner CreateTestPartner(string code, string label, NetworkMode networkMode, string taxIdentificationNumber)
     {
-        
-        var cityId = Guid.NewGuid();
-        var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(Guid.NewGuid()), null);
-
-
-        var sectorId = Guid.NewGuid();
-        var sector = Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city);
-
         return Partner.Create(
             PartnerId.Of(Guid.NewGuid()),
             code,
             label,
             networkMode,
             PaymentMode.PrePaye,
-            "ID" + code,
+            "Test Type",
             Domain.SupportAccountAggregate.SupportAccountType.Commun,
-            identificationNumber,
+            taxIdentificationNumber,
             "Standard",
             "AUX" + code,
             "ICE" + code,
+            "10.5",
             "/logos/logo.png",
-            sector,
-            city
+            null, // IdParent
+            null, // CommissionAccountId
+            null, // ActivityAccountId
+            null  // SupportAccountId
         );
     }
 

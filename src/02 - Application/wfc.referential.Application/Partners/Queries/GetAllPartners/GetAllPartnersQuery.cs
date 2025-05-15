@@ -10,14 +10,16 @@ public record GetAllPartnersQuery : IQuery<PagedResult<PartnerResponse>>
     public int PageSize { get; }
     public string? Code { get; init; }
     public string? Label { get; init; }
+    public string? Type { get; init; }
     public string? NetworkMode { get; init; }
     public string? PaymentMode { get; init; }
-    public string? IdPartner { get; init; }
+    public Guid? IdParent { get; init; }
     public string? SupportAccountType { get; init; }
-    public string? IdentificationNumber { get; init; }
+    public string? TaxIdentificationNumber { get; init; }
     public string? ICE { get; init; }
-    public Guid? SectorId { get; init; }
-    public Guid? CityId { get; init; }
+    public Guid? CommissionAccountId { get; init; }
+    public Guid? ActivityAccountId { get; init; }
+    public Guid? SupportAccountId { get; init; }
     public bool? IsEnabled { get; init; }
 
     public GetAllPartnersQuery(
@@ -25,26 +27,30 @@ public record GetAllPartnersQuery : IQuery<PagedResult<PartnerResponse>>
         int pageSize,
         string? code = null,
         string? label = null,
+        string? type = null,
         string? networkMode = null,
         string? paymentMode = null,
-        string? idPartner = null,
+        Guid? idParent = null,
         string? supportAccountType = null,
-        string? identificationNumber = null,
+        string? taxIdentificationNumber = null,
         string? ice = null,
-        Guid? sectorId = null,
-        Guid? cityId = null,
+        Guid? commissionAccountId = null,
+        Guid? activityAccountId = null,
+        Guid? supportAccountId = null,
         bool? isEnabled = null)
     {
         Code = code;
         Label = label;
+        Type = type;
         NetworkMode = networkMode;
         PaymentMode = paymentMode;
-        IdPartner = idPartner;
+        IdParent = idParent;
         SupportAccountType = supportAccountType;
-        IdentificationNumber = identificationNumber;
+        TaxIdentificationNumber = taxIdentificationNumber;
         ICE = ice;
-        SectorId = sectorId;
-        CityId = cityId;
+        CommissionAccountId = commissionAccountId;
+        ActivityAccountId = activityAccountId;
+        SupportAccountId = supportAccountId;
         PageNumber = pageNumber;
         PageSize = pageSize;
         IsEnabled = isEnabled;

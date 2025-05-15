@@ -21,6 +21,12 @@ public record UpdatePartnerRequest
     public string Label { get; init; } = string.Empty;
 
     /// <summary>
+    /// The type of the Partner.
+    /// </summary>
+    /// <example>3G - Kiosque - Mobile</example>
+    public string Type { get; init; } = string.Empty;
+
+    /// <summary>
     /// The network mode of the Partner.
     /// </summary>
     /// <example>Franchise</example>
@@ -33,10 +39,10 @@ public record UpdatePartnerRequest
     public string PaymentMode { get; init; } = string.Empty;
 
     /// <summary>
-    /// The internal partner identifier.
+    /// The internal parent partner identifier.
     /// </summary>
-    /// <example>ID001</example>
-    public string IdPartner { get; init; } = string.Empty;
+    /// <example>456e35ab-8791-4235-9d44-facfd89f324c</example>
+    public Guid? IdParent { get; init; }
 
     /// <summary>
     /// The support account type associated with this Partner.
@@ -48,7 +54,7 @@ public record UpdatePartnerRequest
     /// The tax identification number of the Partner.
     /// </summary>
     /// <example>TAX123456</example>
-    public string IdentificationNumber { get; init; } = string.Empty;
+    public string TaxIdentificationNumber { get; init; } = string.Empty;
 
     /// <summary>
     /// The tax regime of the Partner.
@@ -69,6 +75,12 @@ public record UpdatePartnerRequest
     public string ICE { get; init; } = string.Empty;
 
     /// <summary>
+    /// The RAS Rate of the Partner.
+    /// </summary>
+    /// <example>10.5</example>
+    public string RASRate { get; init; } = string.Empty;
+
+    /// <summary>
     /// Whether the Partner is enabled or not.
     /// </summary>
     /// <example>true</example>
@@ -81,14 +93,20 @@ public record UpdatePartnerRequest
     public string Logo { get; init; } = string.Empty;
 
     /// <summary>
-    /// The ID of the Sector this Partner belongs to.
+    /// The ID of the Commission Account related to this Partner.
     /// </summary>
     /// <example>7c583b69-6e16-5b2c-9c8f-69627ee725d3</example>
-    public Guid SectorId { get; init; }
+    public Guid? CommissionAccountId { get; init; }
 
     /// <summary>
-    /// The ID of the City where this Partner is located.
+    /// The ID of the Activity Account related to this Partner.
     /// </summary>
     /// <example>8c583b69-6e16-5b2c-9c8f-69627ee725d4</example>
-    public Guid CityId { get; init; }
+    public Guid? ActivityAccountId { get; init; }
+
+    /// <summary>
+    /// The ID of the Support Account related to this Partner.
+    /// </summary>
+    /// <example>9c583b69-6e16-5b2c-9c8f-69627ee725d5</example>
+    public Guid? SupportAccountId { get; init; }
 }

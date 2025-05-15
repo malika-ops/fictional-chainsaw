@@ -1,27 +1,27 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.PartnerAggregate.Exceptions;
-using wfc.referential.Domain.SectorAggregate;
+using wfc.referential.Domain.PartnerAccountAggregate;
+using wfc.referential.Domain.SupportAccountAggregate;
 
 namespace wfc.referential.Application.Partners.Commands.PatchPartner;
 
 public record PatchPartnerCommandHandler : ICommandHandler<PatchPartnerCommand, Guid>
 {
     private readonly IPartnerRepository _partnerRepository;
-    private readonly ISectorRepository _sectorRepository;
-    private readonly ICityRepository _cityRepository;
+    private readonly IPartnerAccountRepository _partnerAccountRepository;
+    private readonly ISupportAccountRepository _supportAccountRepository;
 
     public PatchPartnerCommandHandler(
         IPartnerRepository partnerRepository,
-        ISectorRepository sectorRepository,
-        ICityRepository cityRepository)
+        IPartnerAccountRepository partnerAccountRepository,
+        ISupportAccountRepository supportAccountRepository)
     {
         _partnerRepository = partnerRepository;
-        _sectorRepository = sectorRepository;
-        _cityRepository = cityRepository;
+        _partnerAccountRepository = partnerAccountRepository;
+        _supportAccountRepository = supportAccountRepository;
     }
 
     public async Task<Guid> Handle(PatchPartnerCommand request, CancellationToken cancellationToken)
@@ -39,7 +39,7 @@ public record PatchPartnerCommandHandler : ICommandHandler<PatchPartnerCommand, 
         }
 
         // Check if identification number is unique if it's being updated
-        if (request.IdentificationNumber != null && request.IdentificationNumber != partner.IdentificationNumber)
+        if (request.IdentificationNumber != null && request.IdentificationNumber != partner.TaxIdentificationNumber)
         {
             var existingWithIdentificationNumber = await _partnerRepository.GetByIdentificationNumberAsync(request.IdentificationNumber, cancellationToken);
             if (existingWithIdentificationNumber != null && existingWithIdentificationNumber.Id.Value != request.PartnerId)
@@ -54,38 +54,48 @@ public record PatchPartnerCommandHandler : ICommandHandler<PatchPartnerCommand, 
                 throw new BusinessException($"Partner with ICE {request.ICE} already exists.");
         }
 
-        // Get updated sector if needed
-        var sector = partner.Sector;
-        if (request.SectorId.HasValue && request.SectorId.Value != partner.Sector.Id.Value)
+        // Load related accounts if needed
+        PartnerAccount commissionAccount = null;
+        if (request.CommissionAccountId.HasValue && request.CommissionAccountId != partner.CommissionAccountId)
         {
-            var updatedSector = await _sectorRepository.GetByIdAsync(new SectorId(request.SectorId.Value), cancellationToken);
-            if (updatedSector == null)
-                throw new BusinessException($"Sector with ID {request.SectorId} not found");
-            sector = updatedSector;
+            commissionAccount = await _partnerAccountRepository.GetByIdAsync(new PartnerAccountId(request.CommissionAccountId.Value), cancellationToken);
+            if (commissionAccount is null)
+                throw new BusinessException($"Commission Account with ID {request.CommissionAccountId} not found");
         }
 
-        // Get updated city if needed
-        var city = partner.City;
-        if (request.CityId.HasValue && request.CityId.Value != partner.City.Id.Value)
+        PartnerAccount activityAccount = null;
+        if (request.ActivityAccountId.HasValue && request.ActivityAccountId != partner.ActivityAccountId)
         {
-            var updatedCity = await _cityRepository.GetByIdAsync(request.CityId.Value, cancellationToken);
-            if (updatedCity == null)
-                throw new BusinessException($"City with ID {request.CityId} not found");
-            city = updatedCity;
+            activityAccount = await _partnerAccountRepository.GetByIdAsync(new PartnerAccountId(request.ActivityAccountId.Value), cancellationToken);
+            if (activityAccount is null)
+                throw new BusinessException($"Activity Account with ID {request.ActivityAccountId} not found");
         }
 
-        // Collect updates for domain entities
+        SupportAccount supportAccount = null;
+        if (request.SupportAccountId.HasValue && request.SupportAccountId != partner.SupportAccountId)
+        {
+            supportAccount = await _supportAccountRepository.GetByIdAsync(new SupportAccountId(request.SupportAccountId.Value), cancellationToken);
+            if (supportAccount is null)
+                throw new BusinessException($"Support Account with ID {request.SupportAccountId} not found");
+        }
+
+        // Collect updates for domain entity
         var updatedCode = request.Code ?? partner.Code;
         var updatedLabel = request.Label ?? partner.Label;
         var updatedNetworkMode = request.NetworkMode ?? partner.NetworkMode;
         var updatedPaymentMode = request.PaymentMode ?? partner.PaymentMode;
-        var updatedIdPartner = request.IdPartner ?? partner.IdPartner;
+        var updatedType = request.Type ?? partner.Type;
         var updatedSupportAccountType = request.SupportAccountType ?? partner.SupportAccountType;
-        var updatedIdentificationNumber = request.IdentificationNumber ?? partner.IdentificationNumber;
+        var updatedIdentificationNumber = request.IdentificationNumber ?? partner.TaxIdentificationNumber;
         var updatedTaxRegime = request.TaxRegime ?? partner.TaxRegime;
         var updatedAuxiliaryAccount = request.AuxiliaryAccount ?? partner.AuxiliaryAccount;
         var updatedICE = request.ICE ?? partner.ICE;
+        var updatedRASRate = request.RASRate ?? partner.RASRate;
         var updatedLogo = request.Logo ?? partner.Logo;
+        var updatedIdParent = request.IdParent ?? partner.IdParent;
+        var updatedCommissionAccountId = request.CommissionAccountId ?? partner.CommissionAccountId;
+        var updatedActivityAccountId = request.ActivityAccountId ?? partner.ActivityAccountId;
+        var updatedSupportAccountId = request.SupportAccountId ?? partner.SupportAccountId;
 
         // Update via domain methods
         partner.Patch(
@@ -93,16 +103,35 @@ public record PatchPartnerCommandHandler : ICommandHandler<PatchPartnerCommand, 
             updatedLabel,
             updatedNetworkMode,
             updatedPaymentMode,
-            updatedIdPartner,
+            updatedType,
             updatedSupportAccountType,
             updatedIdentificationNumber,
             updatedTaxRegime,
             updatedAuxiliaryAccount,
             updatedICE,
+            updatedRASRate,
             updatedLogo,
-            sector,
-            city
+            updatedIdParent,
+            updatedCommissionAccountId,
+            updatedActivityAccountId,
+            updatedSupportAccountId
         );
+
+        // Set account relationships if needed
+        if (commissionAccount != null)
+        {
+            partner.SetCommissionAccount(request.CommissionAccountId.Value, commissionAccount);
+        }
+
+        if (activityAccount != null)
+        {
+            partner.SetActivityAccount(request.ActivityAccountId.Value, activityAccount);
+        }
+
+        if (supportAccount != null)
+        {
+            partner.SetSupportAccount(request.SupportAccountId.Value, supportAccount);
+        }
 
         // Handle IsEnabled status changes separately through the proper domain methods
         if (request.IsEnabled.HasValue)

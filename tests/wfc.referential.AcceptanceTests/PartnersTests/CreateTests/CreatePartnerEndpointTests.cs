@@ -9,10 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.RegionAggregate;
-using wfc.referential.Domain.SectorAggregate;
+using wfc.referential.Domain.PartnerAccountAggregate;
+using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnersTests.CreateTests;
@@ -21,8 +20,8 @@ public class CreatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
 {
     private readonly HttpClient _client;
     private readonly Mock<IPartnerRepository> _repoMock = new();
-    private readonly Mock<ISectorRepository> _sectorRepoMock = new();
-    private readonly Mock<ICityRepository> _cityRepoMock = new();
+    private readonly Mock<IPartnerAccountRepository> _partnerAccountRepoMock = new();
+    private readonly Mock<ISupportAccountRepository> _supportAccountRepoMock = new();
 
     public CreatePartnerEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -37,8 +36,8 @@ public class CreatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
             {
                 // Remove concrete registrations that hit the DB / Redis
                 services.RemoveAll<IPartnerRepository>();
-                services.RemoveAll<ISectorRepository>();
-                services.RemoveAll<ICityRepository>();
+                services.RemoveAll<IPartnerAccountRepository>();
+                services.RemoveAll<ISupportAccountRepository>();
                 services.RemoveAll<ICacheService>();
 
                 // Set up mock behavior (echoes entity back, as if EF saved it)
@@ -46,26 +45,10 @@ public class CreatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
                     .Setup(r => r.AddPartnerAsync(It.IsAny<Partner>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Partner p, CancellationToken _) => p);
 
-                // Set up sector and city mocks to return valid entities
-                var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-                var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-                // Create the city first
-                var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(Guid.NewGuid()), null);
-
-                _cityRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(city);
-
-                // Now create the sector WITH the city
-                _sectorRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<SectorId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city));
-
                 // Plug mocks back in
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_sectorRepoMock.Object);
-                services.AddSingleton(_cityRepoMock.Object);
+                services.AddSingleton(_partnerAccountRepoMock.Object);
+                services.AddSingleton(_supportAccountRepoMock.Object);
                 services.AddSingleton(cacheMock.Object);
             });
         });
@@ -77,9 +60,6 @@ public class CreatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
     {
         // Arrange
-        var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
         Partner capturedCreatePartner = null;
         _repoMock
             .Setup(r => r.AddPartnerAsync(It.IsAny<Partner>(), It.IsAny<CancellationToken>()))
@@ -102,17 +82,20 @@ public class CreatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         {
             Code = "PTN001",
             Label = "Partner 1",
+            Type = "3G - Kiosque - Mobile",
             NetworkMode = "Franchise",
             PaymentMode = "PrePaye",
-            IdPartner = "ID001",
             SupportAccountType = "Commun",
-            IdentificationNumber = "ID12345",
+            TaxIdentificationNumber = "ID12345",
             TaxRegime = "Standard",
             AuxiliaryAccount = "AUX001",
             ICE = "ICE12345",
+            RASRate = "10.5",
             Logo = "/logos/logo.png",
-            SectorId = sectorId,
-            CityId = cityId
+            IdParent = (Guid?)null,
+            CommissionAccountId = (Guid?)null,
+            ActivityAccountId = (Guid?)null,
+            SupportAccountId = (Guid?)null
         };
 
         // Act
@@ -130,38 +113,37 @@ public class CreatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         capturedCreatePartner.Should().NotBeNull();
         capturedCreatePartner.Code.Should().Be(payload.Code);
         capturedCreatePartner.Label.Should().Be(payload.Label);
+        capturedCreatePartner.Type.Should().Be(payload.Type);
         capturedCreatePartner.NetworkMode.ToString().Should().Be(payload.NetworkMode);
         capturedCreatePartner.PaymentMode.ToString().Should().Be(payload.PaymentMode);
-        capturedCreatePartner.IdPartner.Should().Be(payload.IdPartner);
-        capturedCreatePartner.IdentificationNumber.Should().Be(payload.IdentificationNumber);
+        capturedCreatePartner.TaxIdentificationNumber.Should().Be(payload.TaxIdentificationNumber);
         capturedCreatePartner.ICE.Should().Be(payload.ICE);
+        capturedCreatePartner.RASRate.Should().Be(payload.RASRate);
         capturedCreatePartner.SupportAccountType.ToString().Should().Be(payload.SupportAccountType);
-        capturedCreatePartner.Sector.Id.Value.Should().Be(sectorId);
-        capturedCreatePartner.City.Id.Value.Should().Be(cityId);
     }
 
     [Fact(DisplayName = "POST /api/partners returns 400 & problem-details when Code is missing")]
     public async Task Post_ShouldReturn400_WhenCodeIsMissing()
     {
         // Arrange
-        var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
         var invalidPayload = new
         {
             // Code intentionally omitted to trigger validation error
             Label = "Partner 1",
+            Type = "3G - Kiosque - Mobile",
             NetworkMode = "Franchise",
             PaymentMode = "PrePaye",
-            IdPartner = "ID001",
             SupportAccountType = "Commun",
-            IdentificationNumber = "ID12345",
+            TaxIdentificationNumber = "ID12345",
             TaxRegime = "Standard",
             AuxiliaryAccount = "AUX001",
             ICE = "ICE12345",
+            RASRate = "10.5",
             Logo = "/logos/logo.png",
-            SectorId = sectorId,
-            CityId = cityId
+            IdParent = (Guid?)null,
+            CommissionAccountId = (Guid?)null,
+            ActivityAccountId = (Guid?)null,
+            SupportAccountId = (Guid?)null
         };
 
         // Act
@@ -191,32 +173,9 @@ public class CreatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         // Arrange 
         const string duplicateCode = "PTN001";
-        var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         // Tell the repo mock that the code already exists
-        // Create the city first
-        var existingCity = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(Guid.NewGuid()), null);
-
-        // Now create the sector WITH the city
-        var existingSector = Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", existingCity);
-
-        var existingPartner = Partner.Create(
-            PartnerId.Of(Guid.NewGuid()),
-            duplicateCode,
-            "Existing Partner",
-            NetworkMode.Franchise,
-            PaymentMode.PrePaye,
-            "IDEXIST",
-            Domain.SupportAccountAggregate.SupportAccountType.Commun,
-            "IDNUM123",
-            "Standard",
-            "AUXEXIST",
-            "ICEEXIST",
-            "/logos/existing.png",
-            existingSector,
-            existingCity
-        );
+        var existingPartner = CreateTestPartner(duplicateCode, "Existing Partner", NetworkMode.Franchise, "IDNUM123");
 
         _repoMock
             .Setup(r => r.GetByCodeAsync(duplicateCode, It.IsAny<CancellationToken>()))
@@ -226,17 +185,20 @@ public class CreatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         {
             Code = duplicateCode,
             Label = "New Partner",
+            Type = "3G - Kiosque - Mobile",
             NetworkMode = "Succursale",
             PaymentMode = "PostPaye",
-            IdPartner = "ID002",
             SupportAccountType = "Individuel",
-            IdentificationNumber = "ID67890",
+            TaxIdentificationNumber = "ID67890",
             TaxRegime = "Simplified",
             AuxiliaryAccount = "AUX002",
             ICE = "ICE67890",
+            RASRate = "15.2",
             Logo = "/logos/new.png",
-            SectorId = sectorId,
-            CityId = cityId
+            IdParent = (Guid?)null,
+            CommissionAccountId = (Guid?)null,
+            ActivityAccountId = (Guid?)null,
+            SupportAccountId = (Guid?)null
         };
 
         // Act
@@ -258,50 +220,27 @@ public class CreatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
             "no insertion should happen when the code is already taken");
     }
 
-    [Fact(DisplayName = "POST /api/partners returns 400 when Sector is not found")]
-    public async Task Post_ShouldReturn400_WhenSectorNotFound()
+    // Helper to build dummy partners quickly
+    private static Partner CreateTestPartner(string code, string label, NetworkMode networkMode, string taxIdentificationNumber)
     {
-        // Arrange
-        var nonExistentSectorId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-        // Setup sector repository to return null for this ID
-        _sectorRepoMock
-            .Setup(r => r.GetByIdAsync(It.Is<SectorId>(id => id.Value == nonExistentSectorId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Sector?)null);
-
-        var payload = new
-        {
-            Code = "PTN001",
-            Label = "Partner 1",
-            NetworkMode = "Franchise",
-            PaymentMode = "PrePaye",
-            IdPartner = "ID001",
-            SupportAccountType = "Commun",
-            IdentificationNumber = "ID12345",
-            TaxRegime = "Standard",
-            AuxiliaryAccount = "AUX001",
-            ICE = "ICE12345",
-            Logo = "/logos/logo.png",
-            SectorId = nonExistentSectorId,
-            CityId = cityId
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/partners", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
-
-        error.Should().Be($"Sector with ID {nonExistentSectorId} not found");
-
-        // Handler must NOT attempt to add the entity
-        _repoMock.Verify(r =>
-            r.AddPartnerAsync(It.IsAny<Partner>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+        return Partner.Create(
+            PartnerId.Of(Guid.NewGuid()),
+            code,
+            label,
+            networkMode,
+            PaymentMode.PrePaye,
+            "Test Type",
+            Domain.SupportAccountAggregate.SupportAccountType.Commun,
+            taxIdentificationNumber,
+            "Standard",
+            "AUX" + code,
+            "ICE" + code,
+            "10.5",
+            "/logos/logo.png",
+            null, // IdParent
+            null, // CommissionAccountId
+            null, // ActivityAccountId
+            null  // SupportAccountId
+        );
     }
 }

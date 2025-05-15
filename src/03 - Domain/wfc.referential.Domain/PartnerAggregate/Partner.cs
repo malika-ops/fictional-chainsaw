@@ -1,8 +1,7 @@
 ﻿using BuildingBlocks.Core.Abstraction.Domain;
 using wfc.referential.Domain.PartnerAggregate.Events;
-using wfc.referential.Domain.SectorAggregate;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
+using wfc.referential.Domain.PartnerAccountAggregate;
 
 namespace wfc.referential.Domain.PartnerAggregate;
 
@@ -12,20 +11,26 @@ public class Partner : Aggregate<PartnerId>
     public string Label { get; private set; } = string.Empty;
     public NetworkMode NetworkMode { get; private set; }
     public PaymentMode PaymentMode { get; private set; }
-    public string IdPartner { get; private set; } = string.Empty;
+    public string Type { get; private set; } = string.Empty;
+    public Guid? IdParent { get; private set; }
     public SupportAccountType SupportAccountType { get; private set; }
-    public string IdentificationNumber { get; private set; } = string.Empty;
+    public string TaxIdentificationNumber { get; private set; } = string.Empty;
     public string TaxRegime { get; private set; } = string.Empty;
     public string AuxiliaryAccount { get; private set; } = string.Empty;
     public string ICE { get; private set; } = string.Empty;
-    public bool IsEnabled { get; private set; } = true;
+    public string RASRate { get; private set; } = string.Empty;
     public string Logo { get; private set; } = string.Empty;
+    public bool IsEnabled { get; private set; } = true;
 
-    // Relations
-    public Sector Sector { get; private set; }
-    public SectorId SectorId { get; private set; }
-    public City City { get; private set; }
-    public CityId CityId { get; private set; }
+    // Account relationships
+    public Guid? CommissionAccountId { get; private set; }
+    public PartnerAccount CommissionAccount { get; private set; }
+
+    public Guid? ActivityAccountId { get; private set; }
+    public PartnerAccount ActivityAccount { get; private set; }
+
+    public Guid? SupportAccountId { get; private set; }
+    public SupportAccount SupportAccount { get; private set; }
 
     private Partner() { }
 
@@ -35,15 +40,18 @@ public class Partner : Aggregate<PartnerId>
         string label,
         NetworkMode networkMode,
         PaymentMode paymentMode,
-        string idPartner,
+        string type,
         SupportAccountType supportAccountType,
-        string identificationNumber,
+        string taxIdentificationNumber,
         string taxRegime,
         string auxiliaryAccount,
         string ice,
+        string rasRate,
         string logo,
-        Sector sector,
-        City city)
+        Guid? idParent = null,
+        Guid? commissionAccountId = null,
+        Guid? activityAccountId = null,
+        Guid? supportAccountId = null)
     {
         var partner = new Partner
         {
@@ -52,18 +60,19 @@ public class Partner : Aggregate<PartnerId>
             Label = label,
             NetworkMode = networkMode,
             PaymentMode = paymentMode,
-            IdPartner = idPartner,
+            Type = type,
             SupportAccountType = supportAccountType,
-            IdentificationNumber = identificationNumber,
+            TaxIdentificationNumber = taxIdentificationNumber,
             TaxRegime = taxRegime,
             AuxiliaryAccount = auxiliaryAccount,
             ICE = ice,
+            RASRate = rasRate,
             IsEnabled = true,
             Logo = logo,
-            Sector = sector,
-            SectorId = sector.Id,
-            City = city,
-            CityId = city.Id
+            IdParent = idParent,
+            CommissionAccountId = commissionAccountId,
+            ActivityAccountId = activityAccountId,
+            SupportAccountId = supportAccountId
         };
 
         // Raise the creation event
@@ -73,16 +82,14 @@ public class Partner : Aggregate<PartnerId>
             partner.Label,
             partner.NetworkMode,
             partner.PaymentMode,
-            partner.IdPartner,
+            String.Empty,
             partner.SupportAccountType,
-            partner.IdentificationNumber,
+            partner.TaxIdentificationNumber,
             partner.TaxRegime,
             partner.AuxiliaryAccount,
             partner.ICE,
             partner.IsEnabled,
             partner.Logo,
-            partner.SectorId.Value,
-            partner.CityId.Value,
             DateTime.UtcNow
         ));
 
@@ -94,31 +101,35 @@ public class Partner : Aggregate<PartnerId>
         string label,
         NetworkMode networkMode,
         PaymentMode paymentMode,
-        string idPartner,
+        string type,
         SupportAccountType supportAccountType,
-        string identificationNumber,
+        string taxIdentificationNumber,
         string taxRegime,
         string auxiliaryAccount,
         string ice,
+        string rasRate,
         string logo,
-        Sector sector,
-        City city)
+        Guid? idParent = null,
+        Guid? commissionAccountId = null,
+        Guid? activityAccountId = null,
+        Guid? supportAccountId = null)
     {
         Code = code;
         Label = label;
         NetworkMode = networkMode;
         PaymentMode = paymentMode;
-        IdPartner = idPartner;
+        Type = type;
         SupportAccountType = supportAccountType;
-        IdentificationNumber = identificationNumber;
+        TaxIdentificationNumber = taxIdentificationNumber;
         TaxRegime = taxRegime;
         AuxiliaryAccount = auxiliaryAccount;
         ICE = ice;
+        RASRate = rasRate;
         Logo = logo;
-        Sector = sector;
-        SectorId = sector.Id;
-        City = city;
-        CityId = city.Id;
+        IdParent = idParent;
+        CommissionAccountId = commissionAccountId;
+        ActivityAccountId = activityAccountId;
+        SupportAccountId = supportAccountId;
 
         // Raise the update event
         AddDomainEvent(new PartnerUpdatedEvent(
@@ -127,16 +138,14 @@ public class Partner : Aggregate<PartnerId>
             Label,
             NetworkMode,
             PaymentMode,
-            IdPartner,
+            String.Empty,
             SupportAccountType,
-            IdentificationNumber,
+            TaxIdentificationNumber,
             TaxRegime,
             AuxiliaryAccount,
             ICE,
             IsEnabled,
             Logo,
-            SectorId.Value,
-            CityId.Value,
             DateTime.UtcNow
         ));
     }
@@ -146,31 +155,35 @@ public class Partner : Aggregate<PartnerId>
         string label,
         NetworkMode networkMode,
         PaymentMode paymentMode,
-        string idPartner,
+        string type,
         SupportAccountType supportAccountType,
-        string identificationNumber,
+        string taxIdentificationNumber,
         string taxRegime,
         string auxiliaryAccount,
         string ice,
+        string rasRate,
         string logo,
-        Sector sector,
-        City city)
+        Guid? idParent = null,
+        Guid? commissionAccountId = null,
+        Guid? activityAccountId = null,
+        Guid? supportAccountId = null)
     {
         Code = code;
         Label = label;
         NetworkMode = networkMode;
         PaymentMode = paymentMode;
-        IdPartner = idPartner;
+        Type = type;
         SupportAccountType = supportAccountType;
-        IdentificationNumber = identificationNumber;
+        TaxIdentificationNumber = taxIdentificationNumber;
         TaxRegime = taxRegime;
         AuxiliaryAccount = auxiliaryAccount;
         ICE = ice;
+        RASRate = rasRate;
         Logo = logo;
-        Sector = sector;
-        SectorId = sector.Id;
-        City = city;
-        CityId = city.Id;
+        IdParent = idParent;
+        CommissionAccountId = commissionAccountId;
+        ActivityAccountId = activityAccountId;
+        SupportAccountId = supportAccountId;
 
         // Raise the patch event
         AddDomainEvent(new PartnerPatchedEvent(
@@ -179,16 +192,14 @@ public class Partner : Aggregate<PartnerId>
             Label,
             NetworkMode,
             PaymentMode,
-            IdPartner,
+            String.Empty,
             SupportAccountType,
-            IdentificationNumber,
+            TaxIdentificationNumber,
             TaxRegime,
             AuxiliaryAccount,
             ICE,
             IsEnabled,
             Logo,
-            SectorId.Value,
-            CityId.Value,
             DateTime.UtcNow
         ));
     }
@@ -213,5 +224,27 @@ public class Partner : Aggregate<PartnerId>
             Id.Value,
             DateTime.UtcNow
         ));
+    }
+
+    // Account relationship methods
+    public void SetCommissionAccount(Guid accountId, PartnerAccount account = null)
+    {
+        CommissionAccountId = accountId;
+        if (account != null)
+            CommissionAccount = account;
+    }
+
+    public void SetActivityAccount(Guid accountId, PartnerAccount account = null)
+    {
+        ActivityAccountId = accountId;
+        if (account != null)
+            ActivityAccount = account;
+    }
+
+    public void SetSupportAccount(Guid accountId, SupportAccount account = null)
+    {
+        SupportAccountId = accountId;
+        if (account != null)
+            SupportAccount = account;
     }
 }

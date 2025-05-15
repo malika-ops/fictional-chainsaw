@@ -1,9 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.SectorAggregate;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
+using wfc.referential.Domain.PartnerAccountAggregate;
 
 namespace wfc.referential.Infrastructure.Persistence.Configurations;
 
@@ -20,6 +19,7 @@ public class PartnerConfiguration : IEntityTypeConfiguration<Partner>
 
         builder.Property(p => p.Code).IsRequired();
         builder.Property(p => p.Label).IsRequired();
+        builder.Property(p => p.Type).IsRequired();
 
         builder.Property(p => p.NetworkMode)
             .HasConversion(
@@ -31,17 +31,18 @@ public class PartnerConfiguration : IEntityTypeConfiguration<Partner>
                 v => v.ToString(),
                 v => (PaymentMode)Enum.Parse(typeof(PaymentMode), v));
 
-        builder.Property(p => p.IdPartner).IsRequired();
+        builder.Property(p => p.IdParent);
 
         builder.Property(p => p.SupportAccountType)
             .HasConversion(
                 v => v.ToString(),
                 v => (SupportAccountType)Enum.Parse(typeof(SupportAccountType), v));
 
-        builder.Property(p => p.IdentificationNumber);
+        builder.Property(p => p.TaxIdentificationNumber);
         builder.Property(p => p.TaxRegime);
         builder.Property(p => p.AuxiliaryAccount);
         builder.Property(p => p.ICE);
+        builder.Property(p => p.RASRate);
 
         builder.Property(p => p.IsEnabled)
             .IsRequired()
@@ -50,28 +51,17 @@ public class PartnerConfiguration : IEntityTypeConfiguration<Partner>
         builder.Property(p => p.Logo);
 
         builder.HasIndex(p => p.Code).IsUnique();
-        builder.HasIndex(p => p.IdentificationNumber).IsUnique();
+        builder.HasIndex(p => p.TaxIdentificationNumber).IsUnique();
         builder.HasIndex(p => p.ICE).IsUnique();
 
-        builder.Property(p => p.SectorId)
-            .HasConversion(
-                Id => Id.Value,
-                value => new SectorId(value));
+        // Account relationships
+        builder.Property(p => p.CommissionAccountId);
+        builder.Property(p => p.ActivityAccountId);
+        builder.Property(p => p.SupportAccountId);
 
-        builder.Property(p => p.CityId)
-            .HasConversion(
-                Id => Id.Value,
-                value => new CityId(value));
-
-        // Relations
-        builder.HasOne(p => p.Sector)
-            .WithMany()
-            .HasForeignKey(p => p.SectorId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(p => p.City)
-            .WithMany()
-            .HasForeignKey(p => p.CityId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Ignore navigation properties to avoid EF Core trying to map them
+        builder.Ignore(p => p.CommissionAccount);
+        builder.Ignore(p => p.ActivityAccount);
+        builder.Ignore(p => p.SupportAccount);
     }
 }

@@ -13,16 +13,19 @@ public record PatchPartnerCommand : ICommand<Guid>
     public string? Label { get; }
     public NetworkMode? NetworkMode { get; }
     public PaymentMode? PaymentMode { get; }
-    public string? IdPartner { get; }
+    public string? Type { get; }
     public wfc.referential.Domain.SupportAccountAggregate.SupportAccountType? SupportAccountType { get; }
     public string? IdentificationNumber { get; }
     public string? TaxRegime { get; }
     public string? AuxiliaryAccount { get; }
     public string? ICE { get; }
+    public string? RASRate { get; }
     public bool? IsEnabled { get; }
     public string? Logo { get; }
-    public Guid? SectorId { get; }
-    public Guid? CityId { get; }
+    public Guid? IdParent { get; }
+    public Guid? CommissionAccountId { get; }
+    public Guid? ActivityAccountId { get; }
+    public Guid? SupportAccountId { get; }
 
     public PatchPartnerCommand(
         Guid partnerId,
@@ -30,31 +33,37 @@ public record PatchPartnerCommand : ICommand<Guid>
         string? label = null,
         NetworkMode? networkMode = null,
         PaymentMode? paymentMode = null,
-        string? idPartner = null,
+        string? type = null,
         wfc.referential.Domain.SupportAccountAggregate.SupportAccountType? supportAccountType = null,
         string? identificationNumber = null,
         string? taxRegime = null,
         string? auxiliaryAccount = null,
         string? ice = null,
+        string? rasRate = null,
         bool? isEnabled = null,
         string? logo = null,
-        Guid? sectorId = null,
-        Guid? cityId = null)
+        Guid? idParent = null,
+        Guid? commissionAccountId = null,
+        Guid? activityAccountId = null,
+        Guid? supportAccountId = null)
     {
         PartnerId = partnerId;
         Code = code;
         Label = label;
         NetworkMode = networkMode;
         PaymentMode = paymentMode;
-        IdPartner = idPartner;
+        Type = type;
         SupportAccountType = supportAccountType;
         IdentificationNumber = identificationNumber;
         TaxRegime = taxRegime;
         AuxiliaryAccount = auxiliaryAccount;
         ICE = ice;
+        RASRate = rasRate;
         IsEnabled = isEnabled;
         Logo = logo;
-        SectorId = sectorId;
-        CityId = cityId;
+        IdParent = idParent;
+        CommissionAccountId = commissionAccountId;
+        ActivityAccountId = activityAccountId;
+        SupportAccountId = supportAccountId;
     }
 }

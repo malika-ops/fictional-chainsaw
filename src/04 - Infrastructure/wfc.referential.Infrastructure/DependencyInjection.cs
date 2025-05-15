@@ -82,6 +82,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<IAgencyTierRepository, AgencyTierRepository>();
         builder.Services.AddScoped<IPartnerRepository, PartnerRepository>();
         builder.Services.AddScoped<ISupportAccountRepository, SupportAccountRepository>();
+        builder.Services.AddScoped<IPartnerCountryRepository, PartnerCountryRepository>();
 
         return builder;
     }

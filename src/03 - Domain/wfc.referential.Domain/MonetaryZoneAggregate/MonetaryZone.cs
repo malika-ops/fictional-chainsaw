@@ -60,8 +60,16 @@ public class MonetaryZone : Aggregate<MonetaryZoneId>
         ));
     }
 
-    public void Patch()
+    public void Patch(string? code,
+            string? name,
+            string? description,
+            bool? isEnabled)
     {
+        Code = code == null ? Code : code;
+        Name = name == null ? Name : name;
+        Description = description == null ? Description : description;
+        IsEnabled = isEnabled.HasValue ? isEnabled.Value : IsEnabled;
+
         AddDomainEvent(new MonetaryZonePatchedEvent(
             Id.Value,
             Code,

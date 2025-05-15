@@ -9,10 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.RegionAggregate;
-using wfc.referential.Domain.SectorAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
@@ -47,12 +44,6 @@ public class UpdateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
                 var sectorId = Guid.NewGuid();
                 var cityId = Guid.NewGuid();
 
-                // First create the city
-                var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(Guid.NewGuid()), null);
-
-                // Then create the sector with the city
-                var sector = Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city);
-
                 var partner = Partner.Create(
                     PartnerId.Of(partnerId),
                     "P001",
@@ -66,8 +57,10 @@ public class UpdateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
                     "AUX001",
                     "ICE001",
                     "/logos/logo.png",
-                    sector,
-                    city
+                    null, // IdParent
+                    null, // CommissionAccountId
+                    null, // ActivityAccountId
+                    null  // SupportAccountId
                 );
 
                 _partnerRepoMock
@@ -89,11 +82,6 @@ public class UpdateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
         var sectorId = Guid.NewGuid();
         var cityId = Guid.NewGuid();
 
-        // First create the city
-        var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(Guid.NewGuid()), null);
-
-        // Then create the sector with the city
-        var sector = Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city);
 
         var partner = Partner.Create(
             PartnerId.Of(partnerId),
@@ -108,8 +96,10 @@ public class UpdateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
             "AUX001",
             "ICE001",
             "/logos/logo.png",
-            sector,
-            city
+            null, // IdParent
+            null, // CommissionAccountId
+            null, // ActivityAccountId
+            null  // SupportAccountId
         );
 
         return SupportAccount.Create(

@@ -23,6 +23,7 @@ using wfc.referential.Domain.TaxRuleDetailAggregate;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
+using wfc.referential.Domain.PartnerCountryAggregate;
 
 namespace wfc.referential.Infrastructure.Data;
 public class ApplicationDbContext : DbContext, IApplicationDbContext
@@ -52,6 +53,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<TaxRuleDetail> TaxRuleDetails => Set<TaxRuleDetail>();
     public DbSet<Partner> Partners => Set<Partner>();
     public DbSet<SupportAccount> SupportAccounts => Set<SupportAccount>();
+    public DbSet<PartnerCountry> PartnerCountries => Set<PartnerCountry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

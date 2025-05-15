@@ -17,55 +17,42 @@ public class MonetaryZoneRepository : IMonetaryZoneRepository
     }
 
     public async Task<List<MonetaryZone>> GetAllMonetaryZonesAsync(CancellationToken cancellationToken)
-    {
-        return await _context.MonetaryZones.ToListAsync();
-    }
+         => await _context.MonetaryZones.ToListAsync(cancellationToken);
 
     public IQueryable<MonetaryZone> GetAllMonetaryZonesQueryable(CancellationToken cancellationToken)
-    {
-        return _context.MonetaryZones
+        => _context.MonetaryZones
             .Include(mz => mz.Countries)
                 .ThenInclude(c => c.Currency)
             .Include(mz => mz.Countries)
                  .ThenInclude(a => a.Regions)
                         .ThenInclude(r => r.Cities)
             .AsNoTracking();
-    }
 
     public async Task<MonetaryZone?> GetByIdAsync(MonetaryZoneId id, CancellationToken cancellationToken)
-    {
-        return await _context.MonetaryZones
-            .Where(mz => mz.Id == id)
+        => await _context.MonetaryZones
             .Include(mz => mz.Countries)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
+            .FirstOrDefaultAsync(mz => mz.Id == id, cancellationToken);
 
     public async Task<MonetaryZone?> GetByCodeAsync(string monetaryZoneCode, CancellationToken cancellationToken)
-    {
-        return await _context.MonetaryZones
-            .Where(mz => mz.Code.ToLower() == monetaryZoneCode.ToLower())
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
+       => await _context.MonetaryZones
+           .FirstOrDefaultAsync(mz => mz.Code.ToLower() == monetaryZoneCode.ToLower(), cancellationToken);
 
     public async Task<MonetaryZone> AddMonetaryZoneAsync(MonetaryZone monetaryZone, CancellationToken cancellationToken)
     {
-        await _context.MonetaryZones.AddAsync(monetaryZone);
-        await _context.SaveChangesAsync(cancellationToken);
-
+        await _context.MonetaryZones.AddAsync(monetaryZone, cancellationToken);
         return monetaryZone;
     }
 
-    public async Task UpdateMonetaryZoneAsync(MonetaryZone monetaryZone, CancellationToken cancellationToken)
+    public Task UpdateMonetaryZoneAsync(MonetaryZone monetaryZone, CancellationToken cancellationToken)
     {
         _context.MonetaryZones.Update(monetaryZone);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteMonetaryZoneAsync(MonetaryZone monetaryZone, CancellationToken cancellationToken)
+    public Task DeleteMonetaryZoneAsync(MonetaryZone monetaryZone, CancellationToken cancellationToken)
     {
         _context.MonetaryZones.Remove(monetaryZone);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
     public async Task<List<MonetaryZone>> GetFilteredMonetaryZonesAsync(GetAllMonetaryZonesQuery request, CancellationToken cancellationToken)
@@ -94,29 +81,25 @@ public class MonetaryZoneRepository : IMonetaryZoneRepository
         return await query.CountAsync(cancellationToken);
     }
 
-    private List<Expression<Func<MonetaryZone, bool>>> BuildFilters(GetAllMonetaryZonesQuery request)
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+          => _context.SaveChangesAsync(cancellationToken);
+
+    // --- Private Helpers ---
+    private static List<Expression<Func<MonetaryZone, bool>>> BuildFilters(GetAllMonetaryZonesQuery request)
     {
         var filters = new List<Expression<Func<MonetaryZone, bool>>>();
 
         if (!string.IsNullOrWhiteSpace(request.Code))
-        {
-            filters.Add(mz => mz.Code.ToUpper().Equals(request.Code.ToUpper()));
-        }
+            filters.Add(mz => mz.Code.ToUpper() == request.Code.ToUpper());
 
         if (!string.IsNullOrWhiteSpace(request.Name))
-        {
-            filters.Add(mz => mz.Name.ToUpper().Equals(request.Name.ToUpper()));
-        }
+            filters.Add(mz => mz.Name.ToUpper() == request.Name.ToUpper());
 
         if (!string.IsNullOrWhiteSpace(request.Description))
-        {
-            filters.Add(mz => mz.Description.ToUpper().Equals(request.Description.ToUpper()));
-        }
+            filters.Add(mz => mz.Description.ToUpper() == request.Description.ToUpper());
 
-        if (!string.IsNullOrWhiteSpace(request.IsEnabled.ToString()))
-        {
-            filters.Add(reg => reg.IsEnabled == request.IsEnabled);
-        }
+        if (request.IsEnabled != null)
+            filters.Add(mz => mz.IsEnabled == request.IsEnabled);
 
         return filters;
     }

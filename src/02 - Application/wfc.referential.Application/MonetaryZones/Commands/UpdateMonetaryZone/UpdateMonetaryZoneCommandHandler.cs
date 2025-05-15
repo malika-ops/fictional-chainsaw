@@ -6,15 +6,8 @@ using wfc.referential.Domain.MonetaryZoneAggregate.Exceptions;
 
 namespace wfc.referential.Application.MonetaryZones.Commands.UpdateMonetaryZone;
 
-public class UpdateMonetaryZoneCommandHandler : ICommandHandler<UpdateMonetaryZoneCommand, Result<Guid>>
+public class UpdateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZoneRepository) : ICommandHandler<UpdateMonetaryZoneCommand, Result<Guid>>
 {
-    private readonly IMonetaryZoneRepository _monetaryZoneRepository;
-
-    public UpdateMonetaryZoneCommandHandler(IMonetaryZoneRepository monetaryZoneRepository)
-    {
-        _monetaryZoneRepository = monetaryZoneRepository;
-    }
-
     public async Task<Result<Guid>> Handle(UpdateMonetaryZoneCommand request, CancellationToken cancellationToken)
     {
         var isExist = await _monetaryZoneRepository.GetByCodeAsync(request.Code, cancellationToken);
@@ -30,6 +23,7 @@ public class UpdateMonetaryZoneCommandHandler : ICommandHandler<UpdateMonetaryZo
         monetaryZone.Update(request.Code, request.Name, request.Description , request.IsEnabled);
 
         await _monetaryZoneRepository.UpdateMonetaryZoneAsync(monetaryZone, cancellationToken);
+        await _monetaryZoneRepository.SaveChangesAsync(cancellationToken);
 
         return Result.Success(monetaryZone.Id!.Value);
     }

@@ -71,7 +71,7 @@ public class MonetaryZoneTests
         monetaryZone.ClearDomainEvents(); // Ignore the creation event
 
         // Act
-        monetaryZone.Patch();
+        monetaryZone.Patch(monetaryZone.Code,monetaryZone.Name,monetaryZone.Description,monetaryZone.IsEnabled);
 
         // Assert
         var domainEvent = Assert.Single(monetaryZone.DomainEvents);

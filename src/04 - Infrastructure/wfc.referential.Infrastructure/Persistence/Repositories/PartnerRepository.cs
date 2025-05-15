@@ -24,8 +24,9 @@ public class PartnerRepository : IPartnerRepository
     public IQueryable<Partner> GetAllPartnersQueryable(CancellationToken cancellationToken)
     {
         return _context.Partners
-            .Include(p => p.Sector)
-            .Include(p => p.City)
+            .Include(p => p.CommissionAccount)
+            .Include(p => p.ActivityAccount)
+            .Include(p => p.SupportAccount)
             .AsNoTracking();
     }
 
@@ -33,8 +34,9 @@ public class PartnerRepository : IPartnerRepository
     {
         return await _context.Partners
             .Where(p => p.Id == id)
-            .Include(p => p.Sector)
-            .Include(p => p.City)
+            .Include(p => p.CommissionAccount)
+            .Include(p => p.ActivityAccount)
+            .Include(p => p.SupportAccount)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -48,7 +50,7 @@ public class PartnerRepository : IPartnerRepository
     public async Task<Partner?> GetByIdentificationNumberAsync(string identificationNumber, CancellationToken cancellationToken)
     {
         return await _context.Partners
-            .Where(p => p.IdentificationNumber.ToLower() == identificationNumber.ToLower())
+            .Where(p => p.TaxIdentificationNumber.ToLower() == identificationNumber.ToLower())
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -84,8 +86,9 @@ public class PartnerRepository : IPartnerRepository
         var filters = BuildFilters(request);
 
         var query = _context.Partners
-            .Include(p => p.Sector)
-            .Include(p => p.City)
+            .Include(p => p.CommissionAccount)
+            .Include(p => p.ActivityAccount)
+            .Include(p => p.SupportAccount)
             .AsNoTracking()
             .ApplyFilters(filters);
 
@@ -106,24 +109,6 @@ public class PartnerRepository : IPartnerRepository
         return await query.CountAsync(cancellationToken);
     }
 
-    public async Task<List<Partner>> GetBySectorIdAsync(Guid sectorId, CancellationToken cancellationToken)
-    {
-        return await _context.Partners
-            .Where(p => p.SectorId.Value == sectorId)
-            .Include(p => p.Sector)
-            .Include(p => p.City)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<List<Partner>> GetByCityIdAsync(Guid cityId, CancellationToken cancellationToken)
-    {
-        return await _context.Partners
-            .Where(p => p.CityId.Value == cityId)
-            .Include(p => p.Sector)
-            .Include(p => p.City)
-            .ToListAsync(cancellationToken);
-    }
-
     private List<Expression<Func<Partner, bool>>> BuildFilters(GetAllPartnersQuery request)
     {
         var filters = new List<Expression<Func<Partner, bool>>>();
@@ -136,6 +121,11 @@ public class PartnerRepository : IPartnerRepository
         if (!string.IsNullOrWhiteSpace(request.Label))
         {
             filters.Add(p => p.Label.ToUpper().Contains(request.Label.ToUpper()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Type))
+        {
+            filters.Add(p => p.Type.ToUpper().Contains(request.Type.ToUpper()));
         }
 
         if (!string.IsNullOrWhiteSpace(request.NetworkMode))
@@ -162,9 +152,9 @@ public class PartnerRepository : IPartnerRepository
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(request.IdPartner))
+        if (request.IdParent.HasValue)
         {
-            filters.Add(p => p.IdPartner.ToUpper().Equals(request.IdPartner.ToUpper()));
+            filters.Add(p => p.IdParent == request.IdParent);
         }
 
         if (!string.IsNullOrWhiteSpace(request.SupportAccountType))
@@ -179,9 +169,9 @@ public class PartnerRepository : IPartnerRepository
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(request.IdentificationNumber))
+        if (!string.IsNullOrWhiteSpace(request.TaxIdentificationNumber))
         {
-            filters.Add(p => p.IdentificationNumber.ToUpper().Equals(request.IdentificationNumber.ToUpper()));
+            filters.Add(p => p.TaxIdentificationNumber.ToUpper().Equals(request.TaxIdentificationNumber.ToUpper()));
         }
 
         if (!string.IsNullOrWhiteSpace(request.ICE))
@@ -189,14 +179,19 @@ public class PartnerRepository : IPartnerRepository
             filters.Add(p => p.ICE.ToUpper().Equals(request.ICE.ToUpper()));
         }
 
-        if (request.SectorId.HasValue && request.SectorId != Guid.Empty)
+        if (request.CommissionAccountId.HasValue)
         {
-            filters.Add(p => p.SectorId.Value == request.SectorId.Value);
+            filters.Add(p => p.CommissionAccountId == request.CommissionAccountId);
         }
 
-        if (request.CityId.HasValue && request.CityId != Guid.Empty)
+        if (request.ActivityAccountId.HasValue)
         {
-            filters.Add(p => p.CityId.Value == request.CityId.Value);
+            filters.Add(p => p.ActivityAccountId == request.ActivityAccountId);
+        }
+
+        if (request.SupportAccountId.HasValue)
+        {
+            filters.Add(p => p.SupportAccountId == request.SupportAccountId);
         }
 
         if (request.IsEnabled.HasValue)

@@ -20,6 +20,7 @@ using wfc.referential.Application.Tiers.Mappings;
 using wfc.referential.Application.AgencyTiers.Mappings;
 using wfc.referential.Application.Partners.Mappings;
 using wfc.referential.Application.SupportAccounts.Mappings;
+using wfc.referential.Application.PartnerCountries.Mappings;
 
 namespace wfc.referential.Application;
 
@@ -49,5 +50,6 @@ public static class MapsterConfig
         AgencyTierMappings.Register();
         SupportAccountMappings.Register();
         PartnerMappings.Register();
+        PartnerCountryMappings.Register();
     }
 }

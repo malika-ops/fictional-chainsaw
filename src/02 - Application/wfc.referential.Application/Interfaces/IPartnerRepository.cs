@@ -27,8 +27,4 @@ public interface IPartnerRepository
     Task<List<Partner>> GetFilteredPartnersAsync(GetAllPartnersQuery request, CancellationToken cancellationToken);
 
     Task<int> GetCountTotalAsync(GetAllPartnersQuery request, CancellationToken cancellationToken);
-
-    Task<List<Partner>> GetBySectorIdAsync(Guid sectorId, CancellationToken cancellationToken);
-
-    Task<List<Partner>> GetByCityIdAsync(Guid cityId, CancellationToken cancellationToken);
 }

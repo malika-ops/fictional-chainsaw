@@ -9,10 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.RegionAggregate;
-using wfc.referential.Domain.SectorAggregate;
+using wfc.referential.Domain.PartnerAccountAggregate;
+using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnersTests.PatchTests;
@@ -21,8 +20,8 @@ public class PatchPartnerEndpointTests : IClassFixture<WebApplicationFactory<Pro
 {
     private readonly HttpClient _client;
     private readonly Mock<IPartnerRepository> _repoMock = new();
-    private readonly Mock<ISectorRepository> _sectorRepoMock = new();
-    private readonly Mock<ICityRepository> _cityRepoMock = new();
+    private readonly Mock<IPartnerAccountRepository> _partnerAccountRepoMock = new();
+    private readonly Mock<ISupportAccountRepository> _supportAccountRepoMock = new();
 
     public PatchPartnerEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -35,8 +34,8 @@ public class PatchPartnerEndpointTests : IClassFixture<WebApplicationFactory<Pro
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IPartnerRepository>();
-                services.RemoveAll<ISectorRepository>();
-                services.RemoveAll<ICityRepository>();
+                services.RemoveAll<IPartnerAccountRepository>();
+                services.RemoveAll<ISupportAccountRepository>();
                 services.RemoveAll<ICacheService>();
 
                 // Default noop for Update
@@ -45,27 +44,9 @@ public class PatchPartnerEndpointTests : IClassFixture<WebApplicationFactory<Pro
                                                    It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
-                // Set up sector and city mocks to return valid entities
-                var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-                var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-                var regionId = Guid.NewGuid();
-
-                
-                var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(regionId), null);
-
-        
-                _sectorRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<SectorId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city));
-
-                // Corriger le mock pour utiliser la valeur Guid au lieu de l'objet CityId
-                _cityRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(city);
-
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_sectorRepoMock.Object);
-                services.AddSingleton(_cityRepoMock.Object);
+                services.AddSingleton(_partnerAccountRepoMock.Object);
+                services.AddSingleton(_supportAccountRepoMock.Object);
                 services.AddSingleton(cacheMock.Object);
             });
         });
@@ -76,31 +57,24 @@ public class PatchPartnerEndpointTests : IClassFixture<WebApplicationFactory<Pro
     // Helper to create a test partner
     private static Partner CreateTestPartner(Guid id, string code, string label, NetworkMode networkMode)
     {
-        var sectorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var cityId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var regionId = Guid.NewGuid();
-
-        
-        var city = City.Create(CityId.Of(cityId), "C001", "Test City", "timezone", "taxzone", new RegionId(regionId), null);
-
-
-        var sector = Sector.Create(SectorId.Of(sectorId), "S001", "Test Sector", city);
-
         return Partner.Create(
             new PartnerId(id),
             code,
             label,
             networkMode,
             PaymentMode.PrePaye,
-            "ID" + code,
+            "Test Type",
             Domain.SupportAccountAggregate.SupportAccountType.Commun,
             "IDNUM" + code,
             "Standard",
             "AUX" + code,
             "ICE" + code,
+            "10.5",
             "/logos/logo.png",
-            sector,
-            city
+            null, // IdParent
+            null, // CommissionAccountId
+            null, // ActivityAccountId
+            null  // SupportAccountId
         );
     }
 
@@ -186,8 +160,8 @@ public class PatchPartnerEndpointTests : IClassFixture<WebApplicationFactory<Pro
         updated.Label.Should().Be("Test Partner"); // Should not change
 
         _repoMock.Verify(r => r.UpdatePartnerAsync(It.IsAny<Partner>(),
-                                                 It.IsAny<CancellationToken>()),
-                          Times.Once);
+                                                  It.IsAny<CancellationToken>()),
+                           Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/partners/{id} returns 400 when partner doesn't exist")]
