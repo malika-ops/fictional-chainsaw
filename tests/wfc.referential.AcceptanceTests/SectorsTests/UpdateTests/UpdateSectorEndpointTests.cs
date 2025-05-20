@@ -11,6 +11,7 @@ using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.RegionAggregate;
 using wfc.referential.Domain.SectorAggregate;
 using Xunit;
@@ -50,7 +51,7 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
                 _cityRepoMock
                     .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", "TZ", regionId, "TC"));
+                    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC"));
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(_cityRepoMock.Object);
@@ -70,10 +71,11 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var country = Country.Create(countryId, "TC", "Test Country", "TC", "TC", "TCO", "+0", "0", false, false, 2,
             true,
-            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid())
+            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid()),
+            new CurrencyId(Guid.NewGuid())
         );
 
-        var city = City.Create(cityId, "CITY1", "Test City", "GMT", "TZ", regionId, "TC");
+        var city = City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC");
 
         var region = Region.Create(regionId, "REG1", "Test Region", countryId);
 

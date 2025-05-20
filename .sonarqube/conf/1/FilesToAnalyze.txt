@@ -1,515 +1,515 @@
-﻿C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\CreateAgency\CreateAgencyCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\CreateAgency\CreateAgencyCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\CreateAgency\CreateAgencyValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\DeleteAgency\DeleteAgencyCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\DeleteAgency\DeleteAgencyCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\DeleteAgency\DeleteAgencyCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\PatchAgency\PatchAgencyCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\PatchAgency\PatchAgencyCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\PatchAgency\PatchAgencyCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\UpdateAgency\UpdateAgencyCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\UpdateAgency\UpdateAgencyCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Commands\UpdateAgency\UpdateAgencyCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Dtos\CreateAgencyRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Dtos\DeleteAgencyRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Dtos\GetAgenciesResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Dtos\GetAllAgenciesRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Dtos\PatchAgencyRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Dtos\UpdateAgencyRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Mappings\AgencyMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Queries\GetAllAgencies\GetAllAgenciesHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Agencies\Queries\GetAllAgencies\GetAllAgenciesQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\CreateAgencyTier\CreateAgencyTierCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\CreateAgencyTier\CreateAgencyTierCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\CreateAgencyTier\CreateAgencyTierValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\DeleteAgencyTier\DeleteAgencyTierCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\DeleteAgencyTier\DeleteAgencyTierCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\DeleteAgencyTier\DeleteAgencyTierValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\PatchAgencyTier\PatchAgencyTierCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\PatchAgencyTier\PatchAgencyTierCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\PatchAgencyTier\PatchAgencyTierValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\UpdateAgencyTier\UpdateAgencyTierCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\UpdateAgencyTier\UpdateAgencyTierCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Commands\UpdateAgencyTier\UpdateAgencyTierValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Dtos\AgencyTierResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Dtos\CreateAgencyTierRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Dtos\DeleteAgencyTierRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Dtos\GetAllAgencyTiersRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Dtos\PatchAgencyTierRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Dtos\UpdateAgencyTierRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Mappings\AgencyTierMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Queries\GetAllAgencyTiers\GetAllAgencyTiersQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Queries\GetAllAgencyTiers\GetAllAgencyTiersQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\AgencyTiers\Queries\GetAllAgencyTiers\GetAllAgencyTiersRequestValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\CreateBank\CreateBankCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\CreateBank\CreateBankCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\CreateBank\CreateBankCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\DeleteBank\DeleteBankCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\DeleteBank\DeleteBankCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\DeleteBank\DeleteBankCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\PatchBank\PatchBankCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\PatchBank\PatchBankCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\PatchBank\PatchBankCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\UpdateBank\UpdateBankCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\UpdateBank\UpdateBankCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Commands\UpdateBank\UpdateBankCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Dtos\BankResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Dtos\CreateBankRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Dtos\DeleteBankRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Dtos\GetAllBanksRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Dtos\PatchBankRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Dtos\UpdateBankRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Mappings\BankMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Queries\GetAllBanks\GetAllBanksQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Banks\Queries\GetAllBanks\GetAllBanksQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\CreateCity\CreateCityCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\CreateCity\CreateCityCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\CreateCity\CreateCityCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\DeleteCity\DeleteCityCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\DeleteCity\DeleteCityCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\DeleteCity\DeleteCityCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\PatchCity\PatchCityCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\PatchCity\PatchCityCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\PatchCity\PatchCityCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\UpdateCity\UpdateCityCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\UpdateCity\UpdateCityCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Commands\UpdateCity\UpdateCityCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Dtos\CreateCityRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Dtos\DeleteCityRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Dtos\GetAllCitiesRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Dtos\GetAllCitiesResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Dtos\PatchCityRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Dtos\UpdateCityRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Mappings\CityMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Queries\GetAllCities\GetAllCitiesQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Queries\GetAllCities\GetAllCitiesQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Cities\Queries\GetAllCities\GetAllCitiesRequestValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\CreateCorridor\CreateCorridorCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\CreateCorridor\CreateCorridorCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\CreateCorridor\CreateCorridorCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\DeleteCorridor\DeleteCorridorCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\DeleteCorridor\DeleteCorridorCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\DeleteCorridor\DeleteRegionCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\PatchCorridor\PatchCorridorCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\PatchCorridor\PatchCorridorCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\PatchCorridor\PatchCorridorValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\UpdateCorridor\UpdateCorridorCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\UpdateCorridor\UpdateCorridorCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Commands\UpdateCorridor\UpdateCorridorValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Dtos\CreateCorridorRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Dtos\CreateCorridorResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Dtos\DeleteCorridorRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Dtos\GetAllCorridorsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Dtos\GetAllCorridorsResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Dtos\PatchCorridorRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Dtos\UpdateCorridorRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Mappings\CorridorMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Queries\GetAllCorridors\GetAllCorridorsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Queries\GetAllCorridors\GetAllCorridorsQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Corridor\Queries\GetAllCorridors\GetAllRegionsQueryValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\CreateCountry\CreateCountryCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\CreateCountry\CreateCountryCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\CreateCountry\CreateCountryValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\DeleteCountry\DeleteCountryCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\DeleteCountry\DeleteCountryCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\DeleteCountry\DeleteCountryCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\PatchCountry\PatchCountryCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\PatchCountry\PatchCountryCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\PatchCountry\PatchCountryValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\UpdateCountry\UpdateCountryCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\UpdateCountry\UpdateCountryCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Commands\UpdateCountry\UpdateCountryValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Dtos\CreateCountryRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Dtos\DeleteCountryRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Dtos\GetAllCountriesRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Dtos\GetCountriesResponce.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Dtos\PatchCountryRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Dtos\UpdateCountryRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Mappings\CountryMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Queries\GetAllCounties\GetAllCountriesQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Countries\Queries\GetAllCounties\GetAllCountriesQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\CreateCountryIdentityDoc\CreateCountryIdentityDocCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\CreateCountryIdentityDoc\CreateCountryIdentityDocCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\CreateCountryIdentityDoc\CreateCountryIdentityDocCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\DeleteCountryIdentityDoc\DeleteCountryIdentityDocCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\DeleteCountryIdentityDoc\DeleteCountryIdentityDocCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\DeleteCountryIdentityDoc\DeleteCountryIdentityDocCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\PatchCountryIdentityDoc\PatchCountryIdentityDocCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\PatchCountryIdentityDoc\PatchCountryIdentityDocCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\PatchCountryIdentityDoc\PatchCountryIdentityDocCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\UpdateCountryIdentityDoc\UpdateCountryIdentityDocCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\UpdateCountryIdentityDoc\UpdateCountryIdentityDocCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Commands\UpdateCountryIdentityDoc\UpdateCountryIdentityDocCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Dtos\CreateCountryIdentityDocRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Dtos\CreateCountryIdentityDocResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Dtos\DeleteCountryIdentityDocRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Dtos\GetAllCountryIdentityDocsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Dtos\GetCountryIdentityDocResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Dtos\PatchCountryIdentityDocRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Dtos\UpdateCountryIdentityDocRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Mappings\CountryIdentityDocMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Queries\GetAllCountryIdentityDocs\GetAllCountryIdentityDocsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\CountryIdentityDocs\Queries\GetAllCountryIdentityDocs\GetAllCountryIdentityDocsQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\CreateCurrency\CreateCurrencyCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\CreateCurrency\CreateCurrencyCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\CreateCurrency\CreateCurrencyValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\DeleteCurrency\DeleteCurrencyCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\DeleteCurrency\DeleteCurrencyCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\DeleteCurrency\DeleteCurrencyCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\PatchCurrency\PatchCurrencyCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\PatchCurrency\PatchCurrencyCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\PatchCurrency\PatchCurrencyValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\UpdateCurrency\UpdateCurrencyCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\UpdateCurrency\UpdateCurrencyCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Commands\UpdateCurrency\UpdateCurrencyValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Dtos\CreateCurrencyRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Dtos\CurrencyResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Dtos\DeleteCurrencyRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Dtos\GetAllCurrenciesRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Dtos\PatchCurrencyRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Dtos\UpdateCurrencyRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Mappings\CurrencyMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Queries\GetAllCurrenciesQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Currencies\Queries\GetAllCurrenciesQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Data\IApplicationDbContext.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\DependencyInjection.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\CreateIdentityDocument\CreateIdentityDocumentCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\CreateIdentityDocument\CreateIdentityDocumentCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\CreateIdentityDocument\CreateIdentityDocumentCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\DeleteIdentityDocument\DeleteIdentityDocumentCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\DeleteIdentityDocument\DeleteIdentityDocumentCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\DeleteIdentityDocument\DeleteIdentityDocumentCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\PatchIdentityDocument\PatchIdentityDocumentCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\PatchIdentityDocument\PatchIdentityDocumentCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\PatchIdentityDocument\PatchIdentityDocumentCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\UpdateIdentityDocument\UpdateIdentityDocumentCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\UpdateIdentityDocument\UpdateIdentityDocumentCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Commands\UpdateIdentityDocument\UpdateIdentityDocumentCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Dtos\CreateIdentityDocumentRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Dtos\CreateIdentityDocumentResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Dtos\DeleteIdentityDocumentRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Dtos\GetAllIdentityDocumentsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Dtos\GetAllIdentityDocumentsResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Dtos\PatchIdentityDocumentRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Dtos\UpdateIdentityDocumentRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Mappings\IdentityDocumentMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Queries\GetAllIdentityDocuments\GetAllIdentityDocumentsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\IdentityDocuments\Queries\GetAllIdentityDocuments\GetAllIdentityDocumentsQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IAgencyRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IAgencyTierRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IBankRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ICityRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ICorridorRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ICountryIdentityDocRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ICountryRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ICurrencyRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IIdentityDocumentRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IMonetaryZoneRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IParamTypeRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IPartnerAccountRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IPartnerRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IProductRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IRegionRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ISectorRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\IServiceRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ISupportAccountRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ITaxRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ITaxRuleDetailRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ITierRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Interfaces\ITypeDefinitionRepository.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MapsterConfig.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\CreateMonetaryZone\CreateMonetaryZoneCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\CreateMonetaryZone\CreateMonetaryZoneCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\CreateMonetaryZone\CreateMonetaryZoneCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\DeleteMonetaryZone\DeleteMonetaryZoneCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\DeleteMonetaryZone\DeleteMonetaryZoneCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\DeleteMonetaryZone\DeleteMonetaryZoneCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\PatchMonetaryZone\PatchMonetaryZoneCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\PatchMonetaryZone\PatchMonetaryZoneCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\PatchMonetaryZone\PatchMonetaryZoneValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\UpdateMonetaryZone\UpdateMonetaryZoneCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\UpdateMonetaryZone\UpdateMonetaryZoneCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Commands\UpdateMonetaryZone\UpdateMonetaryZoneValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Dtos\CreateMonetaryZoneRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Dtos\DeleteMonetaryZoneRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Dtos\GetAllMonetaryZonesRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Dtos\MonetaryZoneResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Dtos\PatchMonetaryZoneRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Dtos\UpdateMonetaryZoneRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Mappings\MonetaryZoneMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Queries\GetAllMonetaryZones\GetAllMonetaryZonesQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Queries\GetAllMonetaryZones\GetAllMonetaryZonesQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\MonetaryZones\Queries\GetAllMonetaryZones\GetAllMonetaryZonesRequestValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\CreateParamType\CreateParamTypeCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\CreateParamType\CreateParamTypeCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\CreateParamType\CreateParamTypeCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\DeleteParamType\DeleteParamTypeCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\DeleteParamType\DeleteParamTypeCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\DeleteParamType\DeleteParamTypeCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\PatchParamType\PatchParamTypeCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\PatchParamType\PatchParamTypeCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\PatchParamType\PatchParamTypeCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\UpdateParamType\UpdateParamTypeCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\UpdateParamType\UpdateParamTypeCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Commands\UpdateParamType\UpdateParamTypeCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Dtos\CreateParamTypeRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Dtos\CreateParamTypeResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Dtos\DeleteParamTypeRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Dtos\GetAllParamTypesRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Dtos\GetAllParamTypesResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Dtos\PatchParamTypeRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Dtos\UpdateParamTypeRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Mappings\ParamTypeMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Queries\GetAllParamTypes\GetAllParamTypesQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\ParamTypes\Queries\GetAllParamTypes\GetAllParamTypesQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\CreatePartnerAccount\CreatePartnerAccountCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\CreatePartnerAccount\CreatePartnerAccountCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\CreatePartnerAccount\CreatePartnerAccountCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\DeletePartnerAccount\DeletePartnerAccountCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\DeletePartnerAccount\DeletePartnerAccountCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\DeletePartnerAccount\DeletePartnerAccountCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\PatchPartnerAccount\PatchPartnerAccountCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\PatchPartnerAccount\PatchPartnerAccountCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\PatchPartnerAccount\PatchPartnerAccountCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\UpdateBalance\UpdateBalanceCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\UpdateBalance\UpdateBalanceCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\UpdateBalance\UpdateBalanceCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\UpdatePartnerAccount\UpdatePartnerAccountCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\UpdatePartnerAccount\UpdatePartnerAccountCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Commands\UpdatePartnerAccount\UpdatePartnerAccountCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Dtos\CreatePartnerAccountRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Dtos\DeletePartnerAccountRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Dtos\GetAllPartnerAccountsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Dtos\PartnerAccountResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Dtos\PatchPartnerAccountRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Dtos\UpdateBalanceRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Dtos\UpdatePartnerAccountRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Mappings\PartnerAccountMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Queries\GetAllPartnerAccounts\GetAllPartnerAccountsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\PartnerAccounts\Queries\GetAllPartnerAccounts\GetAllPartnerAccountsQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\CreatePartner\CreatePartnerCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\CreatePartner\CreatePartnerCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\CreatePartner\CreatePartnerCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\DeletePartner\DeletePartnerCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\DeletePartner\DeletePartnerCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\DeletePartner\DeletePartnerCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\PatchPartner\PatchPartnerCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\PatchPartner\PatchPartnerCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\PatchPartner\PatchPartnerCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\UpdatePartner\UpdatePartnerCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\UpdatePartner\UpdatePartnerCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Commands\UpdatePartner\UpdatePartnerCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Dtos\CreatePartnerRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Dtos\DeletePartnerRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Dtos\GetAllPartnersRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Dtos\PartnerResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Dtos\PatchPartnerRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Dtos\UpdatePartnerRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Mappings\PartnerMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Queries\GetAllPartners\GetAllPartnersQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Partners\Queries\GetAllPartners\GetAllPartnersQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\CreateProduct\CreateProductCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\CreateProduct\CreateProductCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\CreateProduct\CreateProductCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\DeleteProduct\DeleteProductCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\DeleteProduct\DeleteProductCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\DeleteProduct\DeleteProductCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\PatchProduct\PatchProductCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\PatchProduct\PatchProductCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\PatchProduct\PatchProductValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\UpdateProduct\UpdateProductCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\UpdateProduct\UpdateProductCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Commands\UpdateProduct\UpdateProductValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Dtos\CreateProductRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Dtos\CreateProductResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Dtos\DeleteProductRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Dtos\GetAllProdcutsResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Dtos\GetAllProductsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Dtos\PatchProductRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Dtos\UpdateProductRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Mappings\ProductMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Queries\GetAllProducts\GetAllProductsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Queries\GetAllProducts\GetAllProductsQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Products\Queries\GetAllProducts\GetAllProductsQueryValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\CreateRegion\CreateRegionCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\CreateRegion\CreateRegionCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\CreateRegion\CreateRegionCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\DeleteRegion\DeleteRegionCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\DeleteRegion\DeleteRegionCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\DeleteRegion\DeleteRegionCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\PatchRegion\PatchRegionCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\PatchRegion\PatchRegionCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\PatchRegion\PatchRegionValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\UpdateRegion\UpdateRegionCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\UpdateRegion\UpdateRegionCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Commands\UpdateRegion\UpdateRegionValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Dtos\CreateRegionRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Dtos\CreateRegionResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Dtos\DeleteRegionRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Dtos\GetAllRegionsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Dtos\GetAllRegionsResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Dtos\PatchRegionRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Dtos\UpdateRegionRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Mappings\RegionMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Queries\GetAllRegions\GetAllRegionsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Queries\GetAllRegions\GetAllRegionsQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Regions\Queries\GetAllRegions\GetAllRegionsQueryValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\CreateSector\CreateSectorCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\CreateSector\CreateSectorCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\CreateSector\CreateSectorCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\DeleteSector\DeleteSectorCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\DeleteSector\DeleteSectorCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\DeleteSector\DeleteSectorCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\PatchSector\PatchSectorCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\PatchSector\PatchSectorCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\PatchSector\PatchSectorCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\UpdateSector\UpdateSectorCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\UpdateSector\UpdateSectorCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Commands\UpdateSector\UpdateSectorCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Dtos\CreateSectorRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Dtos\DeleteSectorRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Dtos\GetAllSectorsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Dtos\PatchSectorRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Dtos\SectorResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Dtos\UpdateSectorRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Mappings\SectorMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Queries\GetAllSectors\GetAllSectorsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Sectors\Queries\GetAllSectors\GetAllSectorsQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\CreateService\CreateServiceCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\CreateService\CreateServiceCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\CreateService\CreateServiceCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\DeleteService\DeleteServiceCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\DeleteService\DeleteServiceCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\DeleteService\DeleteServiceCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\PatchService\PatchServiceCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\PatchService\PatchServiceCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\PatchService\PatchServiceValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\UpdateService\UpdateServiceCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\UpdateService\UpdateServiceCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Commands\UpdateService\UpdateServiceValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Dtos\CreateServiceRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Dtos\CreateServiceResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Dtos\DeleteServiceRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Dtos\GetAllServicesRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Dtos\GetAllServicesResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Dtos\PatchServiceRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Dtos\UpdateServiceRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Mappings\ServiceMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Queries\GetAllServices\GetAllServicesQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Queries\GetAllServices\GetAllServicesQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Services\Queries\GetAllServices\GetAllServicesQueryValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\CreateSupportAccount\CreateSupportAccountCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\CreateSupportAccount\CreateSupportAccountCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\CreateSupportAccount\CreateSupportAccountCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\DeleteSupportAccount\DeleteSupportAccountCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\DeleteSupportAccount\DeleteSupportAccountCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\DeleteSupportAccount\DeleteSupportAccountCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\PatchSupportAccount\PatchSupportAccountCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\PatchSupportAccount\PatchSupportAccountCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\PatchSupportAccount\PatchSupportAccountCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\UpdateBalance\UpdateSupportAccountBalanceCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\UpdateBalance\UpdateSupportAccountBalanceCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\UpdateBalance\UpdateSupportAccountBalanceCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\UpdateSupportAccount\UpdateSupportAccountCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\UpdateSupportAccount\UpdateSupportAccountCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Commands\UpdateSupportAccount\UpdateSupportAccountCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Dtos\CreateSupportAccountRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Dtos\DeleteSupportAccountRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Dtos\GetAllSupportAccountsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Dtos\PatchSupportAccountRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Dtos\SupportAccountResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Dtos\UpdateSupportAccountBalanceRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Dtos\UpdateSupportAccountRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Mappings\SupportAccountMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Queries\GetAllSupportAccounts\GetAllSupportAccountsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\SupportAccounts\Queries\GetAllSupportAccounts\GetAllSupportAccountsQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\CreateTax\CreateTaxCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\CreateTax\CreateTaxCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\CreateTax\CreateTaxCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\DeleteTax\DeleteTaxCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\DeleteTax\DeleteTaxCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\DeleteTax\DeleteTaxCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\PatchTax\PatchTaxCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\PatchTax\PatchTaxCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\PatchTax\PatchTaxCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\UpdateTax\UpdateTaxCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\UpdateTax\UpdateTaxCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Commands\UpdateTax\UpdateTaxCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Dtos\CreateTaxRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Dtos\CreateTaxResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Dtos\DeleteTaxRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Dtos\GetAllTaxesRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Dtos\GetAllTaxesResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Dtos\PatchTaxRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Dtos\UpdateTaxRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Mappings\TaxMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Queries\GetAllTaxes\GetAllTaxesQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Queries\GetAllTaxes\GetAllTaxesQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Taxes\Queries\GetAllTaxes\GetAllTaxesRequestValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\CreateTaxRuleDetail\CreateTaxRuleDetailCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\CreateTaxRuleDetail\CreateTaxRuleDetailCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\CreateTaxRuleDetail\CreateTaxRuleDetailCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\DeleteTaxRuleDetail\DeleteTaxRuleDetailCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\DeleteTaxRuleDetail\DeleteTaxRuleDetailCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\DeleteTaxRuleDetail\DeleteTaxRuleDetailCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\PatchTaxRuleDetail\PatchTaxRuleDetailCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\PatchTaxRuleDetail\PatchTaxRuleDetailCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\PatchTaxRuleDetail\PatchTaxRuleDetailCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\UpdateTaxRuleDetail\UpdateTaxRuleDetailCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\UpdateTaxRuleDetail\UpdateTaxRuleDetailCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Commands\UpdateTaxRuleDetail\UpdateTaxRuleDetailCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Dtos\CreateTaxRuleDetailRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Dtos\CreateTaxRuleDetailResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Dtos\DeleteTaxRuleDetailRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Dtos\GetAllTaxRuleDetailsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Dtos\GetAllTaxRuleDetailsResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Dtos\PatchTaxRuleDetailRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Dtos\UpdateTaxRuleDetailRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Mappings\TaxRuleDetailMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Queries\GetAllTaxeRuleDetails\GetAllTaxRuleDetailsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Queries\GetAllTaxeRuleDetails\GetAllTaxRuleDetailsQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TaxRuleDetails\Queries\GetAllTaxeRuleDetails\GetAllTaxRuleDetailsRequestValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\CreateTier\CreateTierCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\CreateTier\CreateTierCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\CreateTier\CreateTierValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\DeleteTier\DeleteTierCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\DeleteTier\DeleteTierCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\DeleteTier\DeleteTierCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\PatchTier\PatchTierCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\PatchTier\PatchTierCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\PatchTier\PatchTierValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\UpdateTier\UpdateTierCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\UpdateTier\UpdateTierCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Commands\UpdateTier\UpdateTierValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Dtos\CreateTierRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Dtos\DeleteTierRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Dtos\GetAllTiersRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Dtos\PatchTierRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Dtos\TierResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Dtos\UpdateTierRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Mappings\TierMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Queries\GetAllTiers\GetAllTiersQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Queries\GetAllTiers\GetAllTiersQueryHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\Tiers\Queries\GetAllTiers\GetAllTiersQueryValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\CreateTypeDefinition\CreateTypeDefinitionCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\CreateTypeDefinition\CreateTypeDefinitionCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\CreateTypeDefinition\CreateTypeDefinitionCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\DeleteTypeDefinition\DeleteTypeDefinitionCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\DeleteTypeDefinition\DeleteTypeDefinitionCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\DeleteTypeDefinition\DeleteTypeDefinitionCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\PatchTypeDefinition\PatchTypeDefinitionCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\PatchTypeDefinition\PatchTypeDefinitionCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\PatchTypeDefinition\PatchTypeDefinitionCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\UpdateTypeDefinition\UpdateTypeDefinitionCommand.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\UpdateTypeDefinition\UpdateTypeDefinitionCommandHandler.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Commands\UpdateTypeDefinition\UpdateTypeDefinitionCommandValidator.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Dtos\CreateTypeDefinitionRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Dtos\CreateTypeDefinitionResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Dtos\DeleteTypeDefinitionRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Dtos\GetAllTypeDefinitionsRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Dtos\GetAllTypeDefinitionsResponse.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Dtos\PatchTypeDefinitionRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Dtos\UpdateTypeDefinitionRequest.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Mappings\TypeDefinitionMappings.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Queries\GetAllTypeDefinitions\GetAllTypeDefinitionsQuery.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02 - Application\wfc.referential.Application\TypeDefinitions\Queries\GetAllTypeDefinitions\GetAllTypeDefinitionsQueryHandler.cs
+﻿C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\CreateAgency\CreateAgencyCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\CreateAgency\CreateAgencyCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\CreateAgency\CreateAgencyValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\DeleteAgency\DeleteAgencyCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\DeleteAgency\DeleteAgencyCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\DeleteAgency\DeleteAgencyCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\PatchAgency\PatchAgencyCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\PatchAgency\PatchAgencyCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\PatchAgency\PatchAgencyCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\UpdateAgency\UpdateAgencyCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\UpdateAgency\UpdateAgencyCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Commands\UpdateAgency\UpdateAgencyCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Dtos\CreateAgencyRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Dtos\DeleteAgencyRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Dtos\GetAgenciesResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Dtos\GetAllAgenciesRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Dtos\PatchAgencyRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Dtos\UpdateAgencyRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Mappings\AgencyMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Queries\GetAllAgencies\GetAllAgenciesHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Agencies\Queries\GetAllAgencies\GetAllAgenciesQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\CreateAgencyTier\CreateAgencyTierCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\CreateAgencyTier\CreateAgencyTierCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\CreateAgencyTier\CreateAgencyTierValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\DeleteAgencyTier\DeleteAgencyTierCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\DeleteAgencyTier\DeleteAgencyTierCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\DeleteAgencyTier\DeleteAgencyTierValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\PatchAgencyTier\PatchAgencyTierCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\PatchAgencyTier\PatchAgencyTierCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\PatchAgencyTier\PatchAgencyTierValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\UpdateAgencyTier\UpdateAgencyTierCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\UpdateAgencyTier\UpdateAgencyTierCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Commands\UpdateAgencyTier\UpdateAgencyTierValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Dtos\AgencyTierResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Dtos\CreateAgencyTierRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Dtos\DeleteAgencyTierRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Dtos\GetAllAgencyTiersRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Dtos\PatchAgencyTierRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Dtos\UpdateAgencyTierRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Mappings\AgencyTierMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Queries\GetAllAgencyTiers\GetAllAgencyTiersQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Queries\GetAllAgencyTiers\GetAllAgencyTiersQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\AgencyTiers\Queries\GetAllAgencyTiers\GetAllAgencyTiersRequestValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\CreateBank\CreateBankCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\CreateBank\CreateBankCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\CreateBank\CreateBankCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\DeleteBank\DeleteBankCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\DeleteBank\DeleteBankCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\DeleteBank\DeleteBankCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\PatchBank\PatchBankCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\PatchBank\PatchBankCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\PatchBank\PatchBankCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\UpdateBank\UpdateBankCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\UpdateBank\UpdateBankCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Commands\UpdateBank\UpdateBankCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Dtos\BankResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Dtos\CreateBankRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Dtos\DeleteBankRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Dtos\GetAllBanksRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Dtos\PatchBankRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Dtos\UpdateBankRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Mappings\BankMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Queries\GetAllBanks\GetAllBanksQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Banks\Queries\GetAllBanks\GetAllBanksQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\CreateCity\CreateCityCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\CreateCity\CreateCityCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\CreateCity\CreateCityCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\DeleteCity\DeleteCityCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\DeleteCity\DeleteCityCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\DeleteCity\DeleteCityCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\PatchCity\PatchCityCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\PatchCity\PatchCityCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\PatchCity\PatchCityCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\UpdateCity\UpdateCityCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\UpdateCity\UpdateCityCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Commands\UpdateCity\UpdateCityCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Dtos\CreateCityRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Dtos\DeleteCityRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Dtos\GetAllCitiesRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Dtos\GetAllCitiesResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Dtos\PatchCityRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Dtos\UpdateCityRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Mappings\CityMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Queries\GetAllCities\GetAllCitiesQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Queries\GetAllCities\GetAllCitiesQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Cities\Queries\GetAllCities\GetAllCitiesRequestValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\CreateCorridor\CreateCorridorCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\CreateCorridor\CreateCorridorCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\CreateCorridor\CreateCorridorCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\DeleteCorridor\DeleteCorridorCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\DeleteCorridor\DeleteCorridorCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\DeleteCorridor\DeleteRegionCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\PatchCorridor\PatchCorridorCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\PatchCorridor\PatchCorridorCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\PatchCorridor\PatchCorridorValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\UpdateCorridor\UpdateCorridorCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\UpdateCorridor\UpdateCorridorCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Commands\UpdateCorridor\UpdateCorridorValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Dtos\CreateCorridorRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Dtos\CreateCorridorResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Dtos\DeleteCorridorRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Dtos\GetAllCorridorsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Dtos\GetAllCorridorsResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Dtos\PatchCorridorRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Dtos\UpdateCorridorRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Mappings\CorridorMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Queries\GetAllCorridors\GetAllCorridorsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Queries\GetAllCorridors\GetAllCorridorsQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Corridor\Queries\GetAllCorridors\GetAllRegionsQueryValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\CreateCountry\CreateCountryCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\CreateCountry\CreateCountryCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\CreateCountry\CreateCountryValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\DeleteCountry\DeleteCountryCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\DeleteCountry\DeleteCountryCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\DeleteCountry\DeleteCountryCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\PatchCountry\PatchCountryCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\PatchCountry\PatchCountryCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\PatchCountry\PatchCountryValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\UpdateCountry\UpdateCountryCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\UpdateCountry\UpdateCountryCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Commands\UpdateCountry\UpdateCountryValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Dtos\CreateCountryRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Dtos\DeleteCountryRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Dtos\GetAllCountriesRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Dtos\GetCountriesResponce.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Dtos\PatchCountryRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Dtos\UpdateCountryRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Mappings\CountryMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Queries\GetAllCounties\GetAllCountriesQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Countries\Queries\GetAllCounties\GetAllCountriesQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\CreateCountryIdentityDoc\CreateCountryIdentityDocCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\CreateCountryIdentityDoc\CreateCountryIdentityDocCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\CreateCountryIdentityDoc\CreateCountryIdentityDocCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\DeleteCountryIdentityDoc\DeleteCountryIdentityDocCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\DeleteCountryIdentityDoc\DeleteCountryIdentityDocCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\DeleteCountryIdentityDoc\DeleteCountryIdentityDocCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\PatchCountryIdentityDoc\PatchCountryIdentityDocCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\PatchCountryIdentityDoc\PatchCountryIdentityDocCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\PatchCountryIdentityDoc\PatchCountryIdentityDocCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\UpdateCountryIdentityDoc\UpdateCountryIdentityDocCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\UpdateCountryIdentityDoc\UpdateCountryIdentityDocCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Commands\UpdateCountryIdentityDoc\UpdateCountryIdentityDocCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Dtos\CreateCountryIdentityDocRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Dtos\CreateCountryIdentityDocResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Dtos\DeleteCountryIdentityDocRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Dtos\GetAllCountryIdentityDocsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Dtos\GetCountryIdentityDocResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Dtos\PatchCountryIdentityDocRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Dtos\UpdateCountryIdentityDocRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Mappings\CountryIdentityDocMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Queries\GetAllCountryIdentityDocs\GetAllCountryIdentityDocsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\CountryIdentityDocs\Queries\GetAllCountryIdentityDocs\GetAllCountryIdentityDocsQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\CreateCurrency\CreateCurrencyCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\CreateCurrency\CreateCurrencyCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\CreateCurrency\CreateCurrencyValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\DeleteCurrency\DeleteCurrencyCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\DeleteCurrency\DeleteCurrencyCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\DeleteCurrency\DeleteCurrencyCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\PatchCurrency\PatchCurrencyCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\PatchCurrency\PatchCurrencyCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\PatchCurrency\PatchCurrencyValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\UpdateCurrency\UpdateCurrencyCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\UpdateCurrency\UpdateCurrencyCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Commands\UpdateCurrency\UpdateCurrencyValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Dtos\CreateCurrencyRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Dtos\CurrencyResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Dtos\DeleteCurrencyRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Dtos\GetAllCurrenciesRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Dtos\PatchCurrencyRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Dtos\UpdateCurrencyRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Mappings\CurrencyMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Queries\GetAllCurrenciesQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Currencies\Queries\GetAllCurrenciesQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Data\IApplicationDbContext.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\DependencyInjection.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\CreateIdentityDocument\CreateIdentityDocumentCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\CreateIdentityDocument\CreateIdentityDocumentCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\CreateIdentityDocument\CreateIdentityDocumentCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\DeleteIdentityDocument\DeleteIdentityDocumentCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\DeleteIdentityDocument\DeleteIdentityDocumentCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\DeleteIdentityDocument\DeleteIdentityDocumentCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\PatchIdentityDocument\PatchIdentityDocumentCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\PatchIdentityDocument\PatchIdentityDocumentCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\PatchIdentityDocument\PatchIdentityDocumentCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\UpdateIdentityDocument\UpdateIdentityDocumentCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\UpdateIdentityDocument\UpdateIdentityDocumentCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Commands\UpdateIdentityDocument\UpdateIdentityDocumentCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Dtos\CreateIdentityDocumentRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Dtos\CreateIdentityDocumentResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Dtos\DeleteIdentityDocumentRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Dtos\GetAllIdentityDocumentsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Dtos\GetAllIdentityDocumentsResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Dtos\PatchIdentityDocumentRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Dtos\UpdateIdentityDocumentRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Mappings\IdentityDocumentMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Queries\GetAllIdentityDocuments\GetAllIdentityDocumentsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\IdentityDocuments\Queries\GetAllIdentityDocuments\GetAllIdentityDocumentsQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IAgencyRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IAgencyTierRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IBankRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ICityRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ICorridorRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ICountryIdentityDocRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ICountryRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ICurrencyRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IIdentityDocumentRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IMonetaryZoneRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IParamTypeRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IPartnerAccountRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IPartnerRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IProductRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IRegionRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ISectorRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\IServiceRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ISupportAccountRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ITaxRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ITaxRuleDetailRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ITierRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Interfaces\ITypeDefinitionRepository.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MapsterConfig.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\CreateMonetaryZone\CreateMonetaryZoneCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\CreateMonetaryZone\CreateMonetaryZoneCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\CreateMonetaryZone\CreateMonetaryZoneCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\DeleteMonetaryZone\DeleteMonetaryZoneCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\DeleteMonetaryZone\DeleteMonetaryZoneCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\DeleteMonetaryZone\DeleteMonetaryZoneCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\PatchMonetaryZone\PatchMonetaryZoneCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\PatchMonetaryZone\PatchMonetaryZoneCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\PatchMonetaryZone\PatchMonetaryZoneValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\UpdateMonetaryZone\UpdateMonetaryZoneCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\UpdateMonetaryZone\UpdateMonetaryZoneCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Commands\UpdateMonetaryZone\UpdateMonetaryZoneValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Dtos\CreateMonetaryZoneRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Dtos\DeleteMonetaryZoneRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Dtos\GetAllMonetaryZonesRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Dtos\MonetaryZoneResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Dtos\PatchMonetaryZoneRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Dtos\UpdateMonetaryZoneRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Mappings\MonetaryZoneMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Queries\GetAllMonetaryZones\GetAllMonetaryZonesQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Queries\GetAllMonetaryZones\GetAllMonetaryZonesQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\MonetaryZones\Queries\GetAllMonetaryZones\GetAllMonetaryZonesRequestValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\CreateParamType\CreateParamTypeCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\CreateParamType\CreateParamTypeCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\CreateParamType\CreateParamTypeCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\DeleteParamType\DeleteParamTypeCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\DeleteParamType\DeleteParamTypeCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\DeleteParamType\DeleteParamTypeCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\PatchParamType\PatchParamTypeCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\PatchParamType\PatchParamTypeCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\PatchParamType\PatchParamTypeCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\UpdateParamType\UpdateParamTypeCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\UpdateParamType\UpdateParamTypeCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Commands\UpdateParamType\UpdateParamTypeCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Dtos\CreateParamTypeRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Dtos\CreateParamTypeResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Dtos\DeleteParamTypeRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Dtos\GetAllParamTypesRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Dtos\GetAllParamTypesResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Dtos\PatchParamTypeRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Dtos\UpdateParamTypeRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Mappings\ParamTypeMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Queries\GetAllParamTypes\GetAllParamTypesQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\ParamTypes\Queries\GetAllParamTypes\GetAllParamTypesQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\CreatePartnerAccount\CreatePartnerAccountCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\CreatePartnerAccount\CreatePartnerAccountCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\CreatePartnerAccount\CreatePartnerAccountCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\DeletePartnerAccount\DeletePartnerAccountCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\DeletePartnerAccount\DeletePartnerAccountCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\DeletePartnerAccount\DeletePartnerAccountCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\PatchPartnerAccount\PatchPartnerAccountCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\PatchPartnerAccount\PatchPartnerAccountCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\PatchPartnerAccount\PatchPartnerAccountCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\UpdateBalance\UpdateBalanceCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\UpdateBalance\UpdateBalanceCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\UpdateBalance\UpdateBalanceCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\UpdatePartnerAccount\UpdatePartnerAccountCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\UpdatePartnerAccount\UpdatePartnerAccountCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Commands\UpdatePartnerAccount\UpdatePartnerAccountCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Dtos\CreatePartnerAccountRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Dtos\DeletePartnerAccountRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Dtos\GetAllPartnerAccountsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Dtos\PartnerAccountResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Dtos\PatchPartnerAccountRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Dtos\UpdateBalanceRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Dtos\UpdatePartnerAccountRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Mappings\PartnerAccountMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Queries\GetAllPartnerAccounts\GetAllPartnerAccountsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\PartnerAccounts\Queries\GetAllPartnerAccounts\GetAllPartnerAccountsQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\CreatePartner\CreatePartnerCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\CreatePartner\CreatePartnerCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\CreatePartner\CreatePartnerCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\DeletePartner\DeletePartnerCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\DeletePartner\DeletePartnerCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\DeletePartner\DeletePartnerCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\PatchPartner\PatchPartnerCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\PatchPartner\PatchPartnerCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\PatchPartner\PatchPartnerCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\UpdatePartner\UpdatePartnerCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\UpdatePartner\UpdatePartnerCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Commands\UpdatePartner\UpdatePartnerCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Dtos\CreatePartnerRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Dtos\DeletePartnerRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Dtos\GetAllPartnersRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Dtos\PartnerResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Dtos\PatchPartnerRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Dtos\UpdatePartnerRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Mappings\PartnerMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Queries\GetAllPartners\GetAllPartnersQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Partners\Queries\GetAllPartners\GetAllPartnersQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\CreateProduct\CreateProductCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\CreateProduct\CreateProductCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\CreateProduct\CreateProductCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\DeleteProduct\DeleteProductCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\DeleteProduct\DeleteProductCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\DeleteProduct\DeleteProductCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\PatchProduct\PatchProductCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\PatchProduct\PatchProductCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\PatchProduct\PatchProductValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\UpdateProduct\UpdateProductCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\UpdateProduct\UpdateProductCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Commands\UpdateProduct\UpdateProductValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Dtos\CreateProductRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Dtos\CreateProductResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Dtos\DeleteProductRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Dtos\GetAllProdcutsResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Dtos\GetAllProductsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Dtos\PatchProductRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Dtos\UpdateProductRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Mappings\ProductMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Queries\GetAllProducts\GetAllProductsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Queries\GetAllProducts\GetAllProductsQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Products\Queries\GetAllProducts\GetAllProductsQueryValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\CreateRegion\CreateRegionCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\CreateRegion\CreateRegionCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\CreateRegion\CreateRegionCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\DeleteRegion\DeleteRegionCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\DeleteRegion\DeleteRegionCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\DeleteRegion\DeleteRegionCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\PatchRegion\PatchRegionCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\PatchRegion\PatchRegionCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\PatchRegion\PatchRegionValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\UpdateRegion\UpdateRegionCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\UpdateRegion\UpdateRegionCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Commands\UpdateRegion\UpdateRegionValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Dtos\CreateRegionRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Dtos\CreateRegionResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Dtos\DeleteRegionRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Dtos\GetAllRegionsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Dtos\GetAllRegionsResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Dtos\PatchRegionRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Dtos\UpdateRegionRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Mappings\RegionMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Queries\GetAllRegions\GetAllRegionsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Queries\GetAllRegions\GetAllRegionsQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Regions\Queries\GetAllRegions\GetAllRegionsQueryValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\CreateSector\CreateSectorCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\CreateSector\CreateSectorCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\CreateSector\CreateSectorCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\DeleteSector\DeleteSectorCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\DeleteSector\DeleteSectorCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\DeleteSector\DeleteSectorCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\PatchSector\PatchSectorCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\PatchSector\PatchSectorCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\PatchSector\PatchSectorCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\UpdateSector\UpdateSectorCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\UpdateSector\UpdateSectorCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Commands\UpdateSector\UpdateSectorCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Dtos\CreateSectorRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Dtos\DeleteSectorRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Dtos\GetAllSectorsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Dtos\PatchSectorRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Dtos\SectorResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Dtos\UpdateSectorRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Mappings\SectorMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Queries\GetAllSectors\GetAllSectorsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Sectors\Queries\GetAllSectors\GetAllSectorsQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\CreateService\CreateServiceCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\CreateService\CreateServiceCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\CreateService\CreateServiceCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\DeleteService\DeleteServiceCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\DeleteService\DeleteServiceCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\DeleteService\DeleteServiceCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\PatchService\PatchServiceCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\PatchService\PatchServiceCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\PatchService\PatchServiceValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\UpdateService\UpdateServiceCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\UpdateService\UpdateServiceCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Commands\UpdateService\UpdateServiceValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Dtos\CreateServiceRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Dtos\CreateServiceResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Dtos\DeleteServiceRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Dtos\GetAllServicesRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Dtos\GetAllServicesResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Dtos\PatchServiceRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Dtos\UpdateServiceRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Mappings\ServiceMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Queries\GetAllServices\GetAllServicesQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Queries\GetAllServices\GetAllServicesQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Services\Queries\GetAllServices\GetAllServicesQueryValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\CreateSupportAccount\CreateSupportAccountCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\CreateSupportAccount\CreateSupportAccountCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\CreateSupportAccount\CreateSupportAccountCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\DeleteSupportAccount\DeleteSupportAccountCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\DeleteSupportAccount\DeleteSupportAccountCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\DeleteSupportAccount\DeleteSupportAccountCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\PatchSupportAccount\PatchSupportAccountCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\PatchSupportAccount\PatchSupportAccountCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\PatchSupportAccount\PatchSupportAccountCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\UpdateBalance\UpdateSupportAccountBalanceCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\UpdateBalance\UpdateSupportAccountBalanceCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\UpdateBalance\UpdateSupportAccountBalanceCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\UpdateSupportAccount\UpdateSupportAccountCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\UpdateSupportAccount\UpdateSupportAccountCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Commands\UpdateSupportAccount\UpdateSupportAccountCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Dtos\CreateSupportAccountRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Dtos\DeleteSupportAccountRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Dtos\GetAllSupportAccountsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Dtos\PatchSupportAccountRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Dtos\SupportAccountResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Dtos\UpdateSupportAccountBalanceRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Dtos\UpdateSupportAccountRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Mappings\SupportAccountMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Queries\GetAllSupportAccounts\GetAllSupportAccountsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\SupportAccounts\Queries\GetAllSupportAccounts\GetAllSupportAccountsQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\CreateTax\CreateTaxCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\CreateTax\CreateTaxCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\CreateTax\CreateTaxCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\DeleteTax\DeleteTaxCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\DeleteTax\DeleteTaxCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\DeleteTax\DeleteTaxCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\PatchTax\PatchTaxCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\PatchTax\PatchTaxCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\PatchTax\PatchTaxCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\UpdateTax\UpdateTaxCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\UpdateTax\UpdateTaxCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Commands\UpdateTax\UpdateTaxCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Dtos\CreateTaxRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Dtos\CreateTaxResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Dtos\DeleteTaxRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Dtos\GetAllTaxesRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Dtos\GetAllTaxesResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Dtos\PatchTaxRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Dtos\UpdateTaxRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Mappings\TaxMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Queries\GetAllTaxes\GetAllTaxesQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Queries\GetAllTaxes\GetAllTaxesQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Taxes\Queries\GetAllTaxes\GetAllTaxesRequestValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\CreateTaxRuleDetail\CreateTaxRuleDetailCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\CreateTaxRuleDetail\CreateTaxRuleDetailCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\CreateTaxRuleDetail\CreateTaxRuleDetailCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\DeleteTaxRuleDetail\DeleteTaxRuleDetailCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\DeleteTaxRuleDetail\DeleteTaxRuleDetailCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\DeleteTaxRuleDetail\DeleteTaxRuleDetailCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\PatchTaxRuleDetail\PatchTaxRuleDetailCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\PatchTaxRuleDetail\PatchTaxRuleDetailCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\PatchTaxRuleDetail\PatchTaxRuleDetailCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\UpdateTaxRuleDetail\UpdateTaxRuleDetailCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\UpdateTaxRuleDetail\UpdateTaxRuleDetailCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Commands\UpdateTaxRuleDetail\UpdateTaxRuleDetailCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Dtos\CreateTaxRuleDetailRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Dtos\CreateTaxRuleDetailResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Dtos\DeleteTaxRuleDetailRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Dtos\GetAllTaxRuleDetailsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Dtos\GetAllTaxRuleDetailsResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Dtos\PatchTaxRuleDetailRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Dtos\UpdateTaxRuleDetailRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Mappings\TaxRuleDetailMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Queries\GetAllTaxeRuleDetails\GetAllTaxRuleDetailsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Queries\GetAllTaxeRuleDetails\GetAllTaxRuleDetailsQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TaxRuleDetails\Queries\GetAllTaxeRuleDetails\GetAllTaxRuleDetailsRequestValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\CreateTier\CreateTierCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\CreateTier\CreateTierCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\CreateTier\CreateTierValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\DeleteTier\DeleteTierCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\DeleteTier\DeleteTierCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\DeleteTier\DeleteTierCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\PatchTier\PatchTierCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\PatchTier\PatchTierCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\PatchTier\PatchTierValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\UpdateTier\UpdateTierCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\UpdateTier\UpdateTierCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Commands\UpdateTier\UpdateTierValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Dtos\CreateTierRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Dtos\DeleteTierRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Dtos\GetAllTiersRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Dtos\PatchTierRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Dtos\TierResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Dtos\UpdateTierRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Mappings\TierMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Queries\GetAllTiers\GetAllTiersQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Queries\GetAllTiers\GetAllTiersQueryHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\Tiers\Queries\GetAllTiers\GetAllTiersQueryValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\CreateTypeDefinition\CreateTypeDefinitionCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\CreateTypeDefinition\CreateTypeDefinitionCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\CreateTypeDefinition\CreateTypeDefinitionCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\DeleteTypeDefinition\DeleteTypeDefinitionCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\DeleteTypeDefinition\DeleteTypeDefinitionCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\DeleteTypeDefinition\DeleteTypeDefinitionCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\PatchTypeDefinition\PatchTypeDefinitionCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\PatchTypeDefinition\PatchTypeDefinitionCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\PatchTypeDefinition\PatchTypeDefinitionCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\UpdateTypeDefinition\UpdateTypeDefinitionCommand.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\UpdateTypeDefinition\UpdateTypeDefinitionCommandHandler.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Commands\UpdateTypeDefinition\UpdateTypeDefinitionCommandValidator.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Dtos\CreateTypeDefinitionRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Dtos\CreateTypeDefinitionResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Dtos\DeleteTypeDefinitionRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Dtos\GetAllTypeDefinitionsRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Dtos\GetAllTypeDefinitionsResponse.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Dtos\PatchTypeDefinitionRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Dtos\UpdateTypeDefinitionRequest.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Mappings\TypeDefinitionMappings.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Queries\GetAllTypeDefinitions\GetAllTypeDefinitionsQuery.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\TypeDefinitions\Queries\GetAllTypeDefinitions\GetAllTypeDefinitionsQueryHandler.cs

@@ -1,124 +1,124 @@
-﻿C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\DependencyInjection.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\EndpointGroups.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\CreateAgencyTier.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\DeleteAgencyTier.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\GetAllAgencyTiers.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\PatchAgencyTier.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\UpdateAgencyTier.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Agency\CreateAgencyEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Agency\DeleteAgencyEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Agency\GetAllAgenciesEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Agency\PatchAgencyEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Agency\UpdateAgencyEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Bank\CreateBank.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Bank\DeleteBank.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Bank\GetAllBanks.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Bank\PatchBank.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Bank\UpdateBank.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\CachingEndpoints\RefreshReferentialEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\City\CreateCity.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\City\DeleteCity.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\City\GetAllCities.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\City\PatchCity.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\City\UpdateCity.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\CreateCorridor.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\DeleteCorridor.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\GetAllCorridors.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\PatchCorridor.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\UpdateCorridor.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\CreateCountryIdentityDoc.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\DeleteCountryIdentityDoc.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\GetAllCountryIdentityDocs.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\PatchCountryIdentityDoc.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\UpdateCountryIdentityDoc.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Country\CreateCountryEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Country\DeleteCountryEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Country\GetAllCountriesEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Country\PatchCountryEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Country\UpdateCountryEndpoint.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Currency\CreateCurrency.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Currency\DeleteCurrency.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Currency\GetAllCurrencies.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Currency\PatchCurrency.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Currency\UpdateCurrency.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\CreateIdentityDocument.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\DeleteIdentityDocument.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\GetAllIdentityDocuments.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\PatchIdentityDocument.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\UpdateIdentityDocument.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\CreateMonetaryZone.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\DeleteMonetaryZone.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\GetAllMonetaryZone.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\PatchMonetaryZone.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\UpdateMonetaryZone.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\CreateParamType.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\DeleteParamType.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\GetAllParamTypes.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\PatchParamType.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\UpdateParamType.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\CreatePartnerAccount.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\DeletePartnerAccount.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\GetAllPartnerAccounts.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\PatchPartnerAccount.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\UpdateBalance.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\UpdatePartnerAccount.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Partner\CreatePartner.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Partner\DeletePartner.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Partner\GetAllPartners.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Partner\PatchPartner.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Partner\UpdatePartner.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Product\CreateProduct.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Product\DeleteProduct.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Product\GetAllProducts.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Product\PatchProduct.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Product\UpdateProduct.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Region\CreateRegion.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Region\DeleteRegion.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Region\GetAllRegions.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Region\PatchRegion.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Region\UpdateRegion.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Sector\CreateSectorcs.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Sector\DeleteSector.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Sector\GetAllSectors.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Sector\PatchSector.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Sector\UpdateSector.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Service\CreateService.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Service\DeleteService.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Service\GetAllServices.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Service\PatchService.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Service\UpdateService.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\CreateSupportAccount.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\DeleteSupportAccount.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\GetAllSupportAccounts.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\PatchSupportAccount.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\UpdateBalance.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\UpdateSupportAccount.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\CreateTaxRuleDetail.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\DeleteTaxRuleDetail.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\GetAllTaxRuleDetails.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\PatchTaxRuleDetail.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\UpdateTaxRuleDetail.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tax\CreateTax.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tax\DeleteTax.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tax\GetAllTaxes.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tax\PatchTax.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tax\UpdateTax.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tier\CreateTier.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tier\DeleteTier.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tier\GetAllTiers.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tier\PatchTier.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\Tier\UpdateTier.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\CreateTypeDefinition.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\DeleteTypeDefinition.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\GetAllTypeDefinitions.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\PatchTypeDefinition.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\UpdateTypeDefinition.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Program.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\obj\Debug\net8.0\wfc.referential.API.GlobalUsings.g.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\obj\Debug\net8.0\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\obj\Debug\net8.0\wfc.referential.API.AssemblyInfo.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\obj\Debug\net8.0\wfc.referential.API.MvcApplicationPartsAssemblyInfo.cs
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\appsettings.Development.json
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\appsettings.json
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\wfc.referential.API.http
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01 - InterfaceAdapter\wfc.referential.API\Properties\launchSettings.json
+﻿C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\DependencyInjection.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\EndpointGroups.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\CreateAgencyTier.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\DeleteAgencyTier.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\GetAllAgencyTiers.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\PatchAgencyTier.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\AgencyTier\UpdateAgencyTier.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Agency\CreateAgencyEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Agency\DeleteAgencyEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Agency\GetAllAgenciesEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Agency\PatchAgencyEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Agency\UpdateAgencyEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Bank\CreateBank.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Bank\DeleteBank.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Bank\GetAllBanks.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Bank\PatchBank.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Bank\UpdateBank.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\CachingEndpoints\RefreshReferentialEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\City\CreateCity.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\City\DeleteCity.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\City\GetAllCities.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\City\PatchCity.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\City\UpdateCity.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\CreateCorridor.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\DeleteCorridor.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\GetAllCorridors.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\PatchCorridor.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Corridor\UpdateCorridor.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\CreateCountryIdentityDoc.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\DeleteCountryIdentityDoc.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\GetAllCountryIdentityDocs.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\PatchCountryIdentityDoc.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\CountryIdentityDoc\UpdateCountryIdentityDoc.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Country\CreateCountryEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Country\DeleteCountryEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Country\GetAllCountriesEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Country\PatchCountryEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Country\UpdateCountryEndpoint.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Currency\CreateCurrency.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Currency\DeleteCurrency.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Currency\GetAllCurrencies.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Currency\PatchCurrency.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Currency\UpdateCurrency.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\CreateIdentityDocument.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\DeleteIdentityDocument.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\GetAllIdentityDocuments.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\PatchIdentityDocument.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\IdentityDocument\UpdateIdentityDocument.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\CreateMonetaryZone.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\DeleteMonetaryZone.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\GetAllMonetaryZone.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\PatchMonetaryZone.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\MonetaryZone\UpdateMonetaryZone.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\CreateParamType.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\DeleteParamType.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\GetAllParamTypes.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\PatchParamType.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\ParamType\UpdateParamType.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\CreatePartnerAccount.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\DeletePartnerAccount.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\GetAllPartnerAccounts.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\PatchPartnerAccount.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\UpdateBalance.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\PartnerAccount\UpdatePartnerAccount.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Partner\CreatePartner.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Partner\DeletePartner.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Partner\GetAllPartners.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Partner\PatchPartner.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Partner\UpdatePartner.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Product\CreateProduct.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Product\DeleteProduct.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Product\GetAllProducts.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Product\PatchProduct.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Product\UpdateProduct.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Region\CreateRegion.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Region\DeleteRegion.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Region\GetAllRegions.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Region\PatchRegion.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Region\UpdateRegion.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Sector\CreateSectorcs.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Sector\DeleteSector.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Sector\GetAllSectors.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Sector\PatchSector.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Sector\UpdateSector.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Service\CreateService.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Service\DeleteService.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Service\GetAllServices.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Service\PatchService.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Service\UpdateService.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\CreateSupportAccount.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\DeleteSupportAccount.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\GetAllSupportAccounts.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\PatchSupportAccount.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\UpdateBalance.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\SupportAccount\UpdateSupportAccount.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\CreateTaxRuleDetail.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\DeleteTaxRuleDetail.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\GetAllTaxRuleDetails.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\PatchTaxRuleDetail.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TaxRuleDetails\UpdateTaxRuleDetail.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tax\CreateTax.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tax\DeleteTax.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tax\GetAllTaxes.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tax\PatchTax.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tax\UpdateTax.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tier\CreateTier.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tier\DeleteTier.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tier\GetAllTiers.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tier\PatchTier.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\Tier\UpdateTier.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\CreateTypeDefinition.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\DeleteTypeDefinition.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\GetAllTypeDefinitions.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\PatchTypeDefinition.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Endpoints\TypeDefinition\UpdateTypeDefinition.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Program.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\obj\Debug\net8.0\wfc.referential.API.GlobalUsings.g.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\obj\Debug\net8.0\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\obj\Debug\net8.0\wfc.referential.API.AssemblyInfo.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\obj\Debug\net8.0\wfc.referential.API.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\appsettings.Development.json
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\appsettings.json
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\wfc.referential.API.http
+C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\01.InterfaceAdapter\wfc.referential.API\Properties\launchSettings.json

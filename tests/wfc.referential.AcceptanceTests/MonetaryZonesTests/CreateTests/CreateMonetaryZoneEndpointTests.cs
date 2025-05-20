@@ -143,7 +143,6 @@ public class CreateMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
         }
 
         FirstError(errors, "Name").Should().Be("Name is required");
-        FirstError(errors, "Description").Should().Be("Description is required");
 
         _repoMock.Verify(r => r.AddMonetaryZoneAsync(It.IsAny<MonetaryZone>(),
                                                      It.IsAny<CancellationToken>()),

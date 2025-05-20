@@ -19,10 +19,10 @@ public class GetAllTypeDefinitionsEndpointTests : IClassFixture<WebApplicationFa
 {
     private readonly HttpClient _client;
     private readonly Mock<ITypeDefinitionRepository> _repoMock = new();
+    private readonly Mock<ICacheService> _cacheMock = new();
 
     public GetAllTypeDefinitionsEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
 
         var customizedFactory = factory.WithWebHostBuilder(builder =>
         {
@@ -34,7 +34,7 @@ public class GetAllTypeDefinitionsEndpointTests : IClassFixture<WebApplicationFa
                 services.RemoveAll<ICacheService>();
 
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
+                services.AddSingleton(_cacheMock.Object);
             });
         });
 

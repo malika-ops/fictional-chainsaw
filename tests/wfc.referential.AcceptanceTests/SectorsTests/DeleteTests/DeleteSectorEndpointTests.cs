@@ -11,6 +11,7 @@ using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.SectorAggregate;
 using Xunit;
 
@@ -54,7 +55,8 @@ public class DeleteSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
             new CountryId(Guid.NewGuid()),
             "TC", "Test Country", "TC", "TC", "TCO", "+0", "0", false, false, 2,
             true,
-            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid())
+            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid()),
+            new CurrencyId(Guid.NewGuid())
         );
 
         var city = City.Create(
@@ -62,7 +64,6 @@ public class DeleteSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
             "CITY1",
             "Test City",
             "GMT",
-            "TZ",
             new Domain.RegionAggregate.RegionId(Guid.NewGuid()),
             "TC"
         );

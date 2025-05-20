@@ -50,7 +50,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
                 _cityRepoMock
                     .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", "TZ", regionId, "TC"));
+                    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC"));
 
 
                 // Plug mocks back in
@@ -150,7 +150,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
             SectorId.Of(Guid.NewGuid()),
             duplicateCode,
             "Existing Sector",
-            City.Create(CityId.Of(cityId), "CITY1", "Test City", "GMT", "TZ", RegionId.Of(Guid.NewGuid()), "TC")
+            City.Create(CityId.Of(cityId), "CITY1", "Test City", "GMT", RegionId.Of(Guid.NewGuid()), "TC")
         );
 
         _repoMock

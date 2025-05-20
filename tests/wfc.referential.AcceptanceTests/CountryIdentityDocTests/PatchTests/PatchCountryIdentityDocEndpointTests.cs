@@ -86,7 +86,8 @@ public class PatchCountryIdentityDocEndpointTests : IClassFixture<WebApplication
             false,
             2,
             true,
-            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid())
+            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid()),
+            new Domain.CurrencyAggregate.CurrencyId(Guid.NewGuid())
         );
 
         _countryRepoMock.Setup(r => r.GetByIdAsync(newCountryId, It.IsAny<CancellationToken>()))

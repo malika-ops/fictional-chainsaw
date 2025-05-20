@@ -12,6 +12,7 @@ using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Sectors.Queries.GetAllSectors;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.SectorAggregate;
 using Xunit;
 
@@ -50,7 +51,8 @@ public class GetAllSectorsEndpointTests : IClassFixture<WebApplicationFactory<Pr
             new CountryId(Guid.NewGuid()),
             "TC", "Test Country", "TC", "TC", "TCO", "+0", "0", false, false, 2,
             true,
-            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid())
+            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid()),
+            new CurrencyId(Guid.NewGuid())
         );
 
         var city = City.Create(
@@ -58,7 +60,6 @@ public class GetAllSectorsEndpointTests : IClassFixture<WebApplicationFactory<Pr
             "CITY1",
             "Test City",
             "GMT",
-            "TZ",
             new Domain.RegionAggregate.RegionId(Guid.NewGuid()),
             "TC"
         );

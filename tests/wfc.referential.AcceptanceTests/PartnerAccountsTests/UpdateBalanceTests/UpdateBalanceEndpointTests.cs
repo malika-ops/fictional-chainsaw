@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
+using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using Xunit;
 
@@ -53,6 +54,9 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var bankId = Guid.NewGuid();
         var bank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
 
+        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), null, "Activity");
+
         return PartnerAccount.Create(
             new PartnerAccountId(id),
             accountNumber,
@@ -62,7 +66,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
             "TB",
             balance,
             bank,
-            AccountType.Activité
+            accountType
         );
     }
 

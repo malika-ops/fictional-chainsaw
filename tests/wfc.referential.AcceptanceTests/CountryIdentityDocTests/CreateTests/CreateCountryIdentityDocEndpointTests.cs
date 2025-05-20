@@ -11,7 +11,9 @@ using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
+using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.IdentityDocumentAggregate;
+using wfc.referential.Domain.MonetaryZoneAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CountryIdentityDocTests.CreateTests;
@@ -73,7 +75,8 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             false,
             2,
             true,
-            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid())
+            new MonetaryZoneId(Guid.NewGuid()),
+            new CurrencyId(Guid.NewGuid())
         );
 
         var doc = IdentityDocument.Create(
@@ -184,7 +187,8 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             false,
             2,
             true,
-            new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid())
+            new MonetaryZoneId(Guid.NewGuid()),
+            new CurrencyId(Guid.NewGuid())
         );
 
         var doc = IdentityDocument.Create(

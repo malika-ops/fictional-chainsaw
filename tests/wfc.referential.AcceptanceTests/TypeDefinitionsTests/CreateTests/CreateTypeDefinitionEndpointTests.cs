@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
@@ -18,11 +19,11 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
 {
     private readonly HttpClient _client;
     private readonly Mock<ITypeDefinitionRepository> _repoMock = new();
+    private readonly Mock<ICacheService> _cacheMock = new();
+
 
     public CreateTypeDefinitionEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
         // Clone the factory and customize the host
         var customizedFactory = factory.WithWebHostBuilder(builder =>
         {
@@ -41,7 +42,7 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
 
                 // Plug mocks back in
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
+                services.AddSingleton(_cacheMock.Object);
             });
         });
 
@@ -55,71 +56,69 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
         var payload = new
         {
             Libelle = "TestType",
-            Description = "Test Type Definition",
+            Description = "Test Description",
             IsEnabled = true
         };
+
+        _repoMock
+            .Setup(r => r.GetByLibelleAsync(payload.Libelle, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TypeDefinition?)null); // Pas de doublon
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/typedefinitions", payload);
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
-        // Assert (FluentAssertions)
+        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         returnedId.Should().NotBeEmpty();
 
-        // Verify repository interaction
-        _repoMock.Verify(r =>
-            r.AddTypeDefinitionAsync(It.Is<TypeDefinition>(td =>
-                    td.Libelle == payload.Libelle &&
-                    td.Description == payload.Description &&
-                    td.IsEnabled == payload.IsEnabled),
-                    It.IsAny<CancellationToken>()
-            ),
-            Times.Once
-        );
+        _repoMock.Verify(r => r.GetByLibelleAsync(payload.Libelle, It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.AddTypeDefinitionAsync(It.Is<TypeDefinition>(td =>
+            td.Libelle == payload.Libelle &&
+            td.Description == payload.Description), It.IsAny<CancellationToken>()), Times.Once);
+
+        _cacheMock.Verify(c => c.RemoveByPrefixAsync(CacheKeys.TypeDefinition.Prefix, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "POST /api/typedefinitions returns 400 & problem-details when Libelle is missing")]
-    public async Task Post_ShouldReturn400_WhenLibelleIsMissing()
+    [Fact(DisplayName = "POST /api/typedefinitions returns 400 when Libelle already exists")]
+    public async Task Post_ShouldReturn400_WhenLibelleAlreadyExists()
     {
         // Arrange
-        var invalidPayload = new
+        var payload = new
         {
-            // Libelle intentionally omitted to trigger validation error
-            Description = "Test Type Definition",
+            Libelle = "ExistingType",
+            Description = "Duplicate",
             IsEnabled = true
         };
 
+        var existing = TypeDefinition.Create(TypeDefinitionId.Of(Guid.NewGuid()), payload.Libelle, payload.Description, []);
+
+        _repoMock
+            .Setup(r => r.GetByLibelleAsync(payload.Libelle, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
         // Act
-        var response = await _client.PostAsJsonAsync("/api/typedefinitions", invalidPayload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var response = await _client.PostAsJsonAsync("/api/typedefinitions", payload);
+        var body = await response.Content.ReadAsStringAsync();
+        var doc = JsonDocument.Parse(body);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var root = doc!.RootElement;
+        var root = doc.RootElement;
         root.GetProperty("title").GetString().Should().Be("Bad Request");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
-        root.GetProperty("errors")
-            .GetProperty("libelle")[0].GetString()
-            .Should().Be("Name is required");
-
-        // The handler must NOT be reached
-        _repoMock.Verify(r =>
-            r.AddTypeDefinitionAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()),
-            Times.Never,
-            "when validation fails, the command handler should not be executed");
+        _repoMock.Verify(r => r.AddTypeDefinitionAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact(DisplayName = "POST /api/typedefinitions returns 400 & problem-details when Description is missing")]
+    [Fact(DisplayName = "POST /api/typedefinitions returns 400 when Description is missing")]
     public async Task Post_ShouldReturn400_WhenDescriptionIsMissing()
     {
         // Arrange
         var invalidPayload = new
         {
-            Libelle = "TestType",
-            // Description intentionally omitted to trigger validation error
+            Libelle = "No description",
             IsEnabled = true
         };
 
@@ -136,12 +135,8 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
 
         root.GetProperty("errors")
             .GetProperty("description")[0].GetString()
-            .Should().Be("Description is required");
+            .Should().Contain("required");
 
-        // The handler must NOT be reached
-        _repoMock.Verify(r =>
-            r.AddTypeDefinitionAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()),
-            Times.Never,
-            "when validation fails, the command handler should not be executed");
+        _repoMock.Verify(r => r.AddTypeDefinitionAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

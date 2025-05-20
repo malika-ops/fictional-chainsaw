@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
+using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using Xunit;
 
@@ -20,6 +21,7 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
     private readonly HttpClient _client;
     private readonly Mock<IPartnerAccountRepository> _repoMock = new();
     private readonly Mock<IBankRepository> _bankRepoMock = new();
+    private readonly Mock<IParamTypeRepository> _paramTypeRepoMock = new();
 
     public PatchPartnerAccountEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -33,6 +35,7 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
             {
                 services.RemoveAll<IPartnerAccountRepository>();
                 services.RemoveAll<IBankRepository>();
+                services.RemoveAll<IParamTypeRepository>();
                 services.RemoveAll<ICacheService>();
 
                 // Default noop for Update
@@ -47,8 +50,24 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
                     .Setup(r => r.GetByIdAsync(It.IsAny<BankId>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(Bank.Create(bankId, "AWB", "Attijariwafa Bank", "AWB"));
 
+                // Set up param type mock to return valid account types
+                var activityTypeId = ParamTypeId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
+                var commissionTypeId = ParamTypeId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
+
+                var activityType = ParamType.Create(activityTypeId, null, "Activity");
+                var commissionType = ParamType.Create(commissionTypeId, null, "Commission");
+
+                _paramTypeRepoMock
+                    .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == activityTypeId.Value), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(activityType);
+
+                _paramTypeRepoMock
+                    .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == commissionTypeId.Value), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(commissionType);
+
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(_bankRepoMock.Object);
+                services.AddSingleton(_paramTypeRepoMock.Object);
                 services.AddSingleton(cacheMock.Object);
             });
         });
@@ -62,6 +81,9 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var bank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
 
+        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), null, "Activity");
+
         return PartnerAccount.Create(
             new PartnerAccountId(id),
             accountNumber,
@@ -71,7 +93,7 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
             businessName.Substring(0, 2).ToUpper(),
             50000.00m,
             bank,
-            AccountType.Activité
+            accountType
         );
     }
 
@@ -114,7 +136,7 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
         updated.AccountBalance.Should().Be(75000.00m);      // Should change
         updated.RIB.Should().Be("12345678901234567890123"); // Should not change
         updated.BusinessName.Should().Be("Old Business");   // Should not change
-        updated.AccountType.Should().Be(AccountType.Activité); // Should not change
+        updated.AccountTypeId.Value.Should().Be(Guid.Parse("22222222-2222-2222-2222-222222222222")); // Should not change
         updated.IsEnabled.Should().BeTrue(); // Should remain enabled
 
         _repoMock.Verify(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
@@ -261,6 +283,44 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
 
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be($"Bank with ID {nonExistentBankId} not found");
+
+        _repoMock.Verify(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
+                                                         It.IsAny<CancellationToken>()),
+                         Times.Never);
+    }
+
+    [Fact(DisplayName = "PATCH /api/partner-accounts/{id} returns 400 when provided AccountType doesn't exist")]
+    public async Task Patch_ShouldReturn400_WhenProvidedAccountTypeDoesNotExist()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var nonExistentAccountTypeId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+
+        var partnerAccount = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Test Business");
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(partnerAccount);
+
+        // Setup param type repository to return null for this ID
+        _paramTypeRepoMock
+            .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == nonExistentAccountTypeId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ParamType?)null);
+
+        var payload = new
+        {
+            PartnerAccountId = id,
+            AccountTypeId = nonExistentAccountTypeId
+        };
+
+        // Act
+        var response = await _client.PatchAsync($"/api/partner-accounts/{id}", JsonContent.Create(payload));
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        doc!.RootElement.GetProperty("errors").GetString()
+           .Should().Be($"Account Type with ID {nonExistentAccountTypeId} not found");
 
         _repoMock.Verify(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
                                                          It.IsAny<CancellationToken>()),

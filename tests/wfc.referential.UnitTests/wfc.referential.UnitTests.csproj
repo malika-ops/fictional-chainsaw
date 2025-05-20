@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BuildingBlocks" Version="1.0.0" />
+    <PackageReference Include="BuildingBlocks" Version="1.0.1" />
     <PackageReference Include="FluentAssertions" Version="8.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.13" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.2" />
@@ -23,10 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\01 - InterfaceAdapter\wfc.referential.API\wfc.referential.API.csproj" />
-    <ProjectReference Include="..\..\src\02 - Application\wfc.referential.Application\wfc.referential.Application.csproj" />
-    <ProjectReference Include="..\..\src\03 - Domain\wfc.referential.Domain\wfc.referential.Domain.csproj" />
-    <ProjectReference Include="..\..\src\04 - Infrastructure\wfc.referential.Infrastructure\wfc.referential.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\01.InterfaceAdapter\wfc.referential.API\wfc.referential.API.csproj" />
+    <ProjectReference Include="..\..\src\02.Application\wfc.referential.Application\wfc.referential.Application.csproj" />
+    <ProjectReference Include="..\..\src\03.Domain\wfc.referential.Domain\wfc.referential.Domain.csproj" />
+    <ProjectReference Include="..\..\src\04.Infrastructure\wfc.referential.Infrastructure\wfc.referential.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

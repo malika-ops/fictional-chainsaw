@@ -11,6 +11,7 @@ using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.PartnerAccounts.Queries.GetAllPartnerAccounts;
 using wfc.referential.Domain.BankAggregate;
+using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using Xunit;
 
@@ -43,10 +44,16 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
     }
 
     // Helper to build dummy partner accounts quickly
-    private static PartnerAccount CreateTestPartnerAccount(string accountNumber, string rib, string businessName, AccountType accountType)
+    private static PartnerAccount CreateTestPartnerAccount(string accountNumber, string rib, string businessName, string accountTypeName)
     {
         var bankId = Guid.NewGuid();
         var bank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
+
+        var accountTypeId = accountTypeName == "Activity"
+            ? Guid.Parse("22222222-2222-2222-2222-222222222222")
+            : Guid.Parse("33333333-3333-3333-3333-333333333333");
+
+        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), null, accountTypeName);
 
         return PartnerAccount.Create(
             PartnerAccountId.Of(Guid.NewGuid()),
@@ -70,11 +77,11 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
     {
         // Arrange
         var allAccounts = new[] {
-            CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Wafa Cash Services", AccountType.Activité),
-            CreateTestPartnerAccount("000987654321", "98765432109876543210987", "Transfert Express", AccountType.Commission),
-            CreateTestPartnerAccount("000111222333", "11122233344455566677788", "Rapid Transfer", AccountType.Activité),
-            CreateTestPartnerAccount("000444555666", "44455566677788899900011", "Money Express", AccountType.Commission),
-            CreateTestPartnerAccount("000777888999", "77788899900011122233344", "Quick Cash", AccountType.Activité)
+            CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Wafa Cash Services", "Activity"),
+            CreateTestPartnerAccount("000987654321", "98765432109876543210987", "Transfert Express", "Commission"),
+            CreateTestPartnerAccount("000111222333", "11122233344455566677788", "Rapid Transfer", "Activity"),
+            CreateTestPartnerAccount("000444555666", "44455566677788899900011", "Money Express", "Commission"),
+            CreateTestPartnerAccount("000777888999", "77788899900011122233344", "Quick Cash", "Activity")
         };
 
         // Repository returns first 2 items for page=1 size=2
@@ -110,7 +117,7 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
     public async Task Get_ShouldFilterByAccountNumber()
     {
         // Arrange
-        var account = CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Wafa Cash Services", AccountType.Activité);
+        var account = CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Wafa Cash Services", "Activity");
 
         _repoMock.Setup(r => r.GetFilteredPartnerAccountsAsync(
                             It.Is<GetAllPartnerAccountsQuery>(q => q.AccountNumber == "000123456789"),
@@ -137,28 +144,29 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
                          Times.Once);
     }
 
-    [Fact(DisplayName = "GET /api/partner-accounts?accountType=Activité filters by account type")]
-    public async Task Get_ShouldFilterByAccountType()
+    [Fact(DisplayName = "GET /api/partner-accounts?accountTypeId=22222222-2222-2222-2222-222222222222 filters by account type")]
+    public async Task Get_ShouldFilterByAccountTypeId()
     {
         // Arrange
+        var activityTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
         var activiteAccounts = new[] {
-            CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Wafa Cash Services", AccountType.Activité),
-            CreateTestPartnerAccount("000111222333", "11122233344455566677788", "Rapid Transfer", AccountType.Activité),
-            CreateTestPartnerAccount("000777888999", "77788899900011122233344", "Quick Cash", AccountType.Activité)
+            CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Wafa Cash Services", "Activity"),
+            CreateTestPartnerAccount("000111222333", "11122233344455566677788", "Rapid Transfer", "Activity"),
+            CreateTestPartnerAccount("000777888999", "77788899900011122233344", "Quick Cash", "Activity")
         };
 
         _repoMock.Setup(r => r.GetFilteredPartnerAccountsAsync(
-                            It.Is<GetAllPartnerAccountsQuery>(q => q.AccountType == "Activité"),
+                            It.Is<GetAllPartnerAccountsQuery>(q => q.AccountTypeId == activityTypeId),
                             It.IsAny<CancellationToken>()))
                  .ReturnsAsync(activiteAccounts.ToList());
 
         _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.Is<GetAllPartnerAccountsQuery>(q => q.AccountType == "Activité"),
+                            It.Is<GetAllPartnerAccountsQuery>(q => q.AccountTypeId == activityTypeId),
                             It.IsAny<CancellationToken>()))
                  .ReturnsAsync(activiteAccounts.Length);
 
         // Act
-        var response = await _client.GetAsync("/api/partner-accounts?accountType=Activité");
+        var response = await _client.GetAsync($"/api/partner-accounts?accountTypeId={activityTypeId}");
         var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
 
         // Assert
@@ -168,11 +176,11 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
 
         foreach (var item in dto.Items)
         {
-            item.GetProperty("accountType").GetString().Should().Be("Activité");
+            item.GetProperty("accountTypeName").GetString().Should().Be("Activity");
         }
 
         _repoMock.Verify(r => r.GetFilteredPartnerAccountsAsync(
-                                It.Is<GetAllPartnerAccountsQuery>(q => q.AccountType == "Activité"),
+                                It.Is<GetAllPartnerAccountsQuery>(q => q.AccountTypeId == activityTypeId),
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
     }
@@ -181,7 +189,7 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
     public async Task Get_ShouldFilterByMinimumBalance()
     {
         // Arrange
-        var highBalanceAccount = CreateTestPartnerAccount("000123456789", "12345678901234567890123", "High Balance Account", AccountType.Activité);
+        var highBalanceAccount = CreateTestPartnerAccount("000123456789", "12345678901234567890123", "High Balance Account", "Activity");
 
         // Assume the internal balance is set higher than the original 50000
         var partnerAccountType = typeof(PartnerAccount);
@@ -217,7 +225,7 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
     public async Task Get_ShouldFilterByEnabledStatus()
     {
         // Arrange
-        var disabledAccount = CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Disabled Account", AccountType.Activité);
+        var disabledAccount = CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Disabled Account", "Activity");
         disabledAccount.Disable(); // Make it disabled
 
         _repoMock.Setup(r => r.GetFilteredPartnerAccountsAsync(

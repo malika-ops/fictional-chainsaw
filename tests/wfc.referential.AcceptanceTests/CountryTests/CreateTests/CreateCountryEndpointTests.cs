@@ -10,6 +10,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using Xunit;
 
@@ -62,12 +63,29 @@ public class CreateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
             MonetaryZoneId.Of(Guid.NewGuid()),
             null);
 
-    // 1) Happy‑path creation
-    [Fact(DisplayName = "POST /api/countries returns 200 and Guid when payload is valid")]
+
+    private static Guid ExtractGuid(JsonDocument doc)
+    {
+        var root = doc.RootElement;
+        return root.ValueKind switch
+        {
+            JsonValueKind.String => Guid.Parse(root.GetString()!),
+            JsonValueKind.Object when root.TryGetProperty("value", out var v)
+                                    && v.ValueKind == JsonValueKind.String
+                                    => Guid.Parse(v.GetString()!),
+            JsonValueKind.Object when root.TryGetProperty("value", out var vObj)
+                                    => vObj.GetGuid(),
+            _ => root.GetGuid()     // last-ditch (Guid primitive)
+        };
+    }
+
+     [Fact(DisplayName = "POST /api/countries returns 200 and Guid when payload is valid")]
     public async Task Post_ShouldReturn200_WhenRequestIsValid()
     {
         // Arrange
         var mzId = Guid.NewGuid();
+        var curId = Guid.NewGuid();
+
         var payload = new
         {
             Abbreviation = "US",
@@ -76,31 +94,40 @@ public class CreateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
             ISO2 = "US",
             ISO3 = "USA",
             DialingCode = "+1",
-            TimeZone = "UTC‑5",
-            MonetaryZoneId = mzId
+            TimeZone = "UTC-5",
+            HasSector = false,
+            IsSmsEnabled = false,
+            NumberDecimalDigits = 2,
+            MonetaryZoneId = mzId,
+            CurrencyId = curId
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/countries", payload);
-        var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
+        var resp = await _client.PostAsJsonAsync("/api/countries", payload);
+        var json = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        var id = ExtractGuid(json!);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returnedId.Should().NotBeEmpty();
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        id.Should().NotBeEmpty();
 
         _countryRepoMock.Verify(r =>
             r.AddAsync(It.Is<Country>(c =>
-                    c.Abbreviation == payload.Abbreviation &&
-                    c.Name == payload.Name &&
-                    c.Code == payload.Code &&
-                    c.ISO2 == payload.ISO2 &&
-                    c.ISO3 == payload.ISO3 &&
-                    c.DialingCode == payload.DialingCode &&
-                    c.TimeZone == payload.TimeZone &&
-                    c.MonetaryZoneId.Value == mzId),
+                  c.Abbreviation == payload.Abbreviation &&
+                  c.Name == payload.Name &&
+                  c.Code == payload.Code &&
+                  c.ISO2 == payload.ISO2 &&
+                  c.ISO3 == payload.ISO3 &&
+                  c.DialingCode == payload.DialingCode &&
+                  c.TimeZone == payload.TimeZone &&
+                  c.NumberDecimalDigits == payload.NumberDecimalDigits &&
+                  c.MonetaryZoneId.Value == mzId &&
+                  c.CurrencyId.Value == curId),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+
 
     // 2) Validation error – Name missing
     [Fact(DisplayName = "POST /api/countries returns 400 when Name is missing")]
@@ -135,16 +162,17 @@ public class CreateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
             Times.Never);
     }
 
-    // 3) Duplicate code
+    /* ----------------------------------------------------------------
+   3) Duplicate code
+   ----------------------------------------------------------------*/
     [Fact(DisplayName = "POST /api/countries returns 400 when Code already exists")]
     public async Task Post_ShouldReturn400_WhenCodeAlreadyExists()
     {
         // Arrange
         const string duplicateCode = "FRA";
-
         _countryRepoMock
             .Setup(r => r.GetByCodeAsync(duplicateCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(MakeCountry(duplicateCode));   // simulate existing country
+            .ReturnsAsync(MakeCountry(duplicateCode));
 
         var payload = new
         {
@@ -155,18 +183,33 @@ public class CreateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
             ISO3 = "FRA",
             DialingCode = "+33",
             TimeZone = "UTC+1",
-            MonetaryZoneId = Guid.NewGuid()
+            HasSector = false,
+            IsSmsEnabled = false,
+            NumberDecimalDigits = 2,
+            MonetaryZoneId = Guid.NewGuid(),
+            CurrencyId = Guid.NewGuid()
         };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/countries", payload);
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
+        // Extract first error string regardless of shape
+        string ErrorMessage(JsonDocument d)
+        {
+            var errs = d.RootElement.GetProperty("errors");
+            return errs.ValueKind switch
+            {
+                JsonValueKind.String => errs.GetString()!,
+                JsonValueKind.Object => errs.EnumerateObject().First().Value[0].GetString()!,
+                _ => "<unexpected>"
+            };
+        }
+
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be($"Country with code {duplicateCode} already exists.");
+        ErrorMessage(doc!).Should()
+            .Be($"Country with code {duplicateCode} already exists.");
 
         _countryRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<Country>(), It.IsAny<CancellationToken>()),

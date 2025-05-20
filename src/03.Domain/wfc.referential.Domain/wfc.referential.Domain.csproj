@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="country\**" />
+    <Compile Remove="MonetaryZone\**" />
+    <Compile Remove="Ville\**" />
+    <Compile Remove="WOS\**" />
+    <EmbeddedResource Remove="country\**" />
+    <EmbeddedResource Remove="MonetaryZone\**" />
+    <EmbeddedResource Remove="Ville\**" />
+    <EmbeddedResource Remove="WOS\**" />
+    <None Remove="country\**" />
+    <None Remove="MonetaryZone\**" />
+    <None Remove="Ville\**" />
+    <None Remove="WOS\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BuildingBlocks" Version="1.0.1" />
+  </ItemGroup>
+
+</Project>

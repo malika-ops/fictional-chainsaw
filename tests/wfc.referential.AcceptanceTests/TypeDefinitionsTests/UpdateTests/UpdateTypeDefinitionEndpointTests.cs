@@ -18,10 +18,10 @@ public class UpdateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
 {
     private readonly HttpClient _client;
     private readonly Mock<ITypeDefinitionRepository> _repoMock = new();
+    private readonly Mock<ICacheService> _cacheMock = new();
 
     public UpdateTypeDefinitionEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
 
         var customizedFactory = factory.WithWebHostBuilder(builder =>
         {
@@ -39,7 +39,7 @@ public class UpdateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
                     .Returns(Task.CompletedTask);
 
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
+                services.AddSingleton(_cacheMock.Object);
             });
         });
 
@@ -96,6 +96,42 @@ public class UpdateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
                                                          It.IsAny<CancellationToken>()),
                           Times.Once);
     }
+
+    [Fact(DisplayName = "PUT /api/typedefinitions/{id} returns 400 when Libelle already exists")]
+    public async Task Put_ShouldReturn400_WhenLibelleAlreadyExists()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var existingLibelle = "Existing Libelle";
+
+        var oldTypeDefinition = CreateTestTypeDefinition(id, "Old Libelle", "Old Description");
+        var existing = CreateTestTypeDefinition(Guid.NewGuid(), existingLibelle, "Other");
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(oldTypeDefinition);
+
+        _repoMock.Setup(r => r.GetByLibelleAsync(existingLibelle, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existing);
+
+        var payload = new
+        {
+            TypeDefinitionId = id,
+            Libelle = existingLibelle, // Déjà utilisé
+            Description = "New Description",
+            IsEnabled = true
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/typedefinitions/{id}", payload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        doc!.RootElement.GetProperty("errors").GetString()
+           .Should().Contain($"already exists");
+        _repoMock.Verify(r => r.UpdateTypeDefinitionAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
 
     [Fact(DisplayName = "PUT /api/typedefinitions/{id} handles disabling correctly")]
     public async Task Put_ShouldHandleDisabling_Correctly()

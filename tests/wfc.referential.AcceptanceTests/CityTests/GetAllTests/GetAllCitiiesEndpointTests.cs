@@ -2,17 +2,18 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using wfc.referential.Application.Cities.Dtos;
 using wfc.referential.Application.Cities.Queries.GetAllCities;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Application.RegionManagement.Queries.GetAllRegions;
+using wfc.referential.Application.Sectors.Dtos;
 using wfc.referential.Domain.CityAggregate;
-using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.RegionAggregate;
 using Xunit;
 
@@ -22,11 +23,9 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
 {
     private readonly HttpClient _client;
     private readonly Mock<ICityRepository> _repoMock = new();
-
+    private readonly Mock<ICacheService> _cacheMock = new();
     public GetAllCitiiesEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -37,7 +36,7 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
                 services.RemoveAll<ICacheService>();
 
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
+                services.AddSingleton(_cacheMock.Object);
             });
         });
 
@@ -46,7 +45,7 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
     // Helper to build dummy regions quickly
     private static City DummyCity(string code, string name) =>
-        City.Create(CityId.Of(Guid.NewGuid()), code, name,"timezone","taxzone", RegionId.Of(Guid.NewGuid()), "abbrev");
+        City.Create(CityId.Of(Guid.NewGuid()), code, name,"timezone", RegionId.Of(Guid.NewGuid()), "abbrev");
 
     // Lightweight DTO for deserialising the endpoint response
     private record PagedResultDto<T>(T[] Items, int PageNumber, int PageSize,
@@ -87,6 +86,16 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
                                 It.Is<GetAllCitiesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
+
+        _cacheMock.Verify(c =>
+            c.SetAsync(
+                It.Is<string>(k => k.StartsWith("City_")),
+                It.IsAny<PagedResult<GetAllCitiesResponse>>(),
+                It.IsAny<TimeSpan>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once,
+            "Les résultats doivent être mis en cache après récupération");
+
     }
 
     // 2) Filter by code
@@ -159,4 +168,40 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
                          Times.Once);
     }
 
+    [Fact(DisplayName = "GET /api/cities returns cached result when present")]
+    public async Task Get_ShouldReturnFromCache_WhenCached()
+    {
+        // Arrange
+        var cachedResult = new PagedResult<GetAllCitiesResponse>(
+            new List<GetAllCitiesResponse>
+            {
+            new(
+                CityId: Guid.NewGuid(),
+                Code: "NYC",
+                Name: "New York City",
+                TimeZone: "UTC",
+                Abbreviation: "NYC",
+                RegionId: Guid.NewGuid(),
+                IsEnabled: true,
+                Sectors: new List<SectorResponse>())
+            },
+            totalCount: 1,
+            pageNumber: 1,
+            pageSize: 10);
+
+        _cacheMock.Setup(c => c.GetAsync<PagedResult<GetAllCitiesResponse>>(
+                It.Is<string>(k => k.StartsWith("City_")),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cachedResult);
+
+        // Act
+        var response = await _client.GetAsync("/api/cities?code=NYC&pageNumber=1&pageSize=10");
+        var dto = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        _repoMock.Verify(r => r.GetCitiesByCriteriaAsync(It.IsAny<GetAllCitiesQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.GetCountTotalAsync(It.IsAny<GetAllCitiesQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

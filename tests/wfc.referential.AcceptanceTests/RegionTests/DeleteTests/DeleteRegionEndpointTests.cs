@@ -96,7 +96,7 @@ public class DeleteRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var region = Region.Create(RegionId.Of(regionId), "code", "name", CountryId.Of(Guid.NewGuid()));
         var cities = new List<City>
         {
-            City.Create(CityId.Of(Guid.NewGuid()), "code", "name", "timezone", "taxzone", region.Id, "abbreviation")
+            City.Create(CityId.Of(Guid.NewGuid()), "code", "name", "timezone", region.Id, "abbreviation")
         };
 
         _repoMock.Setup(r => r.GetByIdAsync(regionId, It.IsAny<CancellationToken>()))

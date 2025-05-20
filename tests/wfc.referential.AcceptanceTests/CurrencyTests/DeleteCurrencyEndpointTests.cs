@@ -91,4 +91,41 @@ public class DeleteCurrencyEndpointTests : IClassFixture<WebApplicationFactory<P
         _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<CurrencyId>(), It.IsAny<CancellationToken>()), Times.Never);
         _repoMock.Verify(r => r.UpdateCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact(DisplayName = "DELETE /api/currencies/{id} returns 400 when currency is associated with countries")]
+    public async Task Delete_ShouldReturn400_WhenCurrencyIsAssociatedWithCountries()
+    {
+        // Arrange
+        var currencyId = Guid.NewGuid();
+        var currency = Currency.Create(
+            CurrencyId.Of(currencyId),
+            "USD",
+            "دولار أمريكي",
+            "US Dollar",
+            "US Dollar",
+            840
+        );
+
+        _repoMock
+            .Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
+
+        // Mock the check for associated countries to return true
+        _repoMock
+            .Setup(r => r.IsCurrencyAssociatedWithCountryAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/currencies/{currencyId}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        // Verify repository interactions
+        _repoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.IsCurrencyAssociatedWithCountryAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Verify the currency was NOT updated since it's associated with countries
+        _repoMock.Verify(r => r.UpdateCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }
