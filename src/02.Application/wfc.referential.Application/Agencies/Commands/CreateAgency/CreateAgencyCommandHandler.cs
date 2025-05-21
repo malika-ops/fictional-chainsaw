@@ -16,6 +16,7 @@ public class CreateAgencyCommandHandler : ICommandHandler<CreateAgencyCommand, R
     public CreateAgencyCommandHandler(IAgencyRepository repository)
         => _agencyRepository = repository;
 
+    // test
     public async Task<Result<Guid>> Handle(CreateAgencyCommand c, CancellationToken ct)
     {
         if (await _agencyRepository.GetByCodeAsync(c.Code, ct) is not null)
