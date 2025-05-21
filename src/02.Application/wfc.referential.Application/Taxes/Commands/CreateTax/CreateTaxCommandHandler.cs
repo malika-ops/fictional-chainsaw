@@ -25,7 +25,7 @@ public class CreateTaxCommandHandler(
             request.CodeAr,
             request.Description,
             request.FixedAmount,
-            request.Value
+            request.Rate
         );
 
         await taxRepository.AddTaxAsync(tax, cancellationToken);

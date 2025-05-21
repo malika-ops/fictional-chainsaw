@@ -12,8 +12,8 @@ public record CreateTaxCommand : ICommand<Result<Guid>>, ICacheableQuery
     public string CodeEn { get; init; } = default!;
     public string CodeAr { get; init; } = default!;
     public string Description { get; init; } = default!;
-    public double FixedAmount { get; init; } = default!;
-    public double Value { get; init; }
+    public double? FixedAmount { get; init; }
+    public double? Rate { get; init; }
     public bool IsEnabled { get; init; } = true;
 
     public string CacheKey => $"{nameof(Tax)}_{TaxId}";

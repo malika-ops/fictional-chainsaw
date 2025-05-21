@@ -19,10 +19,10 @@ public record CreateTaxRequest
 
     /// <summary>Tax Type.</summary>
     /// <example>Sales</example>
-    public double FixedAmount { get; init; }
+    public double? FixedAmount { get; init; }
 
     /// <summary>Tax value.</summary>
     /// <example>15.0</example>
-    public double Value { get; init; }
+    public double? Rate { get; init; }
 
 }

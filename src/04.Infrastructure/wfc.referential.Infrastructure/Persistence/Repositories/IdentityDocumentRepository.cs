@@ -36,20 +36,19 @@ public class IdentityDocumentRepository : IIdentityDocumentRepository
     public async Task<IdentityDocument> AddAsync(IdentityDocument document, CancellationToken cancellationToken)
     {
         await _context.IdentityDocuments.AddAsync(document, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
         return document;
     }
 
-    public async Task UpdateAsync(IdentityDocument document, CancellationToken cancellationToken)
+    public Task UpdateAsync(IdentityDocument document, CancellationToken cancellationToken)
     {
         _context.IdentityDocuments.Update(document);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(IdentityDocument document, CancellationToken cancellationToken)
+    public Task DeleteAsync(IdentityDocument document, CancellationToken cancellationToken)
     {
         _context.IdentityDocuments.Remove(document);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
     public async Task<List<IdentityDocument>> GetByCriteriaAsync(GetAllIdentityDocumentsQuery request, CancellationToken cancellationToken)
@@ -91,5 +90,9 @@ public class IdentityDocumentRepository : IIdentityDocumentRepository
             filters.Add(x => x.IsEnabled == request.IsEnabled);
 
         return filters;
+    }
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        return _context.SaveChangesAsync(cancellationToken);
     }
 }

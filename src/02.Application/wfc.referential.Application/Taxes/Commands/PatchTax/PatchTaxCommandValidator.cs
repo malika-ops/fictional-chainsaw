@@ -38,12 +38,11 @@ public class PatchTaxCommandValidator : AbstractValidator<PatchTaxCommand>
                 .MaximumLength(250).WithMessage(x => $"{nameof(x.Description)} must not exceed 250 characters.");
         });
 
-        When(x => x.Value.HasValue, () =>
+        When(x => x.Rate.HasValue || x.FixedAmount.HasValue, () =>
         {
-            RuleFor(x => x.Value.Value)
-                .NotEmpty().WithMessage(x => $"{x.Value} cannot be empty if provided.")
-                .GreaterThanOrEqualTo(0).WithMessage(x => $"{x.Value} must be non-negative.")
-                .LessThanOrEqualTo(100).WithMessage(x => $"{x.Value} must not exceed 100%.");
+            RuleFor(t => t)
+                .Must(x => (x.Rate.HasValue || x.FixedAmount.HasValue))
+                .WithMessage("Either Rate or FixedAmount must be provided or both.");
         });
 
 

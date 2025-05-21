@@ -31,7 +31,7 @@ public record PatchTaxCommand : ICommand<Result<Guid>>, ICacheableQuery
     public double? FixedAmount { get; init; }
 
     /// <summary>Optional tax value to update.</summary>
-    public double? Value { get; init; }
+    public double? Rate { get; init; }
 
     /// <summary>Optional tax status to update.</summary>
     public bool? IsEnabled { get; init; }

@@ -1,13 +1,15 @@
 ﻿using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.IdentityDocumentAggregate;
 using wfc.referential.Domain.IdentityDocumentAggregate.Exceptions;
 
 namespace wfc.referential.Application.IdentityDocuments.Commands.CreateIdentityDocument;
 
-public class CreateIdentityDocumentCommandHandler(IIdentityDocumentRepository repository, ICacheService cache) : ICommandHandler<CreateIdentityDocumentCommand, Result<Guid>>
+public class CreateIdentityDocumentCommandHandler(IIdentityDocumentRepository repository,ICacheService cacheService) 
+    : ICommandHandler<CreateIdentityDocumentCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateIdentityDocumentCommand request, CancellationToken cancellationToken)
     {
@@ -19,12 +21,13 @@ public class CreateIdentityDocumentCommandHandler(IIdentityDocumentRepository re
             IdentityDocumentId.Of(Guid.NewGuid()),
             request.Code,
             request.Name,
-            request.Description,
-            request.IsEnabled);
+            request.Description);
 
         await repository.AddAsync(entity, cancellationToken);
-        await cache.SetAsync(request.CacheKey, entity, TimeSpan.FromMinutes(request.CacheExpiration), cancellationToken);
+        await repository.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(entity.Id.Value);
+        await cacheService.RemoveByPrefixAsync(CacheKeys.IdentityDocument.Prefix,cancellationToken);
+
+        return Result.Success(entity.Id!.Value);
     }
 }

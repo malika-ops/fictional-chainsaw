@@ -100,8 +100,7 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             IdentityDocumentId.Of(newDocId),
             "CIN",
             "Carte d'identité",
-            "Description",
-            true
+            "Description"
         );
 
         _countryRepoMock.Setup(r => r.GetByIdAsync(newCountryId, It.IsAny<CancellationToken>()))
@@ -162,8 +161,7 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             IdentityDocumentId.Of(newDocId),
             "CIN",
             "Carte d'identité",
-            "Description",
-            true
+            "Description"
         );
 
         _identityDocRepoMock.Setup(r => r.GetByIdAsync(newDocId, It.IsAny<CancellationToken>()))

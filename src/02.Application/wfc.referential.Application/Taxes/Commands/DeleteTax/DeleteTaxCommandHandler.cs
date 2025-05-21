@@ -4,6 +4,7 @@ using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TaxAggregate;
+using wfc.referential.Domain.TaxAggregate.Exceptions;
 
 namespace wfc.referential.Application.Taxes.Commands.DeleteTax;
 
@@ -14,11 +15,14 @@ public class DeleteTaxCommandHandler(
 {
     public async Task<Result<bool>> Handle(DeleteTaxCommand request, CancellationToken cancellationToken)
     {
-        var tax = await taxRepository.GetByIdAsync(TaxId.Of(request.TaxId).Value, cancellationToken);
+        var taxId = TaxId.Of(request.TaxId);
+        var tax = await taxRepository.GetByIdAsync(request.TaxId, cancellationToken);
 
         if (tax is null)
             throw new ResourceNotFoundException($"{nameof(Tax)} not found");
 
+        if (await taxRepository.HasTaxRuleDetailsAsync(taxId, cancellationToken))
+            throw new TaxHasTaxRuleDetailsException(request.TaxId);
 
         tax.SetInactive();
         await taxRepository.UpdateTaxAsync(tax, cancellationToken);

@@ -83,9 +83,8 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             IdentityDocumentId.Of(docId),
             "CIN",
             "Carte d'identité",
-            "Description",
-            true
-        );
+            "Description"
+            );
 
         _countryRepoMock.Setup(r => r.GetByIdAsync(countryId, It.IsAny<CancellationToken>()))
                         .ReturnsAsync(country);
@@ -137,8 +136,7 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             IdentityDocumentId.Of(docId),
             "CIN",
             "Carte d'identité",
-            "Description",
-            true
+            "Description"
         );
 
         _identityDocRepoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
@@ -195,9 +193,8 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             IdentityDocumentId.Of(docId),
             "CIN",
             "Carte d'identité",
-            "Description",
-            true
-        );
+            "Description"
+            );
 
         _countryRepoMock.Setup(r => r.GetByIdAsync(countryId, It.IsAny<CancellationToken>()))
                         .ReturnsAsync(country);

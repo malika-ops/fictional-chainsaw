@@ -47,8 +47,8 @@ public class DeleteIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
             IdentityDocumentId.Of(docId),
             "CIN",
             "Carte Nationale",
-            "Valid doc",
-            true);
+            "Valid doc"
+            );
 
         _repoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);

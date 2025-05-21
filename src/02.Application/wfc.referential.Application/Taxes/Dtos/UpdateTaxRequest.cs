@@ -29,7 +29,7 @@ public record UpdateTaxRequest
 
     /// <summary>Tax Value.</summary>
     /// <example>10.0</example>
-    public double Value { get; init; }
+    public double Rate { get; init; }
 
     /// <summary>Status of the tax.</summary>
     /// <example>Enabled</example>

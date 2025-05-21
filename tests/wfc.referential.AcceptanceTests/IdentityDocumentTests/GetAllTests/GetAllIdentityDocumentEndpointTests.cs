@@ -42,7 +42,7 @@ public class GetAllIdentityDocumentsEndpointTests : IClassFixture<WebApplication
     }
 
     private static IdentityDocument Dummy(string code, string name) =>
-        IdentityDocument.Create(IdentityDocumentId.Of(Guid.NewGuid()), code, name, null, true);
+        IdentityDocument.Create(IdentityDocumentId.Of(Guid.NewGuid()), code, name, null);
 
     private record PagedResultDto<T>(T[] Items, int PageNumber, int PageSize, int TotalCount, int TotalPages);
 

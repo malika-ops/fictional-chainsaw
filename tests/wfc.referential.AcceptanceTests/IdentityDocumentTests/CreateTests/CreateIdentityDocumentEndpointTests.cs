@@ -113,9 +113,8 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
             IdentityDocumentId.Of(Guid.NewGuid()),
             duplicateCode,
             "Existing Doc",
-            null,
-            true
-        );
+            null
+            );
 
         _repoMock.Setup(r => r.GetByCodeAsync(duplicateCode, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(doc);

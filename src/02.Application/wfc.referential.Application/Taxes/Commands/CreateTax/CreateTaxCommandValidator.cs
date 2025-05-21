@@ -15,15 +15,10 @@ public class CreateTaxCommandValidator : AbstractValidator<CreateTaxCommand>
 
         RuleFor(x => x.CodeAr)
             .NotEmpty().WithMessage(x => $"{nameof(x.CodeAr)} Code is required");
-
-        RuleFor(x => x.Description)
-            .NotEmpty().WithMessage(x => $"{nameof(x.Description)} is required");
-
-        RuleFor(x => x.FixedAmount)
-            .NotEmpty().WithMessage(x => $"{nameof(x.FixedAmount)} is required");
-
-        RuleFor(x => x.Value)
-            .GreaterThanOrEqualTo(0).WithMessage(x => $"{nameof(x.Value)} must be zero or greater");
+        
+        RuleFor(t => t)
+            .Must(x => (x.Rate.HasValue || x.FixedAmount.HasValue))
+            .WithMessage("Either Rate or FixedAmount must be provided or both.");
 
     }
 }

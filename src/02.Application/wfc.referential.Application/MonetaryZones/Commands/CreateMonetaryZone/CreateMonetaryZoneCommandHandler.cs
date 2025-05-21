@@ -14,7 +14,7 @@ public class CreateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZ
         if (isExist is not null) throw new CodeAlreadyExistException(request.Code);
 
         var id = MonetaryZoneId.Of(Guid.NewGuid()); 
-        var monetaryZone = MonetaryZone.Create(id, request.Code, request.Name, request.Description, null);
+        var monetaryZone = MonetaryZone.Create(id, request.Code, request.Name, request.Description);
 
         await _monetaryZoneRepository.AddMonetaryZoneAsync(monetaryZone, cancellationToken);
         await _monetaryZoneRepository.SaveChangesAsync(cancellationToken);

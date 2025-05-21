@@ -77,7 +77,7 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             CodeAr = "testAABAR",
             Description = "Value Added Tax applicable to goods and services",
             FixedAmount = 43,
-            Value = 15,
+            Rate = 15,
             IsEnabled = true,
         };
 
@@ -107,7 +107,7 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
            CodeAr= "ضريبة الخدمات",
            Description= "Applies to services provided within the country.",
            FixedAmount= 43,
-           Value= 10.0,
+           Rate= 10.0,
            IsEnabled= true
         };
 
@@ -147,7 +147,7 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             CodeAr = "ضريبة الخدمات",
             Description = "Applies to services provided within the country.",
             FixedAmount = 43,
-            Value = 10.0
+            Rate = 10.0
         };
 
         // Act

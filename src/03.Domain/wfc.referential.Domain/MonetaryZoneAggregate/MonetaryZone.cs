@@ -16,7 +16,7 @@ public class MonetaryZone : Aggregate<MonetaryZoneId>
     private MonetaryZone() { }
 
 
-    public static MonetaryZone Create(MonetaryZoneId id, string code, string name, string description, List<Country> countries)
+    public static MonetaryZone Create(MonetaryZoneId id, string code, string name, string description, List<Country>? countries = null)
     {
         var monetaryZone = new MonetaryZone
         {

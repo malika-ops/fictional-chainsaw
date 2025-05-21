@@ -69,8 +69,15 @@ public class CountryIdentityDoc : Aggregate<CountryIdentityDocId>
             DateTime.UtcNow));
     }
 
-    public void Patch()
+    public void Patch(
+        CountryId? countryId,
+        IdentityDocumentId? identityDocumentId,
+        bool? isEnabled)
     {
+        CountryId = countryId ?? CountryId;
+        IdentityDocumentId = identityDocumentId ?? IdentityDocumentId;
+        IsEnabled = isEnabled ?? IsEnabled;
+
         AddDomainEvent(new CountryIdentityDocPatchedEvent(
             Id.Value,
             CountryId.Value,

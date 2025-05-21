@@ -6,7 +6,8 @@ using wfc.referential.Application.Interfaces;
 
 namespace wfc.referential.Application.IdentityDocuments.Commands.DeleteIdentityDocument;
 
-public class DeleteIdentityDocumentCommandHandler(IIdentityDocumentRepository repository, ICacheService cache) : ICommandHandler<DeleteIdentityDocumentCommand, Result<bool>>
+public class DeleteIdentityDocumentCommandHandler(IIdentityDocumentRepository repository) 
+    : ICommandHandler<DeleteIdentityDocumentCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(DeleteIdentityDocumentCommand request, CancellationToken cancellationToken)
     {
@@ -16,7 +17,7 @@ public class DeleteIdentityDocumentCommandHandler(IIdentityDocumentRepository re
 
         entity.SetInactive();
         await repository.UpdateAsync(entity, cancellationToken);
-        await cache.RemoveAsync(request.CacheKey, cancellationToken);
+        await repository.SaveChangesAsync(cancellationToken);
 
         return Result.Success(true);
     }

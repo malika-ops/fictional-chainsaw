@@ -45,7 +45,7 @@ public class UpdateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
     }
 
     private static IdentityDocument Dummy(Guid id, string code, string name) =>
-        IdentityDocument.Create(IdentityDocumentId.Of(id), code, name, "desc", true);
+        IdentityDocument.Create(IdentityDocumentId.Of(id), code, name, "desc");
 
     [Fact(DisplayName = "PUT /api/identitydocuments/{id} updates successfully")]
     public async Task Put_ShouldUpdateSuccessfully()

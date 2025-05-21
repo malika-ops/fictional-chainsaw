@@ -1,5 +1,7 @@
-﻿using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Exceptions;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
@@ -7,22 +9,9 @@ using wfc.referential.Domain.IdentityDocumentAggregate;
 
 namespace wfc.referential.Application.CountryIdentityDocs.Commands.PatchCountryIdentityDoc;
 
-public class PatchCountryIdentityDocCommandHandler : ICommandHandler<PatchCountryIdentityDocCommand, Guid>
+public class PatchCountryIdentityDocCommandHandler(ICountryIdentityDocRepository _repository, ICountryRepository _countryRepository,
+    IIdentityDocumentRepository _identityDocumentRepository , ICacheService _cacheService) : ICommandHandler<PatchCountryIdentityDocCommand, Guid>
 {
-    private readonly ICountryIdentityDocRepository _repository;
-    private readonly ICountryRepository _countryRepository;
-    private readonly IIdentityDocumentRepository _identityDocumentRepository;
-
-    public PatchCountryIdentityDocCommandHandler(
-        ICountryIdentityDocRepository repository,
-        ICountryRepository countryRepository,
-        IIdentityDocumentRepository identityDocumentRepository)
-    {
-        _repository = repository;
-        _countryRepository = countryRepository;
-        _identityDocumentRepository = identityDocumentRepository;
-    }
-
     public async Task<Guid> Handle(PatchCountryIdentityDocCommand request, CancellationToken cancellationToken)
     {
         var entity = await _repository.GetByIdAsync(request.CountryIdentityDocId, cancellationToken);
@@ -57,12 +46,13 @@ public class PatchCountryIdentityDocCommandHandler : ICommandHandler<PatchCountr
             isEnabled = request.IsEnabled.Value;
         }
 
-        entity.Update(countryId, identityDocumentId, isEnabled);
-
-        entity.Patch();
+        entity.Patch(countryId, identityDocumentId, isEnabled);
 
         await _repository.UpdateAsync(entity, cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
 
-        return entity.Id.Value;
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.CountryIdentityDocument.Prefix, cancellationToken);
+
+        return entity.Id!.Value;
     }
 }

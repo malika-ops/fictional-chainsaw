@@ -24,12 +24,9 @@ public class UpdateTaxCommandValidator : AbstractValidator<UpdateTaxCommand>
             .NotEmpty().WithMessage("Description is required.")
             .MaximumLength(250);
 
-        RuleFor(x => x.FixedAmount)
-            .NotEmpty().WithMessage("Type is required.");
-
-        RuleFor(x => x.Value)
-            .GreaterThanOrEqualTo(0).WithMessage(x => $"{x.Value} must be a non-negative value.")
-            .LessThanOrEqualTo(100).WithMessage(x => $"{x.Value} must not exceed 100%.");
+        RuleFor(t => t)
+            .Must(x => (x.Rate > 0 || x.FixedAmount > 0))
+            .WithMessage("Either Rate or FixedAmount must be provided or both.");
 
     }
 }

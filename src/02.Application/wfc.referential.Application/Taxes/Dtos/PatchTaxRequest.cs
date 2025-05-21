@@ -24,7 +24,7 @@ public record PatchTaxRequest
     public double? FixedAmount { get; init; }
 
     /// <summary>If provided, updates the tax value. If omitted, remains unchanged.</summary>
-    public double? Value { get; init; }
+    public double? Rate { get; init; }
 
     /// <summary>If provided, updates the tax status. If omitted, remains unchanged.</summary>
     public bool? IsEnabled { get; set; }

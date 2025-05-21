@@ -101,9 +101,8 @@ public class GetAllCountryIdentityDocsEndpointTests : IClassFixture<WebApplicati
             IdentityDocumentId.Of(docId1),
             "CIN",
             "Carte d'identité",
-            "Description",
-            true
-        );
+            "Description"
+            );
 
         _repoMock.Setup(r => r.GetFilteredAsync(
                         It.Is<GetAllCountryIdentityDocsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
@@ -170,9 +169,8 @@ public class GetAllCountryIdentityDocsEndpointTests : IClassFixture<WebApplicati
             IdentityDocumentId.Of(docId),
             "CIN",
             "Carte d'identité",
-            "Description",
-            true
-        );
+            "Description"
+            );
 
         _repoMock.Setup(r => r.GetFilteredAsync(
                         It.Is<GetAllCountryIdentityDocsQuery>(q => q.CountryId == countryId),

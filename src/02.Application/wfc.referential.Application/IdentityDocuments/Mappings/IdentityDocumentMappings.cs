@@ -1,5 +1,4 @@
 ﻿using Mapster;
-using wfc.referential.Application.IdentityDocuments.Commands;
 using wfc.referential.Application.IdentityDocuments.Commands.CreateIdentityDocument;
 using wfc.referential.Application.IdentityDocuments.Commands.DeleteIdentityDocument;
 using wfc.referential.Application.IdentityDocuments.Commands.PatchIdentityDocument;
@@ -14,11 +13,14 @@ public class IdentityDocumentMappings
 {
     public static void Register()
     {
-        TypeAdapterConfig<GetAllIdentityDocumentsRequest, GetAllIdentityDocumentsQuery>
-            .NewConfig()
-            .Map(dest => dest.PageNumber, src => src.PageNumber ?? 1)
-            .Map(dest => dest.PageSize, src => src.PageSize ?? 10)
-            .Map(dest => dest.IsEnabled, src => src.IsEnabled);
+        TypeAdapterConfig<GetAllIdentityDocumentsRequest, GetAllIdentityDocumentsQuery>.NewConfig()
+          .ConstructUsing(src => new GetAllIdentityDocumentsQuery(
+              src.PageNumber ?? 1,
+              src.PageSize ?? 10,
+              src.Name,
+              src.Code,
+              src.IsEnabled
+          ));
 
         TypeAdapterConfig<IdentityDocument, GetAllIdentityDocumentsResponse>
             .NewConfig()

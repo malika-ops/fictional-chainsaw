@@ -19,24 +19,9 @@ public class TaxConfiguration : IEntityTypeConfiguration<Tax>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.Property(t => t.CodeEn)
-            .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(t => t.CodeAr)
-            .IsRequired()
-            .HasMaxLength(100);
-
         builder.Property(t => t.Description)
             .IsRequired()
             .HasMaxLength(250);
-
-        builder.Property(t => t.FixedAmount)
-            .IsRequired()
-            .HasMaxLength(50);
-
-        builder.Property(t => t.Rate)
-            .IsRequired();
 
         builder.Property(t => t.IsEnabled)
             .IsRequired()

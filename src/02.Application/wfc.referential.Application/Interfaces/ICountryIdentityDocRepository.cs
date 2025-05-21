@@ -17,4 +17,5 @@ public interface ICountryIdentityDocRepository
     Task DeleteAsync(CountryIdentityDoc entity, CancellationToken cancellationToken);
     Task<List<CountryIdentityDoc>> GetFilteredAsync(GetAllCountryIdentityDocsQuery request, CancellationToken cancellationToken);
     Task<int> GetCountTotalAsync(GetAllCountryIdentityDocsQuery request, CancellationToken cancellationToken);
+    Task<int> SaveChangesAsync(CancellationToken token);
 }

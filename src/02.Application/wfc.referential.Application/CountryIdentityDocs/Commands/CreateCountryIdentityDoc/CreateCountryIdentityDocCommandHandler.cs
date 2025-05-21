@@ -1,6 +1,8 @@
-﻿using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
@@ -9,22 +11,10 @@ using wfc.referential.Domain.IdentityDocumentAggregate;
 
 namespace wfc.referential.Application.CountryIdentityDocs.Commands.CreateCountryIdentityDoc;
 
-public class CreateCountryIdentityDocCommandHandler : ICommandHandler<CreateCountryIdentityDocCommand, Result<Guid>>
+public class CreateCountryIdentityDocCommandHandler(ICountryIdentityDocRepository _repository, ICountryRepository _countryRepository,
+    IIdentityDocumentRepository _identityDocumentRepository,ICacheService _cacheService) 
+    : ICommandHandler<CreateCountryIdentityDocCommand, Result<Guid>>
 {
-    private readonly ICountryIdentityDocRepository _repository;
-    private readonly ICountryRepository _countryRepository;
-    private readonly IIdentityDocumentRepository _identityDocumentRepository;
-
-    public CreateCountryIdentityDocCommandHandler(
-        ICountryIdentityDocRepository repository,
-        ICountryRepository countryRepository,
-        IIdentityDocumentRepository identityDocumentRepository)
-    {
-        _repository = repository;
-        _countryRepository = countryRepository;
-        _identityDocumentRepository = identityDocumentRepository;
-    }
-
     public async Task<Result<Guid>> Handle(CreateCountryIdentityDocCommand request, CancellationToken cancellationToken)
     {
         var countryId = new CountryId(request.CountryId);
@@ -53,7 +43,10 @@ public class CreateCountryIdentityDocCommandHandler : ICommandHandler<CreateCoun
             true);
 
         await _repository.AddAsync(entity, cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(entity.Id.Value);
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.CountryIdentityDocument.Prefix, cancellationToken);
+
+        return Result.Success(entity.Id!.Value);
     }
 }

@@ -13,4 +13,5 @@ public interface IIdentityDocumentRepository
     Task DeleteAsync(IdentityDocument entity, CancellationToken cancellationToken);
     Task<List<IdentityDocument>> GetByCriteriaAsync(GetAllIdentityDocumentsQuery request, CancellationToken cancellationToken);
     Task<int> GetCountAsync(GetAllIdentityDocumentsQuery request, CancellationToken cancellationToken);
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

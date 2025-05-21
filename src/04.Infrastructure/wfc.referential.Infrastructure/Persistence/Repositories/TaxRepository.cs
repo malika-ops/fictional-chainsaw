@@ -100,4 +100,10 @@ public class TaxRepository : ITaxRepository
     return filters;
 }
 
+    public async Task<bool> HasTaxRuleDetailsAsync(TaxId taxId, CancellationToken cancellationToken)
+    {
+        return await _context.TaxRuleDetails
+            .AsNoTracking()
+            .AnyAsync(trd => trd.TaxId == taxId, cancellationToken);
+    }
 }

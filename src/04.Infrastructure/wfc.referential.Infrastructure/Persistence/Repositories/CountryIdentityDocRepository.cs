@@ -53,20 +53,19 @@ public class CountryIdentityDocRepository : ICountryIdentityDocRepository
     public async Task<CountryIdentityDoc> AddAsync(CountryIdentityDoc entity, CancellationToken cancellationToken)
     {
         await _context.CountryIdentityDocs.AddAsync(entity, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
         return entity;
     }
 
-    public async Task UpdateAsync(CountryIdentityDoc entity, CancellationToken cancellationToken)
+    public Task UpdateAsync(CountryIdentityDoc entity, CancellationToken cancellationToken)
     {
         _context.CountryIdentityDocs.Update(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(CountryIdentityDoc entity, CancellationToken cancellationToken)
+    public Task DeleteAsync(CountryIdentityDoc entity, CancellationToken cancellationToken)
     {
         _context.CountryIdentityDocs.Remove(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
     public async Task<List<CountryIdentityDoc>> GetFilteredAsync(GetAllCountryIdentityDocsQuery request, CancellationToken cancellationToken)
@@ -116,5 +115,10 @@ public class CountryIdentityDocRepository : ICountryIdentityDocRepository
         }
 
         return filters;
+    }
+
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken) 
+    { 
+        return await _context.SaveChangesAsync(); 
     }
 }

@@ -1,5 +1,4 @@
-﻿using wfc.referential.Application.Cities.Queries.GetAllCities;
-using wfc.referential.Application.Taxes.Queries.GetAllTaxes;
+﻿using wfc.referential.Application.Taxes.Queries.GetAllTaxes;
 using wfc.referential.Domain.TaxAggregate;
 
 namespace wfc.referential.Application.Interfaces;
@@ -16,4 +15,6 @@ public interface ITaxRepository
 
     Task<List<Tax>> GetTaxesByCriteriaAsync(GetAllTaxesQuery request, CancellationToken cancellationToken);
     Task<int> GetCountTotalAsync(GetAllTaxesQuery request, CancellationToken cancellationToken);
+
+    Task<bool> HasTaxRuleDetailsAsync(TaxId taxId, CancellationToken cancellationToken);
 }

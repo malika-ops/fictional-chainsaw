@@ -62,7 +62,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             CodeAr = "ضريبة القيمة المضافة",
             Description = "Value Added Tax applicable to goods and services",
             FixedAmount = 25,
-            Value = 15
+            Rate = 15
         };
 
         // Act
@@ -81,7 +81,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
                     r.CodeAr == payload.CodeAr &&
                     r.Description == payload.Description &&
                     r.FixedAmount == payload.FixedAmount &&
-                    r.Rate == payload.Value),
+                    r.Rate == payload.Rate),
                     It.IsAny<CancellationToken>()
             ),
             Times.Once
@@ -148,7 +148,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             CodeAr = "ضريبة القيمة المضافة",
             Description = "Value Added Tax applicable to goods and services",
             FixedAmount = 32,
-            Value = 15
+            Rate = 15
         };
 
         // Act

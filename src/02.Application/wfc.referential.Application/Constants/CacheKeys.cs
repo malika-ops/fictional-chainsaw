@@ -33,4 +33,16 @@ public static class CacheKeys
     {
         public const string Prefix = InstancePrefix + "ParamType_";
     }
+
+    // 🔹 Entité : IdentityDocuments
+    public static class IdentityDocument
+    {
+        public const string Prefix = InstancePrefix + "IdentityDocument_";
+    }
+
+    // 🔹 Entité : CountryIdentityDocument
+    public static class CountryIdentityDocument
+    {
+        public const string Prefix = InstancePrefix + "CountryIdentityDocument_";
+    }
 }

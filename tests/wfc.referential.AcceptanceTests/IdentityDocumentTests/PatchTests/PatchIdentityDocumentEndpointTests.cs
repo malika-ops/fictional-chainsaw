@@ -48,8 +48,8 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
             IdentityDocumentId.Of(docId),
             "CIN",
             "Carte Nationale",
-            "Original",
-            true);
+            "Original"
+            );
 
         _repoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(existing);
@@ -101,8 +101,8 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
             IdentityDocumentId.Of(docId),
             "CIN",
             "Carte Nationale",
-            null,
-            true);
+            null
+            );
 
         _repoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);

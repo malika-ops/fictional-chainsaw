@@ -16,7 +16,7 @@ public record UpdateTaxCommand : ICommand<Result<Guid>>, ICacheableQuery
     public string CodeAr { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public double FixedAmount { get; init; }
-    public double Value { get; init; }
+    public double Rate { get; init; }
     public bool IsEnabled { get; init; }
     public string CacheKey => $"{nameof(Tax)}_{TaxId}";
     public int CacheExpiration => 5;

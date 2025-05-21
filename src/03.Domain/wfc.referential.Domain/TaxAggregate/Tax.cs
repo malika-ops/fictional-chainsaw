@@ -9,15 +9,15 @@ public class Tax : Aggregate<TaxId>
     public string CodeEn { get; private set; }
     public string CodeAr { get; private set; }
     public string Description { get; private set; }
-    public double FixedAmount { get; private set; }
-    public double Rate { get; private set; }
+    public double? FixedAmount { get; private set; }
+    public double? Rate { get; private set; }
     public bool IsEnabled { get; private set; } = true;
 
     public ICollection<TaxRuleDetail> TaxRuleDetails { get; set; }
     private Tax() { }
 
     public static Tax Create(TaxId id, string code, string codeEn, string codeAr, string description,
-        double fixedAmount, double value)
+        double? fixedAmount, double? rate)
     {
         var tax = new Tax
         {
@@ -27,7 +27,7 @@ public class Tax : Aggregate<TaxId>
             CodeAr = codeAr,
             Description = description,
             FixedAmount = fixedAmount,
-            Rate = value,
+            Rate = rate,
         };
 
         tax.AddDomainEvent(new TaxCreatedEvent(tax));
