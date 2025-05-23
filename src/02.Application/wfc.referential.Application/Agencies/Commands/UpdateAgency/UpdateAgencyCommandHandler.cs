@@ -2,28 +2,26 @@
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.AgencyAggregate.Exceptions;
-using wfc.referential.Domain.CityAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
-using wfc.referential.Domain.SectorAggregate;
 
 namespace wfc.referential.Application.Agencies.Commands.UpdateAgency;
 
 public class UpdateAgencyCommandHandler
-    : ICommandHandler<UpdateAgencyCommand, Result<Guid>>
+    : ICommandHandler<UpdateAgencyCommand, Result<bool>>
 {
     private readonly IAgencyRepository _repo;
 
     public UpdateAgencyCommandHandler(IAgencyRepository repo) => _repo = repo;
 
-    public async Task<Result<Guid>> Handle(UpdateAgencyCommand cmd, CancellationToken ct)
+    public async Task<Result<bool>> Handle(UpdateAgencyCommand cmd, CancellationToken ct)
     {
-        var agency = await _repo.GetByIdAsync(cmd.AgencyId, ct);
+        var agency = await _repo.GetByIdAsync(AgencyId.Of(cmd.AgencyId), ct);
         if (agency is null)
             throw new BusinessException($"Agency [{cmd.AgencyId}] not found.");
 
         // uniqueness on Code
-        var duplicate = await _repo.GetByCodeAsync(cmd.Code, ct);
+        var duplicate = await _repo.GetOneByConditionAsync(a => a.Code == cmd.Code, ct);
         if (duplicate is not null && duplicate.Id != agency.Id)
             throw new AgencyCodeAlreadyExistException(cmd.Code);
 
@@ -43,14 +41,15 @@ public class UpdateAgencyCommandHandler
             cmd.PermissionOfficeChange,
             cmd.Latitude,
             cmd.Longitude,
-            cmd.CityId is null ? null : new CityId(cmd.CityId.Value),
-            cmd.SectorId is null ? null : new SectorId(cmd.SectorId.Value),
-            cmd.AgencyTypeId is null ? null : new ParamTypeId(cmd.AgencyTypeId.Value),
+            cmd.CityId,
+            cmd.SectorId,
+            cmd.AgencyTypeId,
             cmd.SupportAccountId,
             cmd.PartnerId,
             cmd.IsEnabled);
 
-        await _repo.UpdateAsync(agency, ct);
-        return Result.Success(agency.Id.Value);
+        _repo.Update(agency);
+        await _repo.SaveChangesAsync(ct);
+        return Result.Success(true);
     }
 }

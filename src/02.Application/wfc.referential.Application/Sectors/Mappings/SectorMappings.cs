@@ -7,6 +7,7 @@ public class SectorMappings
     public static void Register()
     {
         // Sector mappings
+
         TypeAdapterConfig<Domain.SectorAggregate.Sector, Sectors.Dtos.SectorResponse>
             .NewConfig()
             .Map(dest => dest.SectorId, src => src.Id.Value)

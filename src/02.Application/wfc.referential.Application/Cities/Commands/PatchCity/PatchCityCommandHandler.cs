@@ -19,7 +19,7 @@ public class PatchCityCommandHandler(ICityRepository cityRepository,
 {
     public async Task<Result<Guid>> Handle(PatchCityCommand request, CancellationToken cancellationToken)
     {
-        var city = await cityRepository.GetByIdAsync(request.CityId, cancellationToken);
+        var city = await cityRepository.GetByIdAsync(CityId.Of(request.CityId), cancellationToken);
 
         if (city is null)
         {

@@ -2,7 +2,7 @@
 
 namespace wfc.referential.Application.Currencies.Dtos;
 
-public record CreateCurrencyRequest
+public record CreateCurrencyRequest()
 {
     /// <summary>
     /// A short code for the Currency.

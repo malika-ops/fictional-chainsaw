@@ -19,10 +19,10 @@ public class CityRepository : ICityRepository
     {
         return await _context.Cities.ToListAsync(cancellationToken);
     }
-    public async Task<City?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<City?> GetByIdAsync(CityId id, CancellationToken cancellationToken)
     {
         return await _context.Cities
-            .Where(city => city.Id == CityId.Of(id))
+            .Where(city => city.Id == id)
             .FirstOrDefaultAsync(cancellationToken);
     }
     public async Task<City?> GetByCodeAsync(string cityCode, CancellationToken cancellationToken)

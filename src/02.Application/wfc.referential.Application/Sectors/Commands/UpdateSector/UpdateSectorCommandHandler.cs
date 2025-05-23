@@ -1,6 +1,7 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.SectorAggregate;
 using wfc.referential.Domain.SectorAggregate.Exceptions;
 
@@ -31,7 +32,7 @@ public class UpdateSectorCommandHandler : ICommandHandler<UpdateSectorCommand, G
         if (existingWithCode is not null && existingWithCode.Id.Value != request.SectorId)
             throw new SectorCodeAlreadyExistException(request.Code);
 
-        var city = await _cityRepository.GetByIdAsync(request.CityId, cancellationToken);
+        var city = await _cityRepository.GetByIdAsync(CityId.Of(request.CityId), cancellationToken);
         if (city is null)
             throw new BusinessException($"City with ID {request.CityId} not found");
 

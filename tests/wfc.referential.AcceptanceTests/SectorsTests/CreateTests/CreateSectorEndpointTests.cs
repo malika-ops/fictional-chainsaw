@@ -48,9 +48,9 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
                 var cityId = CityId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
                 var regionId = RegionId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
 
-                _cityRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC"));
+                //_cityRepoMock
+                //    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                //    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC"));
 
 
                 // Plug mocks back in
@@ -191,10 +191,10 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         // Arrange
         var nonExistentCityId = Guid.Parse("99999999-9999-9999-9999-999999999999");
 
-        // Setup country repository to return null for this ID
-        _cityRepoMock
-            .Setup(r => r.GetByIdAsync(nonExistentCityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((City?)null);
+        //// Setup country repository to return null for this ID
+        //_cityRepoMock
+        //    .Setup(r => r.GetByIdAsync(nonExistentCityId, It.IsAny<CancellationToken>()))
+        //    .ReturnsAsync((City?)null);
 
         var payload = new
         {

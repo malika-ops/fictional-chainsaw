@@ -87,7 +87,7 @@ public class CurrencyTests
         currency.ClearDomainEvents(); // Ignore the creation event
 
         // Act
-        currency.Patch(currency.Code, currency.CodeAR, currency.CodeEN, currency.Name, currency.CodeIso);
+        currency.Patch(currency.Code, currency.CodeAR, currency.CodeEN, currency.Name, currency.CodeIso, true);
 
         // Assert
         var domainEvent = Assert.Single(currency.DomainEvents);

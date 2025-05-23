@@ -2,6 +2,7 @@
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.SectorAggregate;
 using wfc.referential.Domain.SectorAggregate.Exceptions;
 
@@ -28,7 +29,7 @@ public class CreateSectorCommandHandler : ICommandHandler<CreateSectorCommand, R
             throw new SectorCodeAlreadyExistException(request.Code);
 
         // Check if the City exist
-        var city = await _cityRepository.GetByIdAsync(request.CityId, cancellationToken);
+        var city = await _cityRepository.GetByIdAsync(CityId.Of(request.CityId), cancellationToken);
         if (city is null)
             throw new BusinessException($"City with ID {request.CityId} not found");
 

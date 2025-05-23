@@ -319,7 +319,6 @@ public static class DbInitializer
                 permissionOfficeChange: "AUTH-001",
                 latitude: 33.589886m,
                 longitude: -7.603869m,
-                isEnabled: true,
                 cityId: casa.Id,
                 sectorId: null,
                 agencyTypeId: null,
@@ -343,7 +342,6 @@ public static class DbInitializer
                 permissionOfficeChange: "AUTH-002",
                 latitude: 34.020882m,
                 longitude: -6.841650m,
-                isEnabled: true,
                 cityId: rabat.Id,
                 sectorId: null,
                 agencyTypeId: null,
@@ -418,8 +416,8 @@ public static class DbInitializer
             var type3G = agencyTypeDef.ParamTypes.FirstOrDefault(p => p.Value == "3G");
             var typeStandard = agencyTypeDef.ParamTypes.FirstOrDefault(p => p.Value == "Standard");
 
-            agency1.SetAgencyType(type3G!.Id!);
-            agency2.SetAgencyType(typeStandard!.Id!);
+            //agency1.SetAgencyType(type3G!.Id!);
+            //agency2.SetAgencyType(typeStandard!.Id!);
             context.SaveChanges();
 
         }

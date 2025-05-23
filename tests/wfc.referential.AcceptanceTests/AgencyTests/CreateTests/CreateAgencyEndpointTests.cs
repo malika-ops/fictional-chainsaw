@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
+using wfc.referential.Domain.CurrencyAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTests.CreateTests;
@@ -145,9 +147,9 @@ public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var existing = Agency.Create(
             AgencyId.Of(Guid.NewGuid()), duplicate, "Old Agency", "OLD",
             "addr", null, "phone", "", "sheet", "acc", "", "", "10000", "",
-            null, null, true, null, null, null, null, null);
+            null, null,  null, null, null, null, null);
 
-        _repoMock.Setup(r => r.GetByCodeAsync(duplicate, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Agency, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(existing);
 
         var payload = new
@@ -173,5 +175,6 @@ public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Pro
         _repoMock.Verify(r => r.AddAsync(It.IsAny<Agency>(),
                                          It.IsAny<CancellationToken>()),
         Times.Never);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

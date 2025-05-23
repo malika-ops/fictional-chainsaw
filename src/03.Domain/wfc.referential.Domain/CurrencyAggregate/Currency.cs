@@ -71,17 +71,19 @@ public class Currency : Aggregate<CurrencyId>
     }
 
     public void Patch(
-            string code,
-            string codeAR,
-            string codeEN,
-            string name,
-            int codeiso)
+            string? code,
+            string? codeAR,
+            string? codeEN,
+            string? name,
+            int? codeiso,
+            bool? isEnabled)
     {
-        Code = code;
-        CodeAR = codeAR;
-        CodeEN = codeEN;
-        Name = name;
-        CodeIso = codeiso;
+        Code = code ?? Code;
+        CodeAR = codeAR ?? CodeAR;
+        CodeEN = codeEN ?? CodeEN;
+        Name = name ?? Name;
+        CodeIso = codeiso ?? CodeIso;
+        IsEnabled = isEnabled ?? IsEnabled;
 
         // Raise the patch event
         AddDomainEvent(new CurrencyPatchedEvent(

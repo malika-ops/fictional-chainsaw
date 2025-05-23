@@ -1,4 +1,5 @@
-﻿using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CurrencyAggregate;
@@ -9,10 +10,12 @@ namespace wfc.referential.Application.Currencies.Commands.PatchCurrency;
 public class PatchCurrencyCommandHandler : ICommandHandler<PatchCurrencyCommand, Result<Guid>>
 {
     private readonly ICurrencyRepository _currencyRepository;
+    private readonly ICacheService _cache;
 
-    public PatchCurrencyCommandHandler(ICurrencyRepository currencyRepository)
+    public PatchCurrencyCommandHandler(ICurrencyRepository currencyRepository, ICacheService cache)
     {
         _currencyRepository = currencyRepository;
+        _cache = cache;
     }
 
     public async Task<Result<Guid>> Handle(PatchCurrencyCommand request, CancellationToken cancellationToken)
@@ -36,35 +39,21 @@ public class PatchCurrencyCommandHandler : ICommandHandler<PatchCurrencyCommand,
         if (request.CodeIso.HasValue && request.CodeIso.Value != currency.CodeIso)
         {
             var existingCurrencyByCodeIso = await _currencyRepository.GetByCodeIsoAsync(request.CodeIso.Value, cancellationToken);
-            if (existingCurrencyByCodeIso != null && existingCurrencyByCodeIso.Id.Value != request.CurrencyId)
+            if (existingCurrencyByCodeIso != null && existingCurrencyByCodeIso.Id!.Value != request.CurrencyId)
             {
                 throw new CodeIsoAlreadyExistException(request.CodeIso.Value);
             }
         }
 
-        // Update the currency with partial data
-        string code = request.Code ?? currency.Code;
-        string name = request.Name ?? currency.Name;
-        string codeAR = request.CodeAR ?? currency.CodeAR;
-        string codeEN = request.CodeEN ?? currency.CodeEN;
-        int codeiso = request.CodeIso ?? currency.CodeIso;
+        // Patch the currency with partial data
 
-        currency.Patch(code, codeAR, codeEN, name, codeiso);
+        currency.Patch(request.Code, request.CodeAR, request.CodeEN, request.Name, request.CodeIso , request.IsEnabled);
 
-        if (request.IsEnabled.HasValue)
-        {
-            if (request.IsEnabled.Value && !currency.IsEnabled)
-            {
-                currency.Activate();
-            }
-            else if (!request.IsEnabled.Value && currency.IsEnabled)
-            {
-                currency.Disable();
-            }
-        }
+     
+        await _currencyRepository.SaveChangesAsync(cancellationToken);
 
-        await _currencyRepository.UpdateCurrencyAsync(currency, cancellationToken);
+        await _cache.RemoveByPrefixAsync("ReferentialCache:currencies_", cancellationToken);
 
-        return Result.Success(currency.Id.Value);
+        return Result.Success(currency.Id!.Value);
     }
 }

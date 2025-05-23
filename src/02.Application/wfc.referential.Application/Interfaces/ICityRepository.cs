@@ -7,7 +7,7 @@ namespace wfc.referential.Application.Interfaces;
 public interface ICityRepository
 {
     Task<List<City>> GetAllCitiesAsync(CancellationToken cancellationToken);
-    Task<City?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<City?> GetByIdAsync(CityId id, CancellationToken cancellationToken);
     Task<City?> GetByCodeAsync(string cityCode, CancellationToken cancellationToken);
 
     Task<City> AddCityAsync(City city, CancellationToken cancellationToken);

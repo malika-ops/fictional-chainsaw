@@ -16,4 +16,6 @@ public interface ICurrencyRepository
     Task<bool> IsCurrencyAssociatedWithCountryAsync(CurrencyId id, CancellationToken cancellationToken);
     Task<List<Currency>> GetCurrenciesByCriteriaAsync(GetAllCurrenciesQuery request, CancellationToken cancellationToken);
     Task<int> GetCountTotalAsync(GetAllCurrenciesQuery request, CancellationToken cancellationToken);
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+
 }

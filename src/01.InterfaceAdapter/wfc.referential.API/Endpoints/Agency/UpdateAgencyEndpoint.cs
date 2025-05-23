@@ -8,7 +8,7 @@ using wfc.referential.Application.Agencies.Dtos;
 namespace wfc.referential.API.Endpoints.Agency;
 
 public class UpdateAgencyEndpoint(IMediator _mediator)
-    : Endpoint<UpdateAgencyRequest, Guid>
+    : Endpoint<UpdateAgencyRequest, bool>
 {
     public override void Configure()
     {
@@ -20,9 +20,10 @@ public class UpdateAgencyEndpoint(IMediator _mediator)
             s.Description = "Updates the agency identified by {AgencyId} with supplied body fields.";
             s.Params["AgencyId"] = "Agency GUID (from route)";
 
-            s.Response<Guid>(200, "Returns the updated AgencyId");
+            s.Response<bool>(200, "Returns the updated AgencyId");
             s.Response(400, "Validation or business rule failure");
             s.Response(500, "Unexpected server error");
+            s.Response(409, "Conflict with an existing Agency");
         });
         Options(o => o.WithTags(EndpointGroups.Agencies));
     }

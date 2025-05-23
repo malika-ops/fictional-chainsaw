@@ -3,15 +3,15 @@ using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Currencies.Commands.UpdateCurrency;
 
-public class UpdateCurrencyCommand : ICommand<Result<Guid>>
+public record UpdateCurrencyCommand : ICommand<Result<Guid>>
 {
-    public Guid CurrencyId { get; set; }
-    public string Code { get; set; }
-    public string Name { get; set; }
-    public string CodeAR { get; set; }
-    public string CodeEN { get; set; }
-    public int CodeIso { get; set; }
-    public bool IsEnabled { get; set; }
+    public Guid CurrencyId { get; init; }
+    public string Code { get; init; }
+    public string Name { get; init; }
+    public string CodeAR { get; init; }
+    public string CodeEN { get; init; }
+    public int CodeIso { get; init; } 
+    public bool IsEnabled { get; init;}
 
     public UpdateCurrencyCommand(
         Guid currencyId,

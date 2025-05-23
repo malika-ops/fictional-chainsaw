@@ -74,7 +74,7 @@ public class PatchPartnerAccountCommandHandler : ICommandHandler<PatchPartnerAcc
         var updatedShortName = request.ShortName ?? partnerAccount.ShortName;
         var updatedAccountBalance = request.AccountBalance ?? partnerAccount.AccountBalance;
 
-        // Update via domain methods
+        // Patch via domain methods
         partnerAccount.Patch(
             updatedAccountNumber,
             updatedRIB,

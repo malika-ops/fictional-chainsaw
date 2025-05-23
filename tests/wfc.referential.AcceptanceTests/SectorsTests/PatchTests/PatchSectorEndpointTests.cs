@@ -38,7 +38,7 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
                 services.RemoveAll<ICityRepository>();
                 services.RemoveAll<ICacheService>();
 
-                // Default noop for Update
+                // Default noop for Patch
                 _repoMock
                     .Setup(r => r.UpdateSectorAsync(It.IsAny<Sector>(),
                                                    It.IsAny<CancellationToken>()))
@@ -49,9 +49,9 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
                 var cityId = CityId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
                 var regionId = RegionId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
 
-                _cityRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC"));
+                //_cityRepoMock
+                //    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                //    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC"));
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(_cityRepoMock.Object);
@@ -242,10 +242,10 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(sid => sid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(sector);
 
-        // Setup country repository to return null for this ID
-        _cityRepoMock
-            .Setup(r => r.GetByIdAsync(nonExistentCityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((City?)null);
+        //// Setup country repository to return null for this ID
+        //_cityRepoMock
+        //    .Setup(r => r.GetByIdAsync(nonExistentCityId, It.IsAny<CancellationToken>()))
+        //    .ReturnsAsync((City?)null);
 
         var payload = new
         {

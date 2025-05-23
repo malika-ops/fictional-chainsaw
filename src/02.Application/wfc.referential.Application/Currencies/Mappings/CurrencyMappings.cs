@@ -13,77 +13,16 @@ public class CurrencyMappings
 {
     public static void Register()
     {
-        TypeAdapterConfig<CurrencyResponse, Currency>.NewConfig()
-            .ConstructUsing(src => Currency.Create(
-                new CurrencyId(src.CurrencyId),
-                src.Code,
-                src.CodeAR,
-                src.CodeEN,
-                src.Name,
-                src.CodeIso)
-            );
 
         TypeAdapterConfig<Currency, CurrencyResponse>
             .NewConfig()
-            .Map(dest => dest.CurrencyId, src => src.Id.Value)
-            .Map(dest => dest.CountriesCount, src => src.Countries.Count)
-            .Map(dest => dest.CodeAR, src => src.CodeAR)
-            .Map(dest => dest.CodeEN, src => src.CodeEN)
-            .Map(dest => dest.CodeIso, src => src.CodeIso)
-            .Map(dest => dest.IsEnabled, src => src.IsEnabled);
+            .Map(dest => dest.CountriesCount, src => src.Countries.Count);
 
-        TypeAdapterConfig<CreateCurrencyRequest, CreateCurrencyCommand>
+        TypeAdapterConfig<CurrencyId, Guid>
             .NewConfig()
-            .ConstructUsing(src => new CreateCurrencyCommand(
-                src.Code,
-                src.Name,
-                src.CodeAR,
-                src.CodeEN,
-                src.CodeIso
-            ));
+            .Map(dest => dest, src => src.Value);
 
-        TypeAdapterConfig<DeleteCurrencyRequest, DeleteCurrencyCommand>
-            .NewConfig()
-            .ConstructUsing(src => new DeleteCurrencyCommand(src.CurrencyId));
-
-        TypeAdapterConfig<UpdateCurrencyRequest, UpdateCurrencyCommand>
-            .NewConfig()
-            .ConstructUsing(src => new UpdateCurrencyCommand(
-                src.CurrencyId,
-                src.Code,
-                src.Name,
-                src.IsEnabled,
-                src.CodeAR,
-                src.CodeEN,
-                src.CodeIso
-            ));
-
-        TypeAdapterConfig<GetAllCurrenciesRequest, GetAllCurrenciesQuery>
-            .NewConfig()
-            .ConstructUsing(src => new GetAllCurrenciesQuery(
-                src.PageNumber ?? 1,
-                src.PageSize ?? 10,
-                src.Code,
-                src.CodeAR,
-                src.CodeEN,
-                src.Name,
-                src.CodeIso,
-                src.IsEnabled
-            ));
-
-        TypeAdapterConfig<PatchCurrencyRequest, PatchCurrencyCommand>
-            .NewConfig()
-            .IgnoreNullValues(true)
-            .MapToConstructor(true)
-            .ConstructUsing(src => new PatchCurrencyCommand(
-                src.CurrencyId,
-                src.Code,
-                src.Name,
-                src.IsEnabled,
-                src.CodeAR,
-                src.CodeEN,
-                src.CodeIso
-            ));
+     
 
         TypeAdapterConfig<PatchCurrencyCommand, Currency>
             .NewConfig()

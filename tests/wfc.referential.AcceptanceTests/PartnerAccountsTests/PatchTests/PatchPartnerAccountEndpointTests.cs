@@ -38,7 +38,7 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
                 services.RemoveAll<IParamTypeRepository>();
                 services.RemoveAll<ICacheService>();
 
-                // Default noop for Update
+                // Default noop for Patch
                 _repoMock
                     .Setup(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
                                                            It.IsAny<CancellationToken>()))

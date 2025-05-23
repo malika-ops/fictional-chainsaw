@@ -14,7 +14,7 @@ public class DeleteCityCommandHandler(ICityRepository _cityRepository, ICacheSer
 {
     public async Task<Result<bool>> Handle(DeleteCityCommand request, CancellationToken cancellationToken)
     {
-        var city = await _cityRepository.GetByIdAsync(CityId.Of(request.CityId).Value, cancellationToken);
+        var city = await _cityRepository.GetByIdAsync(CityId.Of(request.CityId), cancellationToken);
 
         if (city is null)
             throw new ResourceNotFoundException($"{nameof(City)} with Id : {request.CityId} is not found");

@@ -49,9 +49,9 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
                 var cityId = CityId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
                 var regionId = RegionId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
 
-                _cityRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC"));
+                //_cityRepoMock
+                //    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                //    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC"));
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(_cityRepoMock.Object);

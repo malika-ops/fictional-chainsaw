@@ -65,8 +65,8 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         var id = Guid.NewGuid();
         var oldCity = DummyCity(id, "SEK", "Swedish Krona");
 
-        _repoCityMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(oldCity);
+        //_repoCityMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        //         .ReturnsAsync(oldCity);
         City? updated = null;
         _repoCityMock.Setup(r => r.UpdateCityAsync(oldCity,
                                                        It.IsAny<CancellationToken>()))
@@ -162,8 +162,8 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             "America/New_York"
         );
 
-        _repoCityMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(target);
+        //_repoCityMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        //         .ReturnsAsync(target);
 
         _repoCityMock.Setup(r => r.GetByCodeAsync("target", It.IsAny<CancellationToken>()))
                  .ReturnsAsync(existing); // duplicate code

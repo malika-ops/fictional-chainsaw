@@ -61,7 +61,7 @@ public record PatchSupportAccountCommandHandler : ICommandHandler<PatchSupportAc
         var updatedAccountingNumber = request.AccountingNumber ?? supportAccount.AccountingNumber;
         var updatedSupportAccountType = request.SupportAccountType ?? supportAccount.SupportAccountType;
 
-        // Update via domain methods
+        // Patch via domain methods
         supportAccount.Patch(
             updatedCode,
             updatedName,

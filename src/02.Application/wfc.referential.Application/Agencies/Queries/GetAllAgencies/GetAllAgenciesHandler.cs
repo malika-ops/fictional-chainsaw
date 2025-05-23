@@ -14,12 +14,9 @@ public class GetAllAgenciesHandler
     public GetAllAgenciesHandler(IAgencyRepository repo) => _repo = repo;
 
     public async Task<PagedResult<GetAgenciesResponse>> Handle(
-        GetAllAgenciesQuery q, CancellationToken ct)
+        GetAllAgenciesQuery agencyQuery, CancellationToken ct)
     {
-        var agencies = await _repo.GetAllAgenciesPaginatedAsyncFiltered(q, ct);
-        var totalCount = await _repo.GetCountTotalAsync(q, ct);
-
-        var dtos = agencies.Adapt<List<GetAgenciesResponse>>();
-        return new PagedResult<GetAgenciesResponse>(dtos, totalCount, q.PageNumber, q.PageSize);
+        var agencies = await _repo.GetPagedByCriteriaAsync(agencyQuery, agencyQuery.PageNumber, agencyQuery.PageSize, ct);
+        return new PagedResult<GetAgenciesResponse>(agencies.Items.Adapt< List<GetAgenciesResponse>>(), agencies.TotalCount, agencies.PageNumber, agencies.PageSize);
     }
 }

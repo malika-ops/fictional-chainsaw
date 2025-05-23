@@ -34,7 +34,7 @@ public class PatchBankCommandHandler : ICommandHandler<PatchBankCommand, Guid>
         var updatedName = request.Name ?? bank.Name;
         var updatedAbbreviation = request.Abbreviation ?? bank.Abbreviation;
 
-        // Update via domain methods
+        // Patch via domain methods
         bank.Patch(updatedCode, updatedName, updatedAbbreviation);
 
         // Handle IsEnabled status changes separately through the proper domain methods

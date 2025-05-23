@@ -1,4 +1,5 @@
 ﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.Repositories;
 using BuildingBlocks.Core.Behaviors.Interceptors;
 using BuildingBlocks.Infrastructure.CachingManagement;
 using Microsoft.EntityFrameworkCore;
@@ -70,6 +71,7 @@ public static class DependencyInjection
                 }
             }
         }
+        builder.Services.AddScoped(typeof(IRepositoryBase<,>), typeof(BaseRepository<,>));
 
         builder.Services.AddScoped<IMonetaryZoneRepository, MonetaryZoneRepository>();
         builder.Services.AddScoped<ICountryRepository, CountryRepository>();
@@ -89,7 +91,6 @@ public static class DependencyInjection
         builder.Services.AddScoped<IIdentityDocumentRepository, IdentityDocumentRepository>();
         builder.Services.AddScoped<ICorridorRepository, CorridorRepository>();
         builder.Services.AddScoped<ITaxRuleDetailRepository, TaxRuleDetailRepository>();
-
         builder.Services.AddScoped<ICountryIdentityDocRepository, CountryIdentityDocRepository>();
         builder.Services.AddScoped<ITierRepository, TierRepository>();
         builder.Services.AddScoped<IAgencyTierRepository, AgencyTierRepository>();

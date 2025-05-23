@@ -4,7 +4,7 @@ using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Agencies.Commands.PatchAgency;
 
-public record PatchAgencyCommand : ICommand<Result<Guid>>
+public record PatchAgencyCommand : ICommand<Result<bool>>
 {
     public Guid AgencyId { get; init; }
 

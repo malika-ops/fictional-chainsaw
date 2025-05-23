@@ -1,6 +1,7 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.SectorAggregate;
 using wfc.referential.Domain.SectorAggregate.Exceptions;
 
@@ -41,13 +42,13 @@ public class PatchSectorCommandHandler : ICommandHandler<PatchSectorCommand, Gui
         var city = sector.City;
         if (request.CityId.HasValue)
         {
-            var updatedCity = await _cityRepository.GetByIdAsync(request.CityId.Value, cancellationToken);
+            var updatedCity = await _cityRepository.GetByIdAsync(CityId.Of(request.CityId.Value), cancellationToken);
             if (updatedCity == null)
                 throw new BusinessException($"City with ID {request.CityId} not found");
             city = updatedCity;
         }
 
-        // Update via domain methods instead of property setters
+        // Patch via domain methods instead of property setters
         sector.Update(updatedCode, updatedName, city);
 
         // Additionally call patch to raise the event

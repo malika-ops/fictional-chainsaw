@@ -27,7 +27,6 @@ public class PatchMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZo
 
         monetaryZone.Patch(request.Code , request.Name , request.Description , request.IsEnabled);
 
-        await _monetaryZoneRepository.UpdateMonetaryZoneAsync(monetaryZone, cancellationToken);
         await _monetaryZoneRepository.SaveChangesAsync(cancellationToken);
 
         return Result.Success(monetaryZone.Id!.Value);

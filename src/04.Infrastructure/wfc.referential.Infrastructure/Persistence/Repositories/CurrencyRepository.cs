@@ -16,6 +16,8 @@ public class CurrencyRepository : ICurrencyRepository
         _context = context;
     }
 
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+       => _context.SaveChangesAsync(cancellationToken);
     public async Task<List<Currency>> GetAllCurrenciesAsync(CancellationToken cancellationToken)
     {
         return await _context.Currencies.ToListAsync(cancellationToken);

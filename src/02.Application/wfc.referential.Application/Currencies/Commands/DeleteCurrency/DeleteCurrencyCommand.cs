@@ -3,9 +3,9 @@ using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Currencies.Commands.DeleteCurrency;
 
-public class DeleteCurrencyCommand : ICommand<Result<bool>>
+public record DeleteCurrencyCommand : ICommand<Result<bool>>
 {
-    public string CurrencyId { get; set; }
+    public string CurrencyId { get; init; }
 
     public DeleteCurrencyCommand(string currencyId)
     {

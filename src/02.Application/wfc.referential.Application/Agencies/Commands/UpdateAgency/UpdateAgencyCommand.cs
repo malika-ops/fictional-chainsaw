@@ -3,7 +3,7 @@ using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Agencies.Commands.UpdateAgency;
 
-public record UpdateAgencyCommand : ICommand<Result<Guid>>
+public record UpdateAgencyCommand : ICommand<Result<bool>>
 {
     public Guid AgencyId { get; set; }
 

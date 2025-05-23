@@ -13,10 +13,5 @@ public class PatchAgencyCommandValidator : AbstractValidator<PatchAgencyCommand>
         RuleFor(x => new { x.CityId, x.SectorId })
           .Must(v => !(v.CityId.HasValue && v.SectorId.HasValue))
           .WithMessage("CityId and SectorId are mutually exclusive.");
-
-        RuleFor(x => new { x.CityId, x.SectorId })
-          .Must(v => (v.CityId.HasValue || v.SectorId.HasValue) || // none supplied is fine (no change)
-                     !(v.CityId.HasValue ^ v.SectorId.HasValue))    // but not both
-          .WithMessage("Provide at most one of CityId or SectorId.");
     }
 }

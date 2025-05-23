@@ -182,7 +182,7 @@ public class GetAllCountryIdentityDocsEndpointTests : IClassFixture<WebApplicati
                         It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
 
-        // Update to use GetAllCountriesAsync instead of GetAllCountriesQueryable
+        // Patch to use GetAllCountriesAsync instead of GetAllCountriesQueryable
         _countryRepoMock.Setup(r => r.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Country> { country });
 
@@ -225,7 +225,7 @@ public class GetAllCountryIdentityDocsEndpointTests : IClassFixture<WebApplicati
                         It.IsAny<CancellationToken>()))
                 .ReturnsAsync(list.Length);
 
-        // Update to use GetAllCountriesAsync instead of GetAllCountriesQueryable
+        // Patch to use GetAllCountriesAsync instead of GetAllCountriesQueryable
         _countryRepoMock.Setup(r => r.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Country>());
 

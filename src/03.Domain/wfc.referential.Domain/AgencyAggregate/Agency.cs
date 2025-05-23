@@ -54,7 +54,6 @@ public class Agency : Aggregate<AgencyId>
         string permissionOfficeChange,
         decimal? latitude,
         decimal? longitude,
-        bool isEnabled,
         CityId? cityId,
         SectorId? sectorId,
         ParamTypeId? agencyTypeId,
@@ -80,7 +79,6 @@ public class Agency : Aggregate<AgencyId>
             PermissionOfficeChange = permissionOfficeChange,
             Latitude = latitude,
             Longitude = longitude,
-            IsEnabled = isEnabled,
             CityId = cityId,
             SectorId = sectorId,
             AgencyTypeId = agencyTypeId,
@@ -98,12 +96,6 @@ public class Agency : Aggregate<AgencyId>
         return agency;
     }
 
-    public void SetAgencyType(ParamTypeId typeId)
-    {
-        AgencyTypeId = typeId;
-
-        // event to be added
-    }
 
     public void Update(
     string code,
@@ -121,18 +113,18 @@ public class Agency : Aggregate<AgencyId>
     string permissionOfficeChange,
     decimal? latitude,
     decimal? longitude,
-    CityId? cityId,
-    SectorId? sectorId,
-    ParamTypeId? agencyTypeId,
+    Guid? cityId,
+    Guid? sectorId,
+    Guid? agencyTypeId,
     string? supportAccountId,
     string? partnerId,
-    bool isEnabled)
+    bool? isEnabled)
     {
         Code = code;
         Name = name;
-        Abbreviation = abbreviation;
+        Abbreviation  = abbreviation;
         Address1 = address1;
-        Address2 = address2;
+        Address2 = address2 ?? Address2;
         Phone = phone;
         Fax = fax;
         AccountingSheetName = accountingSheetName;
@@ -141,15 +133,15 @@ public class Agency : Aggregate<AgencyId>
         MoneyGramPassword = moneyGramPassword;
         PostalCode = postalCode;
         PermissionOfficeChange = permissionOfficeChange;
-        Latitude = latitude;
-        Longitude = longitude;
+        Latitude = latitude ?? Latitude;
+        Longitude = longitude ?? Longitude;
 
-        CityId = cityId;
-        SectorId = sectorId;
-        AgencyTypeId = agencyTypeId;
-        SupportAccountId = supportAccountId;
-        PartnerId = partnerId;
-        IsEnabled = isEnabled;
+        CityId = cityId.HasValue ? CityId.Of(cityId.Value) : CityId;
+        SectorId = sectorId.HasValue ? SectorId.Of(sectorId.Value) : SectorId;
+        AgencyTypeId = agencyTypeId.HasValue ? ParamTypeId.Of(agencyTypeId.Value) : AgencyTypeId;
+        SupportAccountId = supportAccountId ?? SupportAccountId;
+        PartnerId = partnerId ?? PartnerId;
+        IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new AgencyUpdatedEvent(
             Id!.Value,
@@ -170,11 +162,60 @@ public class Agency : Aggregate<AgencyId>
 
     public void Patch()
     {
+       
+    }
+
+    public void Patch(
+    string? code,
+    string? name,
+    string? abbreviation,
+    string? address1,
+    string? address2,
+    string? phone,
+    string? fax,
+    string? accountingSheetName,
+    string? accountingAccountNumber,
+    string? moneyGramReferenceNumber,
+    string? moneyGramPassword,
+    string? postalCode,
+    string? permissionOfficeChange,
+    decimal? latitude,
+    decimal? longitude,
+    Guid? cityId,
+    Guid? sectorId,
+    Guid? agencyTypeId,
+    string? supportAccountId,
+    string? partnerId,
+    bool? isEnabled)
+    {
+        Code = code ?? Code;
+        Name = name ?? Name;
+        Abbreviation = abbreviation ?? Abbreviation;
+        Address1 = address1 ?? Address1;
+        Address2 = address2 ?? Address2;
+        Phone = phone ?? Phone;
+        Fax = fax ?? Fax;
+        AccountingSheetName = accountingSheetName ?? AccountingSheetName;
+        AccountingAccountNumber = accountingAccountNumber ?? AccountingAccountNumber;
+        MoneyGramReferenceNumber = moneyGramReferenceNumber ?? MoneyGramReferenceNumber;
+        MoneyGramPassword = moneyGramPassword ?? MoneyGramPassword;
+        PostalCode = postalCode ?? PostalCode;
+        PermissionOfficeChange = permissionOfficeChange ?? PermissionOfficeChange;
+        Latitude = latitude ?? Latitude;
+        Longitude = longitude ?? Longitude;
+
+        CityId = cityId.HasValue ? CityId.Of(cityId.Value) : CityId;
+        SectorId = sectorId.HasValue ? SectorId.Of(sectorId.Value) : SectorId;
+        AgencyTypeId = agencyTypeId.HasValue ? ParamTypeId.Of(agencyTypeId.Value) : AgencyTypeId;
+        SupportAccountId = supportAccountId ?? SupportAccountId;
+        PartnerId = partnerId ?? PartnerId;
+        IsEnabled = isEnabled ?? IsEnabled;
+
         AddDomainEvent(new AgencyPatchedEvent(
-            Id!.Value,
-            Code,
-            Name,
-            DateTime.UtcNow));
+           Id!.Value,
+           Code,
+           Name,
+           DateTime.UtcNow));
     }
 
 }

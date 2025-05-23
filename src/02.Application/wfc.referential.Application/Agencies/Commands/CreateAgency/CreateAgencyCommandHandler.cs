@@ -17,36 +17,37 @@ public class CreateAgencyCommandHandler : ICommandHandler<CreateAgencyCommand, R
         => _agencyRepository = repository;
 
     // test
-    public async Task<Result<Guid>> Handle(CreateAgencyCommand c, CancellationToken ct)
+    public async Task<Result<Guid>> Handle(CreateAgencyCommand command, CancellationToken ct)
     {
-        if (await _agencyRepository.GetByCodeAsync(c.Code, ct) is not null)
-            throw new AgencyCodeAlreadyExistException(c.Code);
+        var existingAgency = await _agencyRepository.GetOneByConditionAsync(a => a.Code == command.Code, ct);
+        if (existingAgency is not null)
+            throw new AgencyCodeAlreadyExistException(command.Code);
 
         var agency = Agency.Create(
             AgencyId.Of(Guid.NewGuid()),
-            c.Code,
-            c.Name,
-            c.Abbreviation,
-            c.Address1,
-            c.Address2,
-            c.Phone,
-            c.Fax,
-            c.AccountingSheetName,
-            c.AccountingAccountNumber,
-            c.MoneyGramReferenceNumber,
-            c.MoneyGramPassword,
-            c.PostalCode,
-            c.PermissionOfficeChange,
-            c.Latitude,
-            c.Longitude,
-            true,
-            c.CityId.HasValue ? CityId.Of(c.CityId.Value) : null,
-            c.SectorId.HasValue ? SectorId.Of(c.SectorId.Value) : null,
-            c.AgencyTypeId.HasValue ? ParamTypeId.Of(c.AgencyTypeId.Value) : null,
-            c.SupportAccountId,
-            c.PartnerId);
+            command.Code,
+            command.Name,
+            command.Abbreviation,
+            command.Address1,
+            command.Address2,
+            command.Phone,
+            command.Fax,
+            command.AccountingSheetName,
+            command.AccountingAccountNumber,
+            command.MoneyGramReferenceNumber,
+            command.MoneyGramPassword,
+            command.PostalCode,
+            command.PermissionOfficeChange,
+            command.Latitude,
+            command.Longitude,
+            command.CityId.HasValue ? CityId.Of(command.CityId.Value) : null,
+            command.SectorId.HasValue ? SectorId.Of(command.SectorId.Value) : null,
+            command.AgencyTypeId.HasValue ? ParamTypeId.Of(command.AgencyTypeId.Value) : null,
+            command.SupportAccountId,
+            command.PartnerId);
 
         await _agencyRepository.AddAsync(agency, ct);
+        await _agencyRepository.SaveChangesAsync(ct);
         return Result.Success(agency.Id!.Value);
     }
 }
