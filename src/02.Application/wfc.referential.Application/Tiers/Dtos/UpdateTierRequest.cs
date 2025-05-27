@@ -14,7 +14,7 @@ public record UpdateTierRequest
 
     /// <summary>Description.</summary>
     /// <example>Tiers for “Code AMU” products</example>
-    [Required] public string Description { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
 
     /// <summary>Whether the tier is enabled.</summary>
     public bool IsEnabled { get; init; } = true;

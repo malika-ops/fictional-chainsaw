@@ -8,15 +8,22 @@ namespace wfc.referential.Application.Tiers.Queries.GetAllTiers;
 
 public class GetAllTiersQueryHandler : IQueryHandler<GetAllTiersQuery, PagedResult<TierResponse>>
 {
-    private readonly ITierRepository _repo;
-    public GetAllTiersQueryHandler(ITierRepository repo) => _repo = repo;
-
-    public async Task<PagedResult<TierResponse>> Handle(GetAllTiersQuery q, CancellationToken ct)
+    private readonly ITierRepository _tierRepo;
+    public GetAllTiersQueryHandler(ITierRepository tierRepo)
     {
-        var tiers = await _repo.GetFilteredTiersAsync(q, ct);
-        var total = await _repo.GetCountTotalAsync(q, ct);
+        _tierRepo = tierRepo;
+    }
 
-        var dto = tiers.Adapt<List<TierResponse>>();
-        return new PagedResult<TierResponse>(dto, total, q.PageNumber, q.PageSize);
+    public async Task<PagedResult<TierResponse>> Handle(GetAllTiersQuery tierQuery, CancellationToken ct)
+    {
+        var tiers = await _tierRepo.GetPagedByCriteriaAsync(tierQuery, 
+            tierQuery.PageNumber, 
+            tierQuery.PageSize, 
+            ct);
+
+        return new PagedResult<TierResponse>(tiers.Items.Adapt<List<TierResponse>>(), 
+            tiers.TotalCount, 
+            tiers.PageNumber, 
+            tiers.PageSize);
     }
 }

@@ -3,28 +3,31 @@ using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TierAggregate;
+using wfc.referential.Domain.TierAggregate.Exceptions;
 
 namespace wfc.referential.Application.Tiers.Commands.UpdateTier;
 
-public class UpdateTierCommandHandler : ICommandHandler<UpdateTierCommand, Result<Guid>>
+public class UpdateTierCommandHandler : ICommandHandler<UpdateTierCommand, Result<bool>>
 {
-    private readonly ITierRepository _repo;
-    public UpdateTierCommandHandler(ITierRepository repo) => _repo = repo;
+    private readonly ITierRepository _tierRepo;
+    public UpdateTierCommandHandler(ITierRepository tierRepo) => _tierRepo = tierRepo;
 
-    public async Task<Result<Guid>> Handle(UpdateTierCommand cmd, CancellationToken ct)
+    public async Task<Result<bool>> Handle(UpdateTierCommand cmd, CancellationToken ct)
     {
-        var tier = await _repo.GetByIdAsync(new TierId(cmd.TierId), ct);
-        if (tier is null)
-            throw new BusinessException("Tier not found.");
+        var tierId = TierId.Of(cmd.TierId);
 
-        var nameDuplicate = await _repo.GetByNameAsync(cmd.Name, ct);
-        if (nameDuplicate is not null &&
-            nameDuplicate.Id != tier.Id)
-            throw new BusinessException($"Tier '{cmd.Name}' already exists.");
+        var tier = await _tierRepo.GetByIdAsync(tierId, ct) 
+            ?? throw new ResourceNotFoundException($"Tier with id '{cmd.TierId}' not found.");
+
+        var existingTier = await _tierRepo.GetOneByConditionAsync(t => t.Name.ToLower().Equals(cmd.Name.ToLower()), ct);
+        if (existingTier is not null &&
+            existingTier.Id != tier.Id)
+            throw new TierNameAlreadyExistException($"Tier name '{cmd.Name}' already exists.");
 
         tier.Update(cmd.Name, cmd.Description, cmd.IsEnabled);
 
-        await _repo.UpdateAsync(tier, ct);
-        return Result.Success(tier.Id.Value);
+        await _tierRepo.SaveChangesAsync(ct);
+
+        return Result.Success(true);
     }
 }

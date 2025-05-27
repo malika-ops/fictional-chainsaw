@@ -7,7 +7,7 @@ using wfc.referential.Application.Tiers.Dtos;
 namespace wfc.referential.API.Endpoints.Tier;
 
 public class UpdateTier(IMediator _mediator)
-    : Endpoint<UpdateTierRequest, Guid>
+    : Endpoint<UpdateTierRequest, bool>
 {
     public override void Configure()
     {
@@ -19,9 +19,10 @@ public class UpdateTier(IMediator _mediator)
             s.Description = "Replaces Name, Description and IsEnabled of the specified Tier.";
             s.Params["TierId"] = "Tier ID (GUID) from route";
 
-            s.Response<Guid>(200, "Returns the ID of the updated Tier");
+            s.Response<bool>(200, "Returns a boolean (True or False) as the status of the update");
             s.Response(400, "Validation or business rule failed");
             s.Response(404, "Tier not found");
+            s.Response(409, "Conflict with an existing Tier");
         });
         Options(o => o.WithTags(EndpointGroups.Tiers));
     }

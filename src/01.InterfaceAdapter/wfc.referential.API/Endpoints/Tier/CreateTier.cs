@@ -19,6 +19,7 @@ public class CreateTier(IMediator _mediator)
             s.Description = "Creates a Tier with Name and Description. Name must be unique.";
             s.Response<Guid>(200, "Returns the TierId of the newly created row");
             s.Response(400, "Validation or business rule failed");
+            s.Response(409, "Conflict with an existing Tier");
         });
         Options(o => o.WithTags(EndpointGroups.Tiers));
     }

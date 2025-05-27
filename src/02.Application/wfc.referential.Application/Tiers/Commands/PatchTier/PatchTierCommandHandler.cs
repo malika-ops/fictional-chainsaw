@@ -1,36 +1,36 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
-using Mapster;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TierAggregate;
+using wfc.referential.Domain.TierAggregate.Exceptions;
 
 namespace wfc.referential.Application.Tiers.Commands.PatchTier;
 
-public class PatchTierCommandHandler : ICommandHandler<PatchTierCommand, Result<Guid>>
+public class PatchTierCommandHandler : ICommandHandler<PatchTierCommand, Result<bool>>
 {
-    private readonly ITierRepository _repo;
-    public PatchTierCommandHandler(ITierRepository repo) => _repo = repo;
+    private readonly ITierRepository _tierRepo;
+    public PatchTierCommandHandler(ITierRepository repo) => _tierRepo = repo;
 
-    public async Task<Result<Guid>> Handle(PatchTierCommand cmd, CancellationToken ct)
+    public async Task<Result<bool>> Handle(PatchTierCommand cmd, CancellationToken ct)
     {
-        var tier = await _repo.GetByIdAsync(new TierId(cmd.TierId), ct);
-        if (tier is null)
-            throw new BusinessException("Tier not found.");
+        var tierId = TierId.Of(cmd.TierId);
 
+        var tier = await _tierRepo.GetByIdAsync(tierId, ct) 
+            ?? throw new ResourceNotFoundException($"Tier with id '{cmd.TierId}' not found.");
 
         if (!string.IsNullOrEmpty(cmd.Name))
         {
-            var dup = await _repo.GetByNameAsync(cmd.Name, ct);
-            if (dup is not null && dup.Id != tier.Id)
-                throw new BusinessException($"Tier '{cmd.Name}' already exists.");
+            var existingTier = await _tierRepo.GetOneByConditionAsync(t => t.Name.ToLower().Equals(cmd.Name.ToLower()), ct);
+            if (existingTier is not null &&
+                existingTier.Id != tier.Id)
+                throw new TierNameAlreadyExistException($"Tier name '{cmd.Name}' already exists.");
         }
+        
+        tier.Patch(cmd.Name, cmd.Description, cmd.IsEnabled);             
 
-        // Map non-null props onto entity
-        cmd.Adapt(tier);          
-        tier.Patch();             
+        await _tierRepo.SaveChangesAsync(ct);
 
-        await _repo.UpdateAsync(tier, ct);
-        return Result.Success(tier.Id.Value);
+        return Result.Success(true);
     }
 }

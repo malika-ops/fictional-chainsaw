@@ -9,5 +9,4 @@ public record CreateAgencyTierCommand : ICommand<Result<Guid>>
     public Guid TierId { get; init; }
     public string Code { get; init; } = string.Empty;
     public string? Password { get; init; }
-    public bool IsEnabled { get; init; } = true;
 }

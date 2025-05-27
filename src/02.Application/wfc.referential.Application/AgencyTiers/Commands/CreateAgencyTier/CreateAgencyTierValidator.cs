@@ -9,6 +9,7 @@ public class CreateAgencyTierValidator : AbstractValidator<CreateAgencyTierComma
         RuleFor(x => x.AgencyId)
             .NotEqual(Guid.Empty).WithMessage("AgencyId cannot be empty.");
 
+
         RuleFor(x => x.TierId)
             .NotEqual(Guid.Empty).WithMessage("TierId cannot be empty.");
 

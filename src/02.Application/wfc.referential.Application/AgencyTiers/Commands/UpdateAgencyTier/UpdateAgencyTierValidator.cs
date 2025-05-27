@@ -15,7 +15,7 @@ public class UpdateAgencyTierValidator : AbstractValidator<UpdateAgencyTierComma
         RuleFor(x => x.TierId)
             .NotEqual(Guid.Empty).WithMessage("TierId cannot be empty.");
 
-        RuleFor(x => x.Code).NotEmpty().WithMessage("Code is required.");
-        RuleFor(x => x.Password).NotEmpty().WithMessage("Password is required.");
+        RuleFor(x => x.Code).NotEmpty().WithMessage("Code is required.")
+            .MaximumLength(30).WithMessage("Code max length = 30.");
     }
 }

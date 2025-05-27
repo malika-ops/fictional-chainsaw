@@ -12,9 +12,6 @@ public class UpdateTierValidator : AbstractValidator<UpdateTierCommand>
 
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(200).WithMessage("Name max length is 200 chars.");
-
-        RuleFor(x => x.Description)
-            .NotEmpty().WithMessage("Description is required.");
+            .MaximumLength(100).WithMessage("Name max length is 100 chars.");
     }
 }

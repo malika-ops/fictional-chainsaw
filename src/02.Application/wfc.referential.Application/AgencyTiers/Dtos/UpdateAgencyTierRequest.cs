@@ -17,7 +17,7 @@ public record UpdateAgencyTierRequest
     [Required] public string Code { get; init; } = string.Empty;
 
     /// <summary>Password used for authentication with the Tier.</summary>
-    [Required] public string Password { get; init; } = string.Empty;
+    public string Password { get; init; } = string.Empty;
 
     /// <summary>Whether the link is enabled (default = true).</summary>
     public bool IsEnabled { get; init; } = true;

@@ -1,8 +1,8 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
-using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TierAggregate;
+using wfc.referential.Domain.TierAggregate.Exceptions;
 
 namespace wfc.referential.Application.Tiers.Commands.CreateTier;
 
@@ -12,19 +12,24 @@ public class CreateTierCommandHandler : ICommandHandler<CreateTierCommand, Resul
 
     public CreateTierCommandHandler(ITierRepository repo) => _repo = repo;
 
-    public async Task<Result<Guid>> Handle(CreateTierCommand cmd,
-                                           CancellationToken ct)
+    public async Task<Result<Guid>> Handle(CreateTierCommand cmd, CancellationToken ct)
     {
-        if (await _repo.GetByNameAsync(cmd.Name, ct) is not null)
-            throw new BusinessException($"Tier '{cmd.Name}' already exists.");
+        var existingTier = await _repo.GetOneByConditionAsync(t => t.Name.ToLower().Equals(cmd.Name.ToLower()), ct);
+
+        if (existingTier is not null)
+            throw new TierNameAlreadyExistException($"Tier with name '{cmd.Name}' already exists.");
+
+        var tierId = new TierId(Guid.NewGuid());
 
         var entity = Tier.Create(
-            new TierId(Guid.NewGuid()),
+            tierId,
             cmd.Name,
-            cmd.Description,
-            cmd.IsEnabled);
+            cmd.Description);
 
         await _repo.AddAsync(entity, ct);
+
+        await _repo.SaveChangesAsync(ct);
+
         return Result.Success(entity.Id!.Value);
     }
 }

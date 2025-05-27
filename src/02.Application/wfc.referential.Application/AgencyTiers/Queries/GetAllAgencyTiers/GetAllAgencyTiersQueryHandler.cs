@@ -8,18 +8,23 @@ namespace wfc.referential.Application.AgencyTiers.Queries.GetAllAgencyTiers;
 
 public class GetAllAgencyTiersQueryHandler : IQueryHandler<GetAllAgencyTiersQuery, PagedResult<AgencyTierResponse>>
 {
-    private readonly IAgencyTierRepository _repo;
+    private readonly IAgencyTierRepository _agencyTierRepo;
 
-    public GetAllAgencyTiersQueryHandler(IAgencyTierRepository repo) => _repo = repo;
-
-    public async Task<PagedResult<AgencyTierResponse>> Handle(
-        GetAllAgencyTiersQuery q, CancellationToken ct)
+    public GetAllAgencyTiersQueryHandler(IAgencyTierRepository agencyTierRepo)
     {
-        var list = await _repo.GetFilteredAgencyTiersAsync(q, ct);
-        var total = await _repo.GetCountTotalAsync(q, ct);
+        _agencyTierRepo = agencyTierRepo;
+    }
 
-        var dtos = list.Adapt<List<AgencyTierResponse>>();
+    public async Task<PagedResult<AgencyTierResponse>> Handle(GetAllAgencyTiersQuery agencyTierQuery, CancellationToken ct)
+    {
+        var agencyTiers = await _agencyTierRepo.GetPagedByCriteriaAsync(agencyTierQuery,
+                agencyTierQuery.PageNumber,
+                agencyTierQuery.PageSize,
+                ct);
 
-        return new PagedResult<AgencyTierResponse>(dtos, total, q.PageNumber, q.PageSize);
+        return new PagedResult<AgencyTierResponse>(agencyTiers.Items.Adapt<List<AgencyTierResponse>>(),
+            agencyTiers.TotalCount,
+            agencyTiers.PageNumber,
+            agencyTiers.PageSize);
     }
 }

@@ -7,7 +7,7 @@ using wfc.referential.Application.AgencyTiers.Dtos;
 namespace wfc.referential.API.Endpoints.AgencyTier;
 
 public class PatchAgencyTier(IMediator _mediator)
-        : Endpoint<PatchAgencyTierRequest, Guid>
+        : Endpoint<PatchAgencyTierRequest, bool>
 {
     public override void Configure()
     {
@@ -19,10 +19,11 @@ public class PatchAgencyTier(IMediator _mediator)
             s.Summary = "Partially update an Agency-Tier link";
             s.Description = "Only the supplied fields are updated (Code, Password, IsEnabled, "
                           + "AgencyId, TierId).";
-            s.Params["AgencyTierId"] = "AgencyTier ID (GUID) from route";
-            s.Response<Guid>(200, "ID of the updated AgencyTier");
+            s.Params["AgencyTierId"] = " Returns a boolean (True or False) as the status of the patch";
+            s.Response<bool>(200, "ID of the updated AgencyTier");
             s.Response(400, "Validation errors");
             s.Response(404, "AgencyTier not found");
+            s.Response(409, "Conflict with an existing AgencyTier");
         });
 
         Options(o => o.WithTags(EndpointGroups.AgencyTiers));

@@ -3,7 +3,7 @@ using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.AgencyTiers.Commands.PatchAgencyTier;
 
-public record PatchAgencyTierCommand : ICommand<Result<Guid>>
+public record PatchAgencyTierCommand : ICommand<Result<bool>>
 {
     public Guid AgencyTierId { get; init; }
     public Guid? AgencyId { get; init; }

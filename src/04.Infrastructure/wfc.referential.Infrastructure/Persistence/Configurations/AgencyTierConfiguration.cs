@@ -63,9 +63,6 @@ public class AgencyTierConfiguration : IEntityTypeConfiguration<AgencyTier>
                .HasDefaultValue(true)
                .IsRequired();
 
-        builder.HasIndex(at => new { at.AgencyId, at.TierId })
-               .IsUnique();
-
         builder.HasIndex(at => new { at.AgencyId, at.TierId, at.Code })
                .IsUnique();
     }

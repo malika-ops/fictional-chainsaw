@@ -12,14 +12,13 @@ public class Tier : Aggregate<TierId>
 
     private Tier() { }
 
-    public static Tier Create(TierId id, string name, string description, bool isEnabled = true)
+    public static Tier Create(TierId id, string name, string description)
     {
         var tier = new Tier
         {
             Id = id,
             Name = name,
-            Description = description,
-            IsEnabled = isEnabled
+            Description = description
         };
 
         tier.AddDomainEvent(new TierCreatedEvent(id.Value, name, DateTime.UtcNow));
@@ -33,15 +32,19 @@ public class Tier : Aggregate<TierId>
         IsEnabled = isEnabled;
 
         AddDomainEvent(new TierUpdatedEvent(
-            Id.Value,
+            Id!.Value,
             Name,
             Description,
             IsEnabled,
             DateTime.UtcNow));
     }
 
-    public void Patch()
+    public void Patch(string? name, string? description, bool? isEnabled)
     {
+        Name = name ?? Name;
+        Description = description ?? Description;
+        IsEnabled = isEnabled ?? IsEnabled;
+
         AddDomainEvent(new TierPatchedEvent(
             Id.Value,
             Name,

@@ -24,8 +24,7 @@ public class AgencyTier : Aggregate<AgencyTierId>
        AgencyId agencyId,
        TierId tierId,
        string code,
-       string password,
-         bool isEnabled = true)
+       string? password)
     {
 
         var entity = new AgencyTier
@@ -34,8 +33,7 @@ public class AgencyTier : Aggregate<AgencyTierId>
             AgencyId = agencyId,
             TierId = tierId,
             Code = code,
-            Password = password,
-            IsEnabled = isEnabled
+            Password = password ?? string.Empty,
         };
 
         entity.AddDomainEvent(new AgencyTierCreatedEvent(
@@ -71,15 +69,26 @@ public class AgencyTier : Aggregate<AgencyTierId>
             DateTime.UtcNow));
     }
 
-    public void Patch()
+    public void Patch(
+    AgencyId agencyId,
+    TierId tierId,
+    string? code,
+    string? password,
+    bool? isEnabled)
     {
+        AgencyId = agencyId;
+        TierId = tierId;
+        Code = code ?? Code;
+        Password = password ?? Password;
+        IsEnabled = isEnabled ?? IsEnabled;
+
         AddDomainEvent(new AgencyTierPatchedEvent(
-            Id.Value,
-            AgencyId.Value,
-            TierId.Value,
-            Code,
-            IsEnabled,
-            DateTime.UtcNow));
+           Id!.Value,
+           AgencyId.Value,
+           TierId.Value,
+           Code,
+           IsEnabled,
+           DateTime.UtcNow));
     }
 
     public void Disable()

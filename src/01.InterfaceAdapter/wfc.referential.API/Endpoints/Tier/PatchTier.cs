@@ -6,7 +6,7 @@ using wfc.referential.Application.Tiers.Dtos;
 
 namespace wfc.referential.API.Endpoints.Tier;
 
-public class PatchTier(IMediator _mediator) : Endpoint<PatchTierRequest, Guid>
+public class PatchTier(IMediator _mediator) : Endpoint<PatchTierRequest, bool>
 {
     public override void Configure()
     {
@@ -16,11 +16,12 @@ public class PatchTier(IMediator _mediator) : Endpoint<PatchTierRequest, Guid>
         Summary(s =>
         {
             s.Summary = "Partially update a Tier";
-            s.Description = "Updates only the supplied fields (Name, Description, IsEnabled).";
+            s.Description = "Updates only the supplied fields (Name, Description, IsEnabled), ";
             s.Params["TierId"] = "Tier ID (GUID) from route";
-            s.Response<Guid>(200, "ID of the patched Tier");
+            s.Response<bool>(200, "Returns a boolean (True or False) as the status of the patch");
             s.Response(400, "Validation / business rules failed");
             s.Response(404, "Tier not found");
+            s.Response(409, "Conflict with an existing Tier");
         });
 
         Options(o => o.WithTags(EndpointGroups.Tiers));
