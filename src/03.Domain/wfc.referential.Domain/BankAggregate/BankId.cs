@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using BuildingBlocks.Core.Abstraction.Domain;
+using BuildingBlocks.Core.Exceptions;
 
 namespace wfc.referential.Domain.BankAggregate;
 
@@ -20,9 +21,8 @@ public record BankId : IValueObject
         ArgumentNullException.ThrowIfNull(value);
         if (value == Guid.Empty)
         {
-            throw new Exception("BankId cannot be empty.");
+            throw new BusinessException("BankId cannot be empty.");
         }
-
         return new BankId(value);
     }
 

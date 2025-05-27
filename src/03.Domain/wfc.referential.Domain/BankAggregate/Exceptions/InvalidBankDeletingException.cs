@@ -2,9 +2,5 @@
 
 namespace wfc.referential.Domain.BankAggregate.Exceptions;
 
-public class InvalidBankDeletingException : BusinessException
-{
-    public InvalidBankDeletingException(string validationMessage) : base(validationMessage)
-    {
-    }
-}
+public class InvalidBankDeletingException(string validationMessage)
+    : BusinessException(validationMessage);

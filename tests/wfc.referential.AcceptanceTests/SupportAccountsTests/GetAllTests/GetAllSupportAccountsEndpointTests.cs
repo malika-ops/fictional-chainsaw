@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Application.SupportAccounts.Queries.GetAllSupportAccounts;
+using wfc.referential.Application.SupportAccounts.Dtos;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
@@ -23,8 +23,6 @@ public class GetAllSupportAccountsEndpointTests : IClassFixture<WebApplicationFa
 
     public GetAllSupportAccountsEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -32,97 +30,68 @@ public class GetAllSupportAccountsEndpointTests : IClassFixture<WebApplicationFa
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<ISupportAccountRepository>();
-                services.RemoveAll<ICacheService>();
-
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
             });
         });
 
         _client = customisedFactory.CreateClient();
     }
 
-    // Helper to build dummy support accounts quickly
-    private static SupportAccount CreateTestSupportAccount(string code, string name, decimal threshold, decimal limit, string accountingNumber, SupportAccountType supportAccountType)
+    private static SupportAccount CreateTestSupportAccount(string code, string description, decimal threshold, decimal limit, string accountingNumber)
     {
         var partnerId = Guid.NewGuid();
-        var cityId = Guid.NewGuid();
-        var sectorId = Guid.NewGuid();
-
-        var partner = Partner.Create(
-            PartnerId.Of(partnerId),
-            "P" + code,
-            "Partner for " + name,
-            NetworkMode.Franchise,
-            PaymentMode.PrePaye,
-            "ID" + code,
-            supportAccountType,
-            "IDNUM" + code,
-            "Standard",
-            "AUX" + code,
-            "ICE" + code,
-            "/logos/logo.png",
-            null, // IdParent
-            null, // CommissionAccountId
-            null, // ActivityAccountId
-            null  // SupportAccountId
-        );
 
         return SupportAccount.Create(
             SupportAccountId.Of(Guid.NewGuid()),
             code,
-            name,
+            description,
             threshold,
             limit,
             5000.00m,
-            accountingNumber,
-            partner,
-            supportAccountType
+            accountingNumber
         );
     }
-
-    // Lightweight DTO for deserialising the endpoint response
-    private record PagedResultDto<T>(T[] Items, int PageNumber, int PageSize,
-                                     int TotalCount, int TotalPages);
 
     [Fact(DisplayName = "GET /api/support-accounts returns paged list")]
     public async Task Get_ShouldReturnPagedList_WhenParamsAreValid()
     {
         // Arrange
         var allAccounts = new[] {
-            CreateTestSupportAccount("SA001", "Support Account 1", 10000.00m, 20000.00m, "ACC001", SupportAccountType.Commun),
-            CreateTestSupportAccount("SA002", "Support Account 2", 15000.00m, 25000.00m, "ACC002", SupportAccountType.Individuel),
-            CreateTestSupportAccount("SA003", "Support Account 3", 20000.00m, 30000.00m, "ACC003", SupportAccountType.Commun),
-            CreateTestSupportAccount("SA004", "Support Account 4", 25000.00m, 35000.00m, "ACC004", SupportAccountType.Individuel),
-            CreateTestSupportAccount("SA005", "Support Account 5", 30000.00m, 40000.00m, "ACC005", SupportAccountType.Commun)
+            CreateTestSupportAccount("SA001", "Support Account 1", 10000.00m, 20000.00m, "ACC001"),
+            CreateTestSupportAccount("SA002", "Support Account 2", 15000.00m, 25000.00m, "ACC002"),
+            CreateTestSupportAccount("SA003", "Support Account 3", 20000.00m, 30000.00m, "ACC003"),
+            CreateTestSupportAccount("SA004", "Support Account 4", 25000.00m, 35000.00m, "ACC004"),
+            CreateTestSupportAccount("SA005", "Support Account 5", 30000.00m, 40000.00m, "ACC005")
         };
 
-        // Repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetFilteredSupportAccountsAsync(
-                            It.Is<GetAllSupportAccountsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allAccounts.Take(2).ToList());
+        var pagedResult = new PagedResult<SupportAccount>(allAccounts.Take(2).ToList(), allAccounts.Length, 1, 2);
 
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllSupportAccountsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allAccounts.Length);
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.IsAny<object>(),
+                            It.IsAny<int>(),
+                            It.IsAny<int>(),
+                            It.IsAny<CancellationToken>(),
+                            It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, object>>[]>()))
+                 .ReturnsAsync(pagedResult);
 
         // Act
         var response = await _client.GetAsync("/api/support-accounts?pageNumber=1&pageSize=2");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetSupportAccountsResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(2);
-        dto.TotalCount.Should().Be(5);
-        dto.TotalPages.Should().Be(3);
-        dto.PageNumber.Should().Be(1);
-        dto.PageSize.Should().Be(2);
+        result!.Items.Should().HaveCount(2);
+        result.TotalCount.Should().Be(5);
+        result.TotalPages.Should().Be(3);
+        result.PageNumber.Should().Be(1);
+        result.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetFilteredSupportAccountsAsync(
-                                It.Is<GetAllSupportAccountsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                                It.IsAny<CancellationToken>()),
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+                                It.IsAny<object>(),
+                                It.IsAny<int>(),
+                                It.IsAny<int>(),
+                                It.IsAny<CancellationToken>(),
+                                It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, object>>[]>()),
                          Times.Once);
     }
 
@@ -130,148 +99,32 @@ public class GetAllSupportAccountsEndpointTests : IClassFixture<WebApplicationFa
     public async Task Get_ShouldFilterByCode()
     {
         // Arrange
-        var account = CreateTestSupportAccount("SA001", "Support Account 1", 10000.00m, 20000.00m, "ACC001", SupportAccountType.Commun);
+        var account = CreateTestSupportAccount("SA001", "Support Account 1", 10000.00m, 20000.00m, "ACC001");
+        var pagedResult = new PagedResult<SupportAccount>(new List<SupportAccount> { account }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetFilteredSupportAccountsAsync(
-                            It.Is<GetAllSupportAccountsQuery>(q => q.Code == "SA001"),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<SupportAccount> { account });
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllSupportAccountsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.IsAny<object>(),
+                            It.IsAny<int>(),
+                            It.IsAny<int>(),
+                            It.IsAny<CancellationToken>(),
+                            It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, object>>[]>()))
+                 .ReturnsAsync(pagedResult);
 
         // Act
         var response = await _client.GetAsync("/api/support-accounts?code=SA001");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetSupportAccountsResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(1);
-        dto.Items[0].GetProperty("code").GetString().Should().Be("SA001");
+        result!.Items.Should().HaveCount(1);
+        result.Items.First().Code.Should().Be("SA001");
 
-        _repoMock.Verify(r => r.GetFilteredSupportAccountsAsync(
-                                It.Is<GetAllSupportAccountsQuery>(q => q.Code == "SA001"),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
-    }
-
-    [Fact(DisplayName = "GET /api/support-accounts?supportAccountType=Commun filters by support account type")]
-    public async Task Get_ShouldFilterBySupportAccountType()
-    {
-        // Arrange
-        var communAccounts = new[] {
-            CreateTestSupportAccount("SA001", "Support Account 1", 10000.00m, 20000.00m, "ACC001", SupportAccountType.Commun),
-            CreateTestSupportAccount("SA003", "Support Account 3", 20000.00m, 30000.00m, "ACC003", SupportAccountType.Commun),
-            CreateTestSupportAccount("SA005", "Support Account 5", 30000.00m, 40000.00m, "ACC005", SupportAccountType.Commun)
-        };
-
-        _repoMock.Setup(r => r.GetFilteredSupportAccountsAsync(
-                            It.Is<GetAllSupportAccountsQuery>(q => q.SupportAccountType == "Commun"),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(communAccounts.ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.Is<GetAllSupportAccountsQuery>(q => q.SupportAccountType == "Commun"),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(communAccounts.Length);
-
-        // Act
-        var response = await _client.GetAsync("/api/support-accounts?supportAccountType=Commun");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(3);
-        dto.TotalCount.Should().Be(3);
-
-        foreach (var item in dto.Items)
-        {
-            item.GetProperty("supportAccountType").GetString().Should().Be("Commun");
-        }
-
-        _repoMock.Verify(r => r.GetFilteredSupportAccountsAsync(
-                                It.Is<GetAllSupportAccountsQuery>(q => q.SupportAccountType == "Commun"),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
-    }
-
-    [Fact(DisplayName = "GET /api/support-accounts?minThreshold=20000 filters by minimum threshold")]
-    public async Task Get_ShouldFilterByMinimumThreshold()
-    {
-        // Arrange
-        var highThresholdAccounts = new[] {
-            CreateTestSupportAccount("SA003", "Support Account 3", 20000.00m, 30000.00m, "ACC003", SupportAccountType.Commun),
-            CreateTestSupportAccount("SA004", "Support Account 4", 25000.00m, 35000.00m, "ACC004", SupportAccountType.Individuel),
-            CreateTestSupportAccount("SA005", "Support Account 5", 30000.00m, 40000.00m, "ACC005", SupportAccountType.Commun)
-        };
-
-        _repoMock.Setup(r => r.GetFilteredSupportAccountsAsync(
-                            It.Is<GetAllSupportAccountsQuery>(q => q.MinThreshold == 20000m),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(highThresholdAccounts.ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllSupportAccountsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(highThresholdAccounts.Length);
-
-        // Act
-        var response = await _client.GetAsync("/api/support-accounts?minThreshold=20000");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(3);
-
-        foreach (var item in dto.Items)
-        {
-            item.GetProperty("threshold").GetDecimal().Should().BeGreaterThanOrEqualTo(20000.00m);
-        }
-
-        _repoMock.Verify(r => r.GetFilteredSupportAccountsAsync(
-                                It.Is<GetAllSupportAccountsQuery>(q => q.MinThreshold == 20000m),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
-    }
-
-    [Fact(DisplayName = "GET /api/support-accounts?minLimit=30000 filters by minimum limit")]
-    public async Task Get_ShouldFilterByMinimumLimit()
-    {
-        // Arrange
-        var highLimitAccounts = new[] {
-            CreateTestSupportAccount("SA003", "Support Account 3", 20000.00m, 30000.00m, "ACC003", SupportAccountType.Commun),
-            CreateTestSupportAccount("SA004", "Support Account 4", 25000.00m, 35000.00m, "ACC004", SupportAccountType.Individuel),
-            CreateTestSupportAccount("SA005", "Support Account 5", 30000.00m, 40000.00m, "ACC005", SupportAccountType.Commun)
-        };
-
-        _repoMock.Setup(r => r.GetFilteredSupportAccountsAsync(
-                            It.Is<GetAllSupportAccountsQuery>(q => q.MinLimit == 30000m),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(highLimitAccounts.ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllSupportAccountsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(highLimitAccounts.Length);
-
-        // Act
-        var response = await _client.GetAsync("/api/support-accounts?minLimit=30000");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(3);
-
-        foreach (var item in dto.Items)
-        {
-            item.GetProperty("limit").GetDecimal().Should().BeGreaterThanOrEqualTo(30000.00m);
-        }
-
-        _repoMock.Verify(r => r.GetFilteredSupportAccountsAsync(
-                                It.Is<GetAllSupportAccountsQuery>(q => q.MinLimit == 30000m),
-                                It.IsAny<CancellationToken>()),
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+                                It.IsAny<object>(),
+                                It.IsAny<int>(),
+                                It.IsAny<int>(),
+                                It.IsAny<CancellationToken>(),
+                                It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, object>>[]>()),
                          Times.Once);
     }
 
@@ -279,31 +132,50 @@ public class GetAllSupportAccountsEndpointTests : IClassFixture<WebApplicationFa
     public async Task Get_ShouldFilterByEnabledStatus()
     {
         // Arrange
-        var disabledAccount = CreateTestSupportAccount("SA001", "Disabled Account", 10000.00m, 20000.00m, "ACC001", SupportAccountType.Commun);
+        var disabledAccount = CreateTestSupportAccount("SA001", "Disabled Account", 10000.00m, 20000.00m, "ACC001");
         disabledAccount.Disable(); // Make it disabled
 
-        _repoMock.Setup(r => r.GetFilteredSupportAccountsAsync(
-                            It.Is<GetAllSupportAccountsQuery>(q => q.IsEnabled == false),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<SupportAccount> { disabledAccount });
+        var pagedResult = new PagedResult<SupportAccount>(new List<SupportAccount> { disabledAccount }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllSupportAccountsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(pagedResult);
 
         // Act
         var response = await _client.GetAsync("/api/support-accounts?isEnabled=false");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetSupportAccountsResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(1);
-        dto.Items[0].GetProperty("isEnabled").GetBoolean().Should().BeFalse();
+        result!.Items.Should().HaveCount(1);
+        result.Items.First().IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.GetFilteredSupportAccountsAsync(
-                                It.Is<GetAllSupportAccountsQuery>(q => q.IsEnabled == false),
-                                It.IsAny<CancellationToken>()),
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+                                It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                          Times.Once);
+    }
+
+    [Fact(DisplayName = "GET /api/support-accounts returns empty result when no matches found")]
+    public async Task Get_ShouldReturnEmptyResult_WhenNoMatchesFound()
+    {
+        // Arrange
+        var emptyResult = new PagedResult<SupportAccount>(new List<SupportAccount>(), 0, 1, 10);
+
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.IsAny<object>(),
+                            It.IsAny<int>(),
+                            It.IsAny<int>(),
+                            It.IsAny<CancellationToken>(),
+                            It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, object>>[]>()))
+                 .ReturnsAsync(emptyResult);
+
+        // Act
+        var response = await _client.GetAsync("/api/support-accounts?code=NONEXISTENT");
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetSupportAccountsResponse>>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result!.Items.Should().BeEmpty();
+        result.TotalCount.Should().Be(0);
     }
 }

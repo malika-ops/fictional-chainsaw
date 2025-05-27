@@ -1,29 +1,13 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Banks.Commands.PatchBank;
 
-public class PatchBankCommand : ICommand<Guid>
+public record PatchBankCommand : ICommand<Result<bool>>
 {
-    // The ID from the route
-    public Guid BankId { get; }
-
-    // The optional fields to update
-    public string? Code { get; }
-    public string? Name { get; }
-    public string? Abbreviation { get; }
-    public bool? IsEnabled { get; }
-
-    public PatchBankCommand(
-        Guid bankId,
-        string? code = null,
-        string? name = null,
-        string? abbreviation = null,
-        bool? isEnabled = null)
-    {
-        BankId = bankId;
-        Code = code;
-        Name = name;
-        Abbreviation = abbreviation;
-        IsEnabled = isEnabled;
-    }
+    public Guid BankId { get; init; }
+    public string? Code { get; init; }
+    public string? Name { get; init; }
+    public string? Abbreviation { get; init; }
+    public bool? IsEnabled { get; init; }
 }

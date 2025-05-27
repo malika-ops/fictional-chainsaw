@@ -1,10 +1,6 @@
 ﻿using BuildingBlocks.Core.Exceptions;
 
-namespace wfc.referential.Domain.CurrencyAggregate.Exception;
+namespace wfc.referential.Domain.CurrencyAggregate.Exceptions;
 
-public class CodeAlreadyExistException : BusinessException
-{
-    public CodeAlreadyExistException(string code) : base($"The currency code '{code}' already exists.")
-    {
-    }
-}
+public class CurrencyCodeAlreadyExistException(string code)
+    : ConflictException($"Currency with code {code} already exists.");

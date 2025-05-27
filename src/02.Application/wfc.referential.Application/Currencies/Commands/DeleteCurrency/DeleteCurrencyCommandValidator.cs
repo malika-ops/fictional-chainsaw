@@ -6,9 +6,8 @@ public class DeleteCurrencyCommandValidator : AbstractValidator<DeleteCurrencyCo
 {
     public DeleteCurrencyCommandValidator()
     {
-        // Ensure the ID is non-empty & parseable as a GUID
         RuleFor(x => x.CurrencyId)
-            .Must(guidStr => Guid.TryParse(guidStr, out var parsed) && parsed != Guid.Empty)
-            .WithMessage("CurrencyId must be a valid, non-empty GUID.");
+            .NotEqual(Guid.Empty)
+            .WithMessage("CurrencyId must be a non-empty GUID.");
     }
 }

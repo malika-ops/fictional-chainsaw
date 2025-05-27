@@ -1,12 +1,14 @@
 ﻿using FluentValidation;
-using wfc.referential.Application.Interfaces;
 
 namespace wfc.referential.Application.Currencies.Commands.PatchCurrency;
 
-public class PatchCurrencyValidator : AbstractValidator<PatchCurrencyCommand>
+public class PatchCurrencyCommandValidator : AbstractValidator<PatchCurrencyCommand>
 {
-    public PatchCurrencyValidator(ICurrencyRepository currencyRepository)
+    public PatchCurrencyCommandValidator()
     {
+        RuleFor(x => x.CurrencyId)
+            .NotEqual(Guid.Empty).WithMessage("CurrencyId cannot be empty.");
+
         // If code is provided (not null), check it's not empty
         When(x => x.Code is not null, () => {
             RuleFor(x => x.Code!)
@@ -34,7 +36,7 @@ public class PatchCurrencyValidator : AbstractValidator<PatchCurrencyCommand>
         // If CodeIso is provided, check that it's a valid 3-digit number
         When(x => x.CodeIso.HasValue, () => {
             RuleFor(x => x.CodeIso!.Value)
-                .InclusiveBetween(0, 999).WithMessage("CodeIso must be a 3-digit number between 0 and 999");
+                .InclusiveBetween(0, 999).WithMessage("CodeIso must be a 3-digit number between 0 and 999.");
         });
     }
 }

@@ -7,10 +7,10 @@ public class UpdateSupportAccountBalanceCommandValidator : AbstractValidator<Upd
     public UpdateSupportAccountBalanceCommandValidator()
     {
         RuleFor(x => x.SupportAccountId)
-            .NotEqual(Guid.Empty).WithMessage("SupportAccountId cannot be empty");
+            .NotEqual(Guid.Empty)
+            .WithMessage("SupportAccountId must be a non-empty GUID.");
 
         RuleFor(x => x.NewBalance)
-            .NotNull().WithMessage("New balance is required")
-            .GreaterThanOrEqualTo(0).WithMessage("Balance cannot be negative");
+            .GreaterThanOrEqualTo(0).WithMessage("Balance cannot be negative.");
     }
 }

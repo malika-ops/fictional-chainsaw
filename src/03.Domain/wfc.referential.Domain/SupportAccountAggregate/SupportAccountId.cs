@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using BuildingBlocks.Core.Abstraction.Domain;
+using BuildingBlocks.Core.Exceptions;
 
 namespace wfc.referential.Domain.SupportAccountAggregate;
 
@@ -20,9 +21,8 @@ public record SupportAccountId : IValueObject
         ArgumentNullException.ThrowIfNull(value);
         if (value == Guid.Empty)
         {
-            throw new Exception("SupportAccountId cannot be empty.");
+            throw new BusinessException("SupportAccountId cannot be empty.");
         }
-
         return new SupportAccountId(value);
     }
 

@@ -1,50 +1,25 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace wfc.referential.Application.Currencies.Dtos;
+﻿namespace wfc.referential.Application.Currencies.Dtos;
 
 public record UpdateCurrencyRequest
 {
-    /// <summary>
-    /// The ID of the Currency to update.
-    /// </summary>
-    /// <example>6a472a58-5d05-4a1b-8b7f-58516dd614c3</example>
+    /// <summary>Currency GUID (from route).</summary>
     public Guid CurrencyId { get; init; }
 
-    /// <summary>
-    /// A short code for the Currency.
-    /// Must be unique.
-    /// </summary>
-    /// <example>USD</example>
+    /// <summary>Unique currency code.</summary>
     public string Code { get; init; } = string.Empty;
 
-    /// <summary>
-    /// Arabic code representation for the Currency.
-    /// </summary>
-    /// <example>دولار</example>
-    public string CodeAR { get; init; } = string.Empty;
-
-    /// <summary>
-    /// English code representation for the Currency.
-    /// </summary>
-    /// <example>Dollar</example>
-    public string CodeEN { get; init; } = string.Empty;
-
-    /// <summary>
-    /// A human-readable name.
-    /// </summary>
-    /// <example>United States Dollar</example>
+    /// <summary>Display name.</summary>
     public string Name { get; init; } = string.Empty;
 
-    /// <summary>
-    /// A unique 3-digit number for the Currency.
-    /// Must be unique.
-    /// </summary>
-    /// <example>840</example>
+    /// <summary>Arabic code representation.</summary>
+    public string CodeAR { get; init; } = string.Empty;
+
+    /// <summary>English code representation.</summary>
+    public string CodeEN { get; init; } = string.Empty;
+
+    /// <summary>ISO 3-digit code.</summary>
     public int CodeIso { get; init; }
 
-    /// <summary>
-    /// Whether the currency is enabled or disabled
-    /// </summary>
-    /// <example>true</example>
+    /// <summary>Currency status (enabled/disabled).</summary>
     public bool IsEnabled { get; init; } = true;
 }

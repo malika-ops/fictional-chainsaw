@@ -2,16 +2,6 @@
 
 namespace wfc.referential.Domain.CurrencyAggregate.Events;
 
-public record CurrencyActivatedEvent : IDomainEvent
-{
-    public Guid CurrencyId { get; }
-    public DateTime OccurredOn { get; }
-
-    public CurrencyActivatedEvent(
-        Guid currencyId,
-        DateTime occurredOn)
-    {
-        CurrencyId = currencyId;
-        OccurredOn = occurredOn;
-    }
-}
+public record CurrencyActivatedEvent(
+    Guid CurrencyId,
+    DateTime OccurredOn) : IDomainEvent;

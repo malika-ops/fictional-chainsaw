@@ -2,7 +2,7 @@
 using BuildingBlocks.Core.Abstraction.Domain;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CurrencyAggregate;
-using wfc.referential.Domain.CurrencyAggregate.Exception;
+using wfc.referential.Domain.CurrencyAggregate.Exceptions;
 
 namespace wfc.referential.Application.Currencies.Commands.CreateCurrency;
 
@@ -11,42 +11,28 @@ public class CreateCurrencyCommandHandler : ICommandHandler<CreateCurrencyComman
     private readonly ICurrencyRepository _currencyRepository;
 
     public CreateCurrencyCommandHandler(ICurrencyRepository currencyRepository)
+        => _currencyRepository = currencyRepository;
+
+    public async Task<Result<Guid>> Handle(CreateCurrencyCommand command, CancellationToken ct)
     {
-        _currencyRepository = currencyRepository;
-    }
+        var existingCurrencyByCode = await _currencyRepository.GetOneByConditionAsync(c => c.Code == command.Code, ct);
+        if (existingCurrencyByCode is not null)
+            throw new CurrencyCodeAlreadyExistException(command.Code);
 
-    public async Task<Result<Guid>> Handle(CreateCurrencyCommand command, CancellationToken cancellationToken)
-    {
-        // Check if currency with same code already exists
-        var existingCurrencyByCode = await _currencyRepository.GetByCodeAsync(command.Code, cancellationToken);
+        var existingCurrencyByCodeIso = await _currencyRepository.GetOneByConditionAsync(c => c.CodeIso == command.CodeIso, ct);
+        if (existingCurrencyByCodeIso is not null)
+            throw new CurrencyCodeIsoAlreadyExistException(command.CodeIso);
 
-        if (existingCurrencyByCode != null)
-        {
-            throw new CodeAlreadyExistException(command.Code);
-        }
-
-        // Check if currency with same codeiso already exists
-        var existingCurrencyByCodeIso = await _currencyRepository.GetByCodeIsoAsync(command.CodeIso, cancellationToken);
-
-        if (existingCurrencyByCodeIso != null)
-        {
-            throw new CodeIsoAlreadyExistException(command.CodeIso);
-        }
-
-        // Create new currency
         var currency = Currency.Create(
             CurrencyId.Of(Guid.NewGuid()),
             command.Code,
             command.CodeAR,
             command.CodeEN,
             command.Name,
-            command.CodeIso
-        );
+            command.CodeIso);
 
-        // Save to repository
-        await _currencyRepository.AddCurrencyAsync(currency, cancellationToken);
-
-        // Return ID of new currency
-        return Result.Success(currency.Id.Value);
+        await _currencyRepository.AddAsync(currency, ct);
+        await _currencyRepository.SaveChangesAsync(ct);
+        return Result.Success(currency.Id!.Value);
     }
 }

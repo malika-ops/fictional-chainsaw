@@ -1,38 +1,24 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿namespace wfc.referential.Application.Currencies.Dtos;
 
-namespace wfc.referential.Application.Currencies.Dtos;
-
-public record CreateCurrencyRequest()
+public record CreateCurrencyRequest
 {
-    /// <summary>
-    /// A short code for the Currency.
-    /// Must be unique.
-    /// </summary>
+    /// <summary>Unique currency code.</summary>
     /// <example>USD</example>
     public string Code { get; init; } = string.Empty;
 
-    /// <summary>
-    /// Arabic code representation for the Currency.
-    /// </summary>
+    /// <summary>Currency Name.</summary>
+    /// <example>United States Dollar</example>
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>Arabic code representation.</summary>
     /// <example>دولار</example>
     public string CodeAR { get; init; } = string.Empty;
 
-    /// <summary>
-    /// English code representation for the Currency.
-    /// </summary>
+    /// <summary>English code representation.</summary>
     /// <example>Dollar</example>
     public string CodeEN { get; init; } = string.Empty;
 
-    /// <summary>
-    /// A human-readable name.
-    /// </summary>
-    ///<example>United States Dollar</example>
-    public string Name { get; init; } = string.Empty;
-
-    /// <summary>
-    /// A unique 3-digit number for the Currency.
-    /// Must be unique.
-    /// </summary>
+    /// <summary>ISO 3-digit code.</summary>
     /// <example>840</example>
     public int CodeIso { get; init; }
 }

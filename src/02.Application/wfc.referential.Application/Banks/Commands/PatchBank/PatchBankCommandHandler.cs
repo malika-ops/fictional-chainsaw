@@ -1,4 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
@@ -6,52 +7,38 @@ using wfc.referential.Domain.BankAggregate.Exceptions;
 
 namespace wfc.referential.Application.Banks.Commands.PatchBank;
 
-public class PatchBankCommandHandler : ICommandHandler<PatchBankCommand, Guid>
+public class PatchBankCommandHandler : ICommandHandler<PatchBankCommand, Result<bool>>
 {
-    private readonly IBankRepository _bankRepository;
+    private readonly IBankRepository _repo;
 
-    public PatchBankCommandHandler(IBankRepository bankRepository)
+    public PatchBankCommandHandler(IBankRepository repo)
     {
-        _bankRepository = bankRepository;
+        _repo = repo;
     }
 
-    public async Task<Guid> Handle(PatchBankCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(PatchBankCommand cmd, CancellationToken ct)
     {
-        var bank = await _bankRepository.GetByIdAsync(new BankId(request.BankId), cancellationToken);
-        if (bank == null)
-            throw new BusinessException("Bank not found");
+        var bank = await _repo.GetByIdAsync(BankId.Of(cmd.BankId), ct);
+        if (bank is null)
+            throw new ResourceNotFoundException($"Bank [{cmd.BankId}] not found.");
 
-        // Check if code is unique if it's being updated
-        if (request.Code != null && request.Code != bank.Code)
+        // duplicate Code check
+        if (!string.IsNullOrWhiteSpace(cmd.Code))
         {
-            var existingWithCode = await _bankRepository.GetByCodeAsync(request.Code, cancellationToken);
-            if (existingWithCode != null && existingWithCode.Id.Value != request.BankId)
-                throw new BankCodeAlreadyExistException(request.Code);
+            var dup = await _repo.GetOneByConditionAsync(b => b.Code == cmd.Code, ct);
+            if (dup is not null && dup.Id != bank.Id)
+                throw new BankCodeAlreadyExistException(cmd.Code);
         }
 
-        // Collect updates for domain entities
-        var updatedCode = request.Code ?? bank.Code;
-        var updatedName = request.Name ?? bank.Name;
-        var updatedAbbreviation = request.Abbreviation ?? bank.Abbreviation;
+        bank.Patch(
+            cmd.Code,
+            cmd.Name,
+            cmd.Abbreviation,
+            cmd.IsEnabled);
 
-        // Patch via domain methods
-        bank.Patch(updatedCode, updatedName, updatedAbbreviation);
+        _repo.Update(bank);
+        await _repo.SaveChangesAsync(ct);
 
-        // Handle IsEnabled status changes separately through the proper domain methods
-        if (request.IsEnabled.HasValue)
-        {
-            if (request.IsEnabled.Value && !bank.IsEnabled)
-            {
-                bank.Activate();
-            }
-            else if (!request.IsEnabled.Value && bank.IsEnabled)
-            {
-                bank.Disable();
-            }
-        }
-
-        await _bankRepository.UpdateBankAsync(bank, cancellationToken);
-
-        return bank.Id.Value;
+        return Result.Success(true);
     }
 }

@@ -6,9 +6,8 @@ public class DeleteSupportAccountCommandValidator : AbstractValidator<DeleteSupp
 {
     public DeleteSupportAccountCommandValidator()
     {
-        // Ensure the ID is non-empty & parseable as a GUID
         RuleFor(x => x.SupportAccountId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage("SupportAccountId must be a non-empty GUID.");
     }
 }

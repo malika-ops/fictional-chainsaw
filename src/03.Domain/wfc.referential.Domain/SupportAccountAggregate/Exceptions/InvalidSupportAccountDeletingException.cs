@@ -2,9 +2,5 @@
 
 namespace wfc.referential.Domain.SupportAccountAggregate.Exceptions;
 
-public class InvalidSupportAccountDeletingException : BusinessException
-{
-    public InvalidSupportAccountDeletingException(string validationMessage) : base(validationMessage)
-    {
-    }
-}
+public class InvalidSupportAccountDeletingException(string validationMessage)
+    : BusinessException(validationMessage);

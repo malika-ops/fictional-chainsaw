@@ -1,4 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
@@ -7,68 +8,50 @@ using wfc.referential.Domain.SectorAggregate.Exceptions;
 
 namespace wfc.referential.Application.Sectors.Commands.PatchSector;
 
-public class PatchSectorCommandHandler : ICommandHandler<PatchSectorCommand, Guid>
+public class PatchSectorCommandHandler : ICommandHandler<PatchSectorCommand, Result<bool>>
 {
-    private readonly ISectorRepository _sectorRepository;
-    private readonly ICityRepository _cityRepository;
+    private readonly ISectorRepository _sectorRepo;
+    private readonly ICityRepository _cityRepo;
 
-    public PatchSectorCommandHandler(
-        ISectorRepository sectorRepository,
-        ICityRepository cityRepository)
+    public PatchSectorCommandHandler(ISectorRepository sectorRepo, ICityRepository cityRepo)
     {
-        _sectorRepository = sectorRepository;
-        _cityRepository = cityRepository;
+        _sectorRepo = sectorRepo;
+        _cityRepo = cityRepo;
     }
 
-    public async Task<Guid> Handle(PatchSectorCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(PatchSectorCommand cmd, CancellationToken ct)
     {
-        var sector = await _sectorRepository.GetByIdAsync(new SectorId(request.SectorId), cancellationToken);
-        if (sector == null)
-            throw new BusinessException("Sector not found");
+        // Check if sector exists
+        var sector = await _sectorRepo.GetByIdAsync(SectorId.Of(cmd.SectorId), ct);
+        if (sector is null)
+            throw new BusinessException($"Sector not found");
 
-        // Check if code is unique if it's being updated
-        if (request.Code != null && request.Code != sector.Code)
+        // Validate city exists if CityId is provided
+        if (cmd.CityId.HasValue)
         {
-            var existingWithCode = await _sectorRepository.GetByCodeAsync(request.Code, cancellationToken);
-            if (existingWithCode != null && existingWithCode.Id.Value != request.SectorId)
-                throw new SectorCodeAlreadyExistException(request.Code);
+            var city = await _cityRepo.GetByIdAsync(CityId.Of(cmd.CityId.Value), ct);
+            if (city is null)
+                throw new BusinessException($"City with ID {cmd.CityId.Value} not found");
         }
 
-        // Collect updates for domain entities
-        var updatedCode = request.Code ?? sector.Code;
-        var updatedName = request.Name ?? sector.Name;
-
-        // Get city if it's being updated, otherwise use existing
-        var city = sector.City;
-        if (request.CityId.HasValue)
+        // Check for duplicate code if Code is being updated
+        if (!string.IsNullOrWhiteSpace(cmd.Code))
         {
-            var updatedCity = await _cityRepository.GetByIdAsync(CityId.Of(request.CityId.Value), cancellationToken);
-            if (updatedCity == null)
-                throw new BusinessException($"City with ID {request.CityId} not found");
-            city = updatedCity;
+            var duplicate = await _sectorRepo.GetOneByConditionAsync(s => s.Code == cmd.Code, ct);
+            if (duplicate is not null && duplicate.Id != sector.Id)
+                throw new SectorCodeAlreadyExistException(cmd.Code);
         }
 
-        // Patch via domain methods instead of property setters
-        sector.Update(updatedCode, updatedName, city);
+        // Apply the patch
+        sector.Patch(
+            cmd.Code,
+            cmd.Name,
+            cmd.CityId.HasValue ? CityId.Of(cmd.CityId.Value) : null,
+            cmd.IsEnabled);
 
-        // Additionally call patch to raise the event
-        sector.Patch();
+        _sectorRepo.Update(sector);
+        await _sectorRepo.SaveChangesAsync(ct);
 
-        // Handle enabled status if provided
-        if (request.IsEnabled.HasValue)
-        {
-            if (request.IsEnabled.Value && !sector.IsEnabled)
-            {
-                sector.Activate();
-            }
-            else if (!request.IsEnabled.Value && sector.IsEnabled)
-            {
-                sector.Disable();
-            }
-        }
-
-        await _sectorRepository.UpdateSectorAsync(sector, cancellationToken);
-
-        return sector.Id.Value;
+        return Result.Success(true);
     }
 }

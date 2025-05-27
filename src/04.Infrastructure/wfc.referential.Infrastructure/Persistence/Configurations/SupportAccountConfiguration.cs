@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using wfc.referential.Domain.SupportAccountAggregate;
 using wfc.referential.Domain.PartnerAggregate;
+using wfc.referential.Domain.ParamTypeAggregate;
 
 namespace wfc.referential.Infrastructure.Persistence.Configurations;
 
@@ -17,7 +18,7 @@ public class SupportAccountConfiguration : IEntityTypeConfiguration<SupportAccou
                 value => new SupportAccountId(value));
 
         builder.Property(s => s.Code).IsRequired();
-        builder.Property(s => s.Name).IsRequired();
+        builder.Property(s => s.Description).IsRequired();
         builder.Property(s => s.Threshold)
             .HasColumnType("decimal(18,2)")
             .IsRequired();
@@ -38,17 +39,24 @@ public class SupportAccountConfiguration : IEntityTypeConfiguration<SupportAccou
 
         builder.Property(s => s.PartnerId)
             .HasConversion(
-                Id => Id.Value,
-                value => new PartnerId(value));
+                Id => Id!.Value,
+                value => new PartnerId(value))
+            .IsRequired(false);
 
-        builder.Property(s => s.SupportAccountType)
+        builder.Property(s => s.SupportAccountTypeId)
             .HasConversion(
-                v => v.ToString(),
-                v => (SupportAccountType)Enum.Parse(typeof(SupportAccountType), v));
+                Id => Id!.Value,
+                value => new ParamTypeId(value))
+            .IsRequired(false);
 
         builder.HasOne(s => s.Partner)
             .WithMany()
             .HasForeignKey(s => s.PartnerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(s => s.SupportAccountType)
+            .WithMany()
+            .HasForeignKey(s => s.SupportAccountTypeId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -10,20 +10,15 @@ public record SectorId : IValueObject
     [JsonConstructor]
     public SectorId(Guid value) => Value = value;
 
+    public static SectorId Of(Guid value)
+    {
+        if (value == Guid.Empty) throw new ArgumentException("SectorId cannot be empty");
+        return new SectorId(value);
+    }
+
     public override string ToString()
     {
         return Value.ToString();
-    }
-
-    public static SectorId Of(Guid value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        if (value == Guid.Empty)
-        {
-            throw new Exception("SectorId cannot be empty.");
-        }
-
-        return new SectorId(value);
     }
 
     public IEnumerable<object> GetEqualityComponents()

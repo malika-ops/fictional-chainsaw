@@ -1,134 +1,117 @@
 ﻿using BuildingBlocks.Core.Abstraction.Domain;
 using wfc.referential.Domain.SupportAccountAggregate.Events;
 using wfc.referential.Domain.PartnerAggregate;
+using wfc.referential.Domain.ParamTypeAggregate;
 
 namespace wfc.referential.Domain.SupportAccountAggregate;
 
 public class SupportAccount : Aggregate<SupportAccountId>
 {
     public string Code { get; private set; } = string.Empty;
-    public string Name { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
     public decimal Threshold { get; private set; } = 0;
     public decimal Limit { get; private set; } = 0;
     public decimal AccountBalance { get; private set; } = 0;
     public string AccountingNumber { get; private set; } = string.Empty;
     public bool IsEnabled { get; private set; } = true;
-    public Partner Partner { get; private set; }
-    public PartnerId PartnerId { get; private set; }
-    public SupportAccountType SupportAccountType { get; private set; }
+    public Partner? Partner { get; private set; }
+    public PartnerId? PartnerId { get; private set; }
+    public ParamTypeId? SupportAccountTypeId { get; private set; }
+    public ParamType? SupportAccountType { get; private set; }
 
     private SupportAccount() { }
 
     public static SupportAccount Create(
         SupportAccountId id,
         string code,
-        string name,
+        string description,
         decimal threshold,
         decimal limit,
         decimal accountBalance,
-        string accountingNumber,
-        Partner partner,
-        SupportAccountType supportAccountType)
+        string accountingNumber)
     {
         var supportAccount = new SupportAccount
         {
             Id = id,
             Code = code,
-            Name = name,
+            Description = description,
             Threshold = threshold,
             Limit = limit,
             AccountBalance = accountBalance,
             AccountingNumber = accountingNumber,
-            Partner = partner,
-            PartnerId = partner.Id,
-            SupportAccountType = supportAccountType,
             IsEnabled = true
         };
 
         supportAccount.AddDomainEvent(new SupportAccountCreatedEvent(
             supportAccount.Id.Value,
             supportAccount.Code,
-            supportAccount.Name,
+            supportAccount.Description,
             supportAccount.Threshold,
             supportAccount.Limit,
             supportAccount.AccountBalance,
             supportAccount.AccountingNumber,
-            supportAccount.PartnerId.Value,
-            supportAccount.SupportAccountType,
             supportAccount.IsEnabled,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
+
         return supportAccount;
     }
 
     public void Update(
         string code,
-        string name,
+        string description,
         decimal threshold,
         decimal limit,
         decimal accountBalance,
         string accountingNumber,
-        Partner partner,
-        SupportAccountType supportAccountType)
+        bool? isEnabled)
     {
         Code = code;
-        Name = name;
+        Description = description;
         Threshold = threshold;
         Limit = limit;
         AccountBalance = accountBalance;
         AccountingNumber = accountingNumber;
-        Partner = partner;
-        PartnerId = partner.Id;
-        SupportAccountType = supportAccountType;
+        IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new SupportAccountUpdatedEvent(
             Id.Value,
             Code,
-            Name,
+            Description,
             Threshold,
             Limit,
             AccountBalance,
             AccountingNumber,
-            PartnerId.Value,
-            SupportAccountType,
             IsEnabled,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Patch(
-        string code,
-        string name,
-        decimal threshold,
-        decimal limit,
-        decimal accountBalance,
-        string accountingNumber,
-        Partner partner,
-        SupportAccountType supportAccountType)
+        string? code,
+        string? description,
+        decimal? threshold,
+        decimal? limit,
+        decimal? accountBalance,
+        string? accountingNumber,
+        bool? isEnabled)
     {
-        Code = code;
-        Name = name;
-        Threshold = threshold;
-        Limit = limit;
-        AccountBalance = accountBalance;
-        AccountingNumber = accountingNumber;
-        Partner = partner;
-        PartnerId = partner.Id;
-        SupportAccountType = supportAccountType;
+        Code = code ?? Code;
+        Description = description ?? Description;
+        Threshold = threshold ?? Threshold;
+        Limit = limit ?? Limit;
+        AccountBalance = accountBalance ?? AccountBalance;
+        AccountingNumber = accountingNumber ?? AccountingNumber;
+        IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new SupportAccountPatchedEvent(
             Id.Value,
             Code,
-            Name,
+            Description,
             Threshold,
             Limit,
             AccountBalance,
             AccountingNumber,
-            PartnerId.Value,
-            SupportAccountType,
             IsEnabled,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void UpdateBalance(decimal newBalance)
@@ -140,8 +123,7 @@ public class SupportAccount : Aggregate<SupportAccountId>
             Id.Value,
             oldBalance,
             AccountBalance,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Disable()
@@ -150,8 +132,7 @@ public class SupportAccount : Aggregate<SupportAccountId>
 
         AddDomainEvent(new SupportAccountDisabledEvent(
             Id.Value,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Activate()
@@ -160,7 +141,11 @@ public class SupportAccount : Aggregate<SupportAccountId>
 
         AddDomainEvent(new SupportAccountActivatedEvent(
             Id.Value,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
+    }
+
+    public void SetSupportAccountType(ParamTypeId typeId)
+    {
+        SupportAccountTypeId = typeId;
     }
 }

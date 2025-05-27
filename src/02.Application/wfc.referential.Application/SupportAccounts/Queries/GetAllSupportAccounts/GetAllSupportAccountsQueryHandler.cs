@@ -6,25 +6,17 @@ using wfc.referential.Application.SupportAccounts.Dtos;
 
 namespace wfc.referential.Application.SupportAccounts.Queries.GetAllSupportAccounts;
 
-public class GetAllSupportAccountsQueryHandler : IQueryHandler<GetAllSupportAccountsQuery, PagedResult<SupportAccountResponse>>
+public class GetAllSupportAccountsHandler
+    : IQueryHandler<GetAllSupportAccountsQuery, PagedResult<GetSupportAccountsResponse>>
 {
-    private readonly ISupportAccountRepository _supportAccountRepository;
+    private readonly ISupportAccountRepository _repo;
 
-    public GetAllSupportAccountsQueryHandler(ISupportAccountRepository supportAccountRepository)
+    public GetAllSupportAccountsHandler(ISupportAccountRepository repo) => _repo = repo;
+
+    public async Task<PagedResult<GetSupportAccountsResponse>> Handle(
+        GetAllSupportAccountsQuery supportAccountQuery, CancellationToken ct)
     {
-        _supportAccountRepository = supportAccountRepository;
-    }
-
-    public async Task<PagedResult<SupportAccountResponse>> Handle(GetAllSupportAccountsQuery request, CancellationToken cancellationToken)
-    {
-        var supportAccounts = await _supportAccountRepository
-            .GetFilteredSupportAccountsAsync(request, cancellationToken);
-
-        int totalCount = await _supportAccountRepository
-            .GetCountTotalAsync(request, cancellationToken);
-
-        var supportAccountResponses = supportAccounts.Adapt<List<SupportAccountResponse>>();
-
-        return new PagedResult<SupportAccountResponse>(supportAccountResponses, totalCount, request.PageNumber, request.PageSize);
+        var supportAccounts = await _repo.GetPagedByCriteriaAsync(supportAccountQuery, supportAccountQuery.PageNumber, supportAccountQuery.PageSize, ct);
+        return new PagedResult<GetSupportAccountsResponse>(supportAccounts.Items.Adapt<List<GetSupportAccountsResponse>>(), supportAccounts.TotalCount, supportAccounts.PageNumber, supportAccounts.PageSize);
     }
 }

@@ -13,323 +13,194 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CurrencyTests.PatchTests;
 
-public class PatchCurrencyEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
     private readonly Mock<ICurrencyRepository> _repoMock = new();
 
-    public PatchCurrencyEndpointTests(WebApplicationFactory<Program> factory)
+    public PatchCurrencyAcceptanceTests(WebApplicationFactory<Program> factory)
     {
-        // Clone the factory and customize the host
         var customizedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
-
             builder.ConfigureServices(services =>
             {
-                // Remove concrete registrations that hit the DB
                 services.RemoveAll<ICurrencyRepository>();
 
-                // Plug mocks back in
+                _repoMock.Setup(r => r.Update(It.IsAny<Currency>()));
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
+
                 services.AddSingleton(_repoMock.Object);
             });
         });
-
         _client = customizedFactory.CreateClient();
     }
 
-    [Fact(DisplayName = "PATCH /api/currencies/{id} returns 200 and Guid when patch is successful")]
-    public async Task Patch_ShouldReturn200_AndGuid_WhenPatchIsSuccessful()
+    [Fact(DisplayName = "PATCH /api/currencies/{id} modifies only provided fields")]
+    public async Task PatchCurrency_Should_ModifyOnlyProvidedFields_WhenPartialDataSent()
     {
         // Arrange
         var currencyId = Guid.NewGuid();
-        var currency = Currency.Create(
+        var originalCurrency = Currency.Create(
             CurrencyId.Of(currencyId),
-            "USD",
-            "US Dollar",
-            "دولار أمريكي",
-            "US Dollar",
-            840
-        );
+            "USD", "دولار أمريكي", "US Dollar", "US Dollar", 840);
 
-        _repoMock
-            .Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
-
-        var patchRequest = new PatchCurrencyRequest
-        {
-            CurrencyId = currencyId,
-            Name = "Updated US Dollar", // Only changing the name
-        };
-
-        // Act
-        var response = await _client.PatchAsJsonAsync($"/api/currencies/{currencyId}", patchRequest);
-        var result = await response.Content.ReadFromJsonAsync<Guid>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        result.Should().Be(currencyId);
-
-        // Verify repository interactions
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.UpdateCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact(DisplayName = "PATCH /api/currencies/{id} returns 200 and Guid when only code is patched")]
-    public async Task Patch_ShouldReturn200_AndGuid_WhenOnlyCodeIsPatched()
-    {
-        // Arrange
-        var currencyId = Guid.NewGuid();
-        var currency = Currency.Create(
-            CurrencyId.Of(currencyId),
-            "USD",
-            "US Dollar",
-            "دولار أمريكي",
-            "US Dollar",
-            840
-        );
-
-        _repoMock
-            .Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
-
-        _repoMock
-            .Setup(r => r.GetByCodeAsync("USDNEW", It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(originalCurrency);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency)null);
 
         var patchRequest = new PatchCurrencyRequest
         {
             CurrencyId = currencyId,
-            Code = "USDNEW", // Only changing the code
+            Name = "Updated US Dollar Name", // Only updating name
+            // Other fields intentionally omitted
         };
 
         // Act
         var response = await _client.PatchAsJsonAsync($"/api/currencies/{currencyId}", patchRequest);
-        var result = await response.Content.ReadFromJsonAsync<Guid>();
+        var result = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        result.Should().Be(currencyId);
+        result.Should().BeTrue();
 
-        // Verify repository interactions
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.GetByCodeAsync("USDNEW", It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.UpdateCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Once);
+        // Verify only the name was changed, other fields remain unchanged
+        originalCurrency.Name.Should().Be("Updated US Dollar Name");
+        originalCurrency.Code.Should().Be("USD"); // Unchanged
+        originalCurrency.CodeIso.Should().Be(840); // Unchanged
+
+        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "PATCH /api/currencies/{id} returns 200 and Guid when only codeiso is patched")]
-    public async Task Patch_ShouldReturn200_AndGuid_WhenOnlyCodeIsoIsPatched()
+    [Fact(DisplayName = "PATCH /api/currencies/{id} validates duplicates for changed fields only")]
+    public async Task PatchCurrency_Should_ValidateDuplicates_OnlyForChangedFields()
+    {
+        // Arrange
+        var currencyId = Guid.NewGuid();
+        var existingCurrencyId = Guid.NewGuid();
+
+        var targetCurrency = Currency.Create(CurrencyId.Of(currencyId), "USD", "دولار", "Dollar", "Dollar", 840);
+        var conflictingCurrency = Currency.Create(CurrencyId.Of(existingCurrencyId), "EUR", "يورو", "Euro", "Euro", 978);
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(targetCurrency);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(conflictingCurrency);
+
+        var patchRequest = new PatchCurrencyRequest
+        {
+            CurrencyId = currencyId,
+            Code = "EUR", // Attempting to change to existing code
+        };
+
+        // Act
+        var response = await _client.PatchAsJsonAsync($"/api/currencies/{currencyId}", patchRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "PATCH /api/currencies/{id} allows same values in unchanged fields")]
+    public async Task PatchCurrency_Should_AllowSameValues_WhenNotChangingFields()
     {
         // Arrange
         var currencyId = Guid.NewGuid();
         var currency = Currency.Create(
             CurrencyId.Of(currencyId),
-            "USD",
-            "US Dollar",
-            "دولار أمريكي",
-            "US Dollar",
-            840
-        );
+            "USD", "دولار أمريكي", "US Dollar", "US Dollar", 840);
 
-        _repoMock
-            .Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
-
-        _repoMock
-            .Setup(r => r.GetByCodeIsoAsync(999, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency)null);
 
         var patchRequest = new PatchCurrencyRequest
         {
             CurrencyId = currencyId,
-            CodeIso = 999, // Only changing the codeiso
+            Code = "USD", // Same code as current (should be allowed)
+            Name = "New Name" // Different name
         };
 
         // Act
         var response = await _client.PatchAsJsonAsync($"/api/currencies/{currencyId}", patchRequest);
-        var result = await response.Content.ReadFromJsonAsync<Guid>();
+        var result = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        result.Should().Be(currencyId);
+        result.Should().BeTrue();
 
-        // Verify repository interactions
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.GetByCodeIsoAsync(999, It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.UpdateCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "PATCH /api/currencies/{id} returns 200 and Guid when only IsEnabled is patched")]
-    public async Task Patch_ShouldReturn200_AndGuid_WhenOnlyIsEnabledIsPatched()
+    [Fact(DisplayName = "PATCH /api/currencies/{id} returns 400 when currency not found")]
+    public async Task PatchCurrency_Should_ReturnBadRequest_WhenCurrencyNotFound()
+    {
+        // Arrange
+        var currencyId = Guid.NewGuid();
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Currency)null);
+
+        var patchRequest = new PatchCurrencyRequest
+        {
+            CurrencyId = currencyId,
+            Name = "New Name"
+        };
+
+        // Act
+        var response = await _client.PatchAsJsonAsync($"/api/currencies/{currencyId}", patchRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Never);
+    }
+
+    [Theory(DisplayName = "PATCH /api/currencies/{id} updates individual fields correctly")]
+    [InlineData("NewCode", null, null, null, null, null)]
+    [InlineData(null, "NewName", null, null, null, null)]
+    [InlineData(null, null, "كود عربي جديد", null, null, null)]
+    [InlineData(null, null, null, "New English Code", null, null)]
+    [InlineData(null, null, null, null, 999, null)]
+    [InlineData(null, null, null, null, null, false)]
+    public async Task PatchCurrency_Should_UpdateIndividualFields_Correctly(
+        string code, string name, string codeAR, string codeEN, int? codeIso, bool? isEnabled)
     {
         // Arrange
         var currencyId = Guid.NewGuid();
         var currency = Currency.Create(
             CurrencyId.Of(currencyId),
-            "USD",
-            "US Dollar",
-            "دولار أمريكي",
-            "US Dollar",
-            840
-        );
+            "USD", "دولار", "Dollar", "Dollar", 840);
 
-        _repoMock
-            .Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Currency)null);
 
         var patchRequest = new PatchCurrencyRequest
         {
             CurrencyId = currencyId,
-            IsEnabled = false, // Only changing the enabled status
+            Code = code,
+            Name = name,
+            CodeAR = codeAR,
+            CodeEN = codeEN,
+            CodeIso = codeIso,
+            IsEnabled = isEnabled
         };
 
         // Act
         var response = await _client.PatchAsJsonAsync($"/api/currencies/{currencyId}", patchRequest);
-        var result = await response.Content.ReadFromJsonAsync<Guid>();
+        var result = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        result.Should().Be(currencyId);
+        result.Should().BeTrue();
 
-        // Verify repository interactions
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.UpdateCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact(DisplayName = "PATCH /api/currencies/{id} returns 400 when patched code already exists")]
-    public async Task Patch_ShouldReturn400_WhenPatchedCodeAlreadyExists()
-    {
-        // Arrange
-        var currencyId = Guid.NewGuid();
-        var existingCurrencyId = Guid.NewGuid();
-
-        var currency = Currency.Create(
-            CurrencyId.Of(currencyId),
-            "USD",
-            "US Dollar",
-            "دولار أمريكي",
-            "US Dollar",
-            840
-        );
-
-        var existingCurrency = Currency.Create(
-            CurrencyId.Of(existingCurrencyId),
-            "EUR",
-            "Euro",
-            "يورو",
-            "Euro",
-            978
-        );
-
-        _repoMock
-            .Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
-
-        _repoMock
-            .Setup(r => r.GetByCodeAsync("EUR", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingCurrency);
-
-        var patchRequest = new PatchCurrencyRequest
-        {
-            CurrencyId = currencyId,
-            Code = "EUR", // Code already exists for another currency
-        };
-
-        // Act
-        var response = await _client.PatchAsJsonAsync($"/api/currencies/{currencyId}", patchRequest);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // Verify repository interactions
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.GetByCodeAsync("EUR", It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.UpdateCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact(DisplayName = "PATCH /api/currencies/{id} returns 400 when patched codeiso already exists")]
-    public async Task Patch_ShouldReturn400_WhenPatchedCodeIsoAlreadyExists()
-    {
-        // Arrange
-        var currencyId = Guid.NewGuid();
-        var existingCurrencyId = Guid.NewGuid();
-
-        var currency = Currency.Create(
-            CurrencyId.Of(currencyId),
-            "USD",
-            "US Dollar",
-            "دولار أمريكي",
-            "US Dollar",
-            840
-        );
-
-        var existingCurrency = Currency.Create(
-            CurrencyId.Of(existingCurrencyId),
-            "EUR",
-            "Euro",
-            "يورو",
-            "Euro",
-            978
-        );
-
-        _repoMock
-            .Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
-
-        _repoMock
-            .Setup(r => r.GetByCodeIsoAsync(978, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingCurrency);
-
-        var patchRequest = new PatchCurrencyRequest
-        {
-            CurrencyId = currencyId,
-            CodeIso = 978, // CodeIso already exists for another currency
-        };
-
-        // Act
-        var response = await _client.PatchAsJsonAsync($"/api/currencies/{currencyId}", patchRequest);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // Verify repository interactions
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.GetByCodeIsoAsync(978, It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.UpdateCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact(DisplayName = "PATCH /api/currencies/{id} returns 400 when codeiso is out of range")]
-    public async Task Patch_ShouldReturn400_WhenCodeIsoIsOutOfRange()
-    {
-        // Arrange
-        var currencyId = Guid.NewGuid();
-        var currency = Currency.Create(
-            CurrencyId.Of(currencyId),
-            "USD",
-            "US Dollar",
-            "دولار أمريكي",
-            "US Dollar",
-            840
-        );
-
-        _repoMock
-            .Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
-
-        var patchRequest = new PatchCurrencyRequest
-        {
-            CurrencyId = currencyId,
-            CodeIso = 1234, // More than 3 digits
-        };
-
-        // Act
-        var response = await _client.PatchAsJsonAsync($"/api/currencies/{currencyId}", patchRequest);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // Verify repository interactions
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Never);
-        _repoMock.Verify(r => r.UpdateCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

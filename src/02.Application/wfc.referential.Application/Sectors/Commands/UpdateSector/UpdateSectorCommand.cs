@@ -1,21 +1,13 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Sectors.Commands.UpdateSector;
 
-public class UpdateSectorCommand : ICommand<Guid>
+public record UpdateSectorCommand : ICommand<Result<bool>>
 {
     public Guid SectorId { get; set; }
-    public string Code { get; set; }
-    public string Name { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
     public Guid CityId { get; set; }
-    public bool IsEnabled { get; set; }
-
-    public UpdateSectorCommand(Guid sectorId, string code, string name, Guid cityId, bool isEnabled = true)
-    {
-        SectorId = sectorId;
-        Code = code;
-        Name = name;
-        CityId = cityId;
-        IsEnabled = isEnabled;
-    }
+    public bool IsEnabled { get; set; } = true;
 }

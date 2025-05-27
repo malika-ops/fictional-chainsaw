@@ -2,9 +2,5 @@
 
 namespace wfc.referential.Domain.SupportAccountAggregate.Exceptions;
 
-public class SupportAccountAlreadyExistException : BusinessException
-{
-    public SupportAccountAlreadyExistException(string code) : base($"Support account with code {code} already exists.")
-    {
-    }
-}
+public class SupportAccountCodeAlreadyExistException(string code)
+    : ConflictException($"Support account with code {code} already exists.");

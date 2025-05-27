@@ -15,10 +15,10 @@ public record UpdateSupportAccountRequest
     public string Code { get; init; } = string.Empty;
 
     /// <summary>
-    /// The name of the Support Account.
+    /// The description of the Support Account.
     /// </summary>
     /// <example>Support Principal</example>
-    public string Name { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
 
     /// <summary>
     /// The threshold amount for this Support Account.
@@ -43,18 +43,6 @@ public record UpdateSupportAccountRequest
     /// </summary>
     /// <example>ACC123456</example>
     public string AccountingNumber { get; init; } = string.Empty;
-
-    /// <summary>
-    /// The ID of the Partner this account belongs to.
-    /// </summary>
-    /// <example>8c583b69-6e16-5b2c-9c8f-69627ee725d5</example>
-    public Guid PartnerId { get; init; }
-
-    /// <summary>
-    /// The type of Support Account (Commun or Individuel).
-    /// </summary>
-    /// <example>Commun</example>
-    public string SupportAccountType { get; init; } = string.Empty;
 
     /// <summary>
     /// Whether the account is enabled or not.

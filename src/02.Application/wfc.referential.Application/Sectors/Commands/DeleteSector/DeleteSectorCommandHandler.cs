@@ -1,36 +1,36 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
+using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.SectorAggregate;
 using wfc.referential.Domain.SectorAggregate.Exceptions;
 
 namespace wfc.referential.Application.Sectors.Commands.DeleteSector;
 
-public class DeleteSectorCommandHandler : ICommandHandler<DeleteSectorCommand, bool>
+public class DeleteSectorCommandHandler : ICommandHandler<DeleteSectorCommand, Result<bool>>
 {
-    private readonly ISectorRepository _sectorRepository;
+    private readonly ISectorRepository _sectorRepo;
+    private readonly IAgencyRepository _agencyRepo;
 
-    public DeleteSectorCommandHandler(ISectorRepository sectorRepository)
+    public DeleteSectorCommandHandler(ISectorRepository sectorRepo, IAgencyRepository agencyRepo)
     {
-        _sectorRepository = sectorRepository;
+        _sectorRepo = sectorRepo;
+        _agencyRepo = agencyRepo;
     }
 
-    public async Task<bool> Handle(DeleteSectorCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(DeleteSectorCommand cmd, CancellationToken ct)
     {
-        var sector = await _sectorRepository.GetByIdAsync(SectorId.Of(request.SectorId), cancellationToken);
+        var sector = await _sectorRepo.GetByIdAsync(SectorId.Of(cmd.SectorId), ct);
+        if (sector is null)
+            throw new BusinessException($"Sector [{cmd.SectorId}] not found.");
 
-        if (sector == null)
-            throw new InvalidSectorDeletingException("Sector not found");
+        // Check if sector is linked to agencies using BaseRepository method
+        var linkedAgencies = await _agencyRepo.GetByConditionAsync(a => a.SectorId == sector.Id, ct);
+        if (linkedAgencies.Any())
+            throw new SectorLinkedToAgencyException(cmd.SectorId);
 
-        // Check if sector has linked agencies
-        var hasLinkedAgencies = await _sectorRepository.HasLinkedAgenciesAsync(sector.Id, cancellationToken);
-        if (hasLinkedAgencies)
-            throw new SectorLinkedToAgencyException(request.SectorId);
-
-        // Disable the sector instead of deleting it
         sector.Disable();
-
-        await _sectorRepository.UpdateSectorAsync(sector, cancellationToken);
-
-        return true;
+        await _sectorRepo.SaveChangesAsync(ct);
+        return Result.Success(true);
     }
 }

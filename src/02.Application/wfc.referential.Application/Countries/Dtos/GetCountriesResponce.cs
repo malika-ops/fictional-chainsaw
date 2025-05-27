@@ -15,6 +15,6 @@ public record GetCountriesResponce (
     bool IsSmsEnabled,
     int NumberDecimalDigits,
     bool IsEnabled,
-    CurrencyResponse Currency,
+    GetCurrenciesResponse Currency,
     Guid MonetaryZoneId
     );

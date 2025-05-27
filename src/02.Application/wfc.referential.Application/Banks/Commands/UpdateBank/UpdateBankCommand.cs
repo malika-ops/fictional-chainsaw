@@ -1,21 +1,13 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Banks.Commands.UpdateBank;
 
-public class UpdateBankCommand : ICommand<Guid>
+public record UpdateBankCommand : ICommand<Result<bool>>
 {
     public Guid BankId { get; set; }
-    public string Code { get; set; }
-    public string Name { get; set; }
-    public string Abbreviation { get; set; }
-    public bool IsEnabled { get; set; }
-
-    public UpdateBankCommand(Guid bankId, string code, string name, string abbreviation, bool isEnabled)
-    {
-        BankId = bankId;
-        Code = code;
-        Name = name;
-        Abbreviation = abbreviation;
-        IsEnabled = isEnabled;
-    }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Abbreviation { get; set; } = string.Empty;
+    public bool IsEnabled { get; set; } = true;
 }

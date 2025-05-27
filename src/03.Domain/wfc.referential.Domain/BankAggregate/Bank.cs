@@ -23,46 +23,47 @@ public class Bank : Aggregate<BankId>
             IsEnabled = true
         };
 
-        // raise the creation event
         bank.AddDomainEvent(new BankCreatedEvent(
             bank.Id.Value,
             bank.Code,
             bank.Name,
             bank.Abbreviation,
             bank.IsEnabled,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
+
         return bank;
     }
 
     public void Update(
-            string code,
-            string name,
-            string abbreviation)
+        string code,
+        string name,
+        string abbreviation,
+        bool? isEnabled)
     {
         Code = code;
         Name = name;
         Abbreviation = abbreviation;
+        IsEnabled = isEnabled ?? IsEnabled;
 
-        // raise the update event
         AddDomainEvent(new BankUpdatedEvent(
             Id.Value,
             Code,
             Name,
             Abbreviation,
             IsEnabled,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Patch(
-            string code,
-            string name,
-            string abbreviation)
+        string? code,
+        string? name,
+        string? abbreviation,
+        bool? isEnabled)
     {
-        Code = code;
-        Name = name;
-        Abbreviation = abbreviation;
+        Code = code ?? Code;
+        Name = name ?? Name;
+        Abbreviation = abbreviation ?? Abbreviation;
+        IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new BankPatchedEvent(
             Id.Value,
@@ -70,29 +71,24 @@ public class Bank : Aggregate<BankId>
             Name,
             Abbreviation,
             IsEnabled,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Disable()
     {
         IsEnabled = false;
 
-        // raise the disable event
         AddDomainEvent(new BankDisabledEvent(
             Id.Value,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Activate()
     {
         IsEnabled = true;
 
-        // raise the activate event
         AddDomainEvent(new BankActivatedEvent(
             Id.Value,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 }

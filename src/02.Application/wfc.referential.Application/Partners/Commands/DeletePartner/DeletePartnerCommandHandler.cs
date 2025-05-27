@@ -26,7 +26,9 @@ public record DeletePartnerCommandHandler : ICommandHandler<DeletePartnerCommand
             throw new InvalidPartnerDeletingException("Partner not found");
 
         // Check if this partner has any support accounts
-        var supportAccounts = await _supportAccountRepository.GetByPartnerIdAsync(request.PartnerId, cancellationToken);
+        var supportAccounts = await _supportAccountRepository.GetByConditionAsync(
+                                                                 sa => sa.PartnerId != null && sa.PartnerId.Value == request.PartnerId,
+                                                                 cancellationToken);
         if (supportAccounts.Any())
             throw new InvalidPartnerDeletingException("Cannot delete partner with existing support accounts");
 

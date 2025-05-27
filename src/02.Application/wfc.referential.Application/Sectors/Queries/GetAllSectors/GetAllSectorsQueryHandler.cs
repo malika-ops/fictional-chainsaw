@@ -6,25 +6,17 @@ using wfc.referential.Application.Sectors.Dtos;
 
 namespace wfc.referential.Application.Sectors.Queries.GetAllSectors;
 
-public class GetAllSectorsQueryHandler : IQueryHandler<GetAllSectorsQuery, PagedResult<SectorResponse>>
+public class GetAllSectorsQueryHandler
+    : IQueryHandler<GetAllSectorsQuery, PagedResult<SectorResponse>>
 {
-    private readonly ISectorRepository _sectorRepository;
+    private readonly ISectorRepository _repo;
 
-    public GetAllSectorsQueryHandler(ISectorRepository sectorRepository)
+    public GetAllSectorsQueryHandler(ISectorRepository repo) => _repo = repo;
+
+    public async Task<PagedResult<SectorResponse>> Handle(
+        GetAllSectorsQuery sectorQuery, CancellationToken ct)
     {
-        _sectorRepository = sectorRepository;
-    }
-
-    public async Task<PagedResult<SectorResponse>> Handle(GetAllSectorsQuery request, CancellationToken cancellationToken)
-    {
-             var sectors = await _sectorRepository
-            .GetFilteredSectorsAsync(request, cancellationToken);
-
-        int totalCount = await _sectorRepository
-            .GetCountTotalAsync(request, cancellationToken);
-
-        var sectorResponses = sectors.Adapt<List<SectorResponse>>();
-
-        return new PagedResult<SectorResponse>(sectorResponses, totalCount, request.PageNumber, request.PageSize);
+        var sectors = await _repo.GetPagedByCriteriaAsync(sectorQuery, sectorQuery.PageNumber, sectorQuery.PageSize, ct);
+        return new PagedResult<SectorResponse>(sectors.Items.Adapt<List<SectorResponse>>(), sectors.TotalCount, sectors.PageNumber, sectors.PageSize);
     }
 }

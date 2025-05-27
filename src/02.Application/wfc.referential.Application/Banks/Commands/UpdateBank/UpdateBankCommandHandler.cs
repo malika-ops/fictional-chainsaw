@@ -1,4 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
@@ -6,42 +7,32 @@ using wfc.referential.Domain.BankAggregate.Exceptions;
 
 namespace wfc.referential.Application.Banks.Commands.UpdateBank;
 
-public class UpdateBankCommandHandler : ICommandHandler<UpdateBankCommand, Guid>
+public class UpdateBankCommandHandler
+    : ICommandHandler<UpdateBankCommand, Result<bool>>
 {
-    private readonly IBankRepository _bankRepository;
+    private readonly IBankRepository _repo;
 
-    public UpdateBankCommandHandler(IBankRepository bankRepository)
-    {
-        _bankRepository = bankRepository;
-    }
+    public UpdateBankCommandHandler(IBankRepository repo) => _repo = repo;
 
-    public async Task<Guid> Handle(UpdateBankCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(UpdateBankCommand cmd, CancellationToken ct)
     {
-        // Check if bank exists
-        var bank = await _bankRepository.GetByIdAsync(new BankId(request.BankId), cancellationToken);
+        var bank = await _repo.GetByIdAsync(BankId.Of(cmd.BankId), ct);
         if (bank is null)
-            throw new BusinessException($"Bank with ID {request.BankId} not found");
+            throw new BusinessException($"Bank [{cmd.BankId}] not found.");
 
-        // Check if code is unique (if changed)
-        var existingWithCode = await _bankRepository.GetByCodeAsync(request.Code, cancellationToken);
-        if (existingWithCode is not null && existingWithCode.Id.Value != request.BankId)
-            throw new BankCodeAlreadyExistException(request.Code);
+        // uniqueness on Code
+        var duplicateCode = await _repo.GetOneByConditionAsync(b => b.Code == cmd.Code, ct);
+        if (duplicateCode is not null && duplicateCode.Id != bank.Id)
+            throw new BankCodeAlreadyExistException(cmd.Code);
 
-        // Update the bank
-        bank.Update(request.Code, request.Name, request.Abbreviation);
+        bank.Update(
+            cmd.Code,
+            cmd.Name,
+            cmd.Abbreviation,
+            cmd.IsEnabled);
 
-        // Handle enabled status changes separately
-        if (request.IsEnabled && !bank.IsEnabled)
-        {
-            bank.Activate();
-        }
-        else if (!request.IsEnabled && bank.IsEnabled)
-        {
-            bank.Disable();
-        }
-
-        await _bankRepository.UpdateBankAsync(bank, cancellationToken);
-
-        return bank.Id.Value;
+        _repo.Update(bank);
+        await _repo.SaveChangesAsync(ct);
+        return Result.Success(true);
     }
 }

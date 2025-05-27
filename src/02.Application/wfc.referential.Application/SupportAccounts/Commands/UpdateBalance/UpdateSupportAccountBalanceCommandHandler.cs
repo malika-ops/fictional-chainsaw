@@ -1,31 +1,25 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.SupportAccountAggregate;
 
 namespace wfc.referential.Application.SupportAccounts.Commands.UpdateBalance;
 
-public record UpdateSupportAccountBalanceCommandHandler : ICommandHandler<UpdateSupportAccountBalanceCommand, Guid>
+public class UpdateSupportAccountBalanceCommandHandler : ICommandHandler<UpdateSupportAccountBalanceCommand, Result<bool>>
 {
-    private readonly ISupportAccountRepository _supportAccountRepository;
+    private readonly ISupportAccountRepository _repo;
 
-    public UpdateSupportAccountBalanceCommandHandler(ISupportAccountRepository supportAccountRepository)
-    {
-        _supportAccountRepository = supportAccountRepository;
-    }
+    public UpdateSupportAccountBalanceCommandHandler(ISupportAccountRepository repo) => _repo = repo;
 
-    public async Task<Guid> Handle(UpdateSupportAccountBalanceCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(UpdateSupportAccountBalanceCommand cmd, CancellationToken ct)
     {
-        // Check if support account exists
-        var supportAccount = await _supportAccountRepository.GetByIdAsync(new SupportAccountId(request.SupportAccountId), cancellationToken);
+        var supportAccount = await _repo.GetByIdAsync(SupportAccountId.Of(cmd.SupportAccountId), ct);
         if (supportAccount is null)
-            throw new BusinessException($"Support account with ID {request.SupportAccountId} not found");
+            throw new BusinessException($"Support account [{cmd.SupportAccountId}] not found.");
 
-        // Update the balance using dedicated domain method
-        supportAccount.UpdateBalance(request.NewBalance);
-
-        await _supportAccountRepository.UpdateSupportAccountAsync(supportAccount, cancellationToken);
-
-        return supportAccount.Id.Value;
+        supportAccount.UpdateBalance(cmd.NewBalance);
+        await _repo.SaveChangesAsync(ct);
+        return Result.Success(true);
     }
 }

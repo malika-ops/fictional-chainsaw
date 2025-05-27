@@ -1,66 +1,45 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CurrencyAggregate;
-using wfc.referential.Domain.CurrencyAggregate.Exception;
+using wfc.referential.Domain.CurrencyAggregate.Exceptions;
 
 namespace wfc.referential.Application.Currencies.Commands.UpdateCurrency;
 
-public class UpdateCurrencyCommandHandler : ICommandHandler<UpdateCurrencyCommand, Result<Guid>>
+public class UpdateCurrencyCommandHandler
+    : ICommandHandler<UpdateCurrencyCommand, Result<bool>>
 {
-    private readonly ICurrencyRepository _currencyRepository;
+    private readonly ICurrencyRepository _repo;
 
-    public UpdateCurrencyCommandHandler(ICurrencyRepository currencyRepository)
+    public UpdateCurrencyCommandHandler(ICurrencyRepository repo) => _repo = repo;
+
+    public async Task<Result<bool>> Handle(UpdateCurrencyCommand cmd, CancellationToken ct)
     {
-        _currencyRepository = currencyRepository;
-    }
+        var currency = await _repo.GetByIdAsync(CurrencyId.Of(cmd.CurrencyId), ct);
+        if (currency is null)
+            throw new BusinessException($"Currency [{cmd.CurrencyId}] not found.");
 
-    public async Task<Result<Guid>> Handle(UpdateCurrencyCommand request, CancellationToken cancellationToken)
-    {
-        var currency = await _currencyRepository.GetByIdAsync(new CurrencyId(request.CurrencyId), cancellationToken);
+        // uniqueness on Code
+        var duplicateCode = await _repo.GetOneByConditionAsync(c => c.Code == cmd.Code, ct);
+        if (duplicateCode is not null && duplicateCode.Id != currency.Id)
+            throw new CurrencyCodeAlreadyExistException(cmd.Code);
 
-        if (currency == null)
-            return Result.Failure<Guid>("Currency not found");
-
-        // Check if the code is already used by another currency
-        if (currency.Code != request.Code)
-        {
-            var existingCurrency = await _currencyRepository.GetByCodeAsync(request.Code, cancellationToken);
-            if (existingCurrency != null && existingCurrency.Id.Value != request.CurrencyId)
-            {
-                throw new CodeAlreadyExistException(request.Code);
-            }
-        }
-
-        // Check if the codeiso is already used by another currency
-        if (currency.CodeIso != request.CodeIso)
-        {
-            var existingCurrencyByCodeIso = await _currencyRepository.GetByCodeIsoAsync(request.CodeIso, cancellationToken);
-            if (existingCurrencyByCodeIso != null && existingCurrencyByCodeIso.Id.Value != request.CurrencyId)
-            {
-                throw new CodeIsoAlreadyExistException(request.CodeIso);
-            }
-        }
+        // uniqueness on CodeIso
+        var duplicateCodeIso = await _repo.GetOneByConditionAsync(c => c.CodeIso == cmd.CodeIso, ct);
+        if (duplicateCodeIso is not null && duplicateCodeIso.Id != currency.Id)
+            throw new CurrencyCodeIsoAlreadyExistException(cmd.CodeIso);
 
         currency.Update(
-            request.Code,
-            request.CodeAR,
-            request.CodeEN,
-            request.Name,
-            request.CodeIso
-        );
+            cmd.Code,
+            cmd.CodeAR,
+            cmd.CodeEN,
+            cmd.Name,
+            cmd.CodeIso,
+            cmd.IsEnabled);
 
-        if (request.IsEnabled && !currency.IsEnabled)
-        {
-            currency.Activate();
-        }
-        else if (!request.IsEnabled && currency.IsEnabled)
-        {
-            currency.Disable();
-        }
-
-        await _currencyRepository.UpdateCurrencyAsync(currency, cancellationToken);
-
-        return Result.Success(currency.Id.Value);
+        _repo.Update(currency);
+        await _repo.SaveChangesAsync(ct);
+        return Result.Success(true);
     }
 }

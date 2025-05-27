@@ -5,10 +5,6 @@ namespace wfc.referential.Application.Currencies.Commands.DeleteCurrency;
 
 public record DeleteCurrencyCommand : ICommand<Result<bool>>
 {
-    public string CurrencyId { get; init; }
-
-    public DeleteCurrencyCommand(string currencyId)
-    {
-        CurrencyId = currencyId;
-    }
+    public Guid CurrencyId { get; }
+    public DeleteCurrencyCommand(Guid currencyId) => CurrencyId = currencyId;
 }

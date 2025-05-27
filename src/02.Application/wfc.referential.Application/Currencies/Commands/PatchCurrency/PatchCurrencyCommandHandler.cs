@@ -1,59 +1,54 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CurrencyAggregate;
-using wfc.referential.Domain.CurrencyAggregate.Exception;
+using wfc.referential.Domain.CurrencyAggregate.Exceptions;
 
 namespace wfc.referential.Application.Currencies.Commands.PatchCurrency;
 
-public class PatchCurrencyCommandHandler : ICommandHandler<PatchCurrencyCommand, Result<Guid>>
+public class PatchCurrencyCommandHandler : ICommandHandler<PatchCurrencyCommand, Result<bool>>
 {
-    private readonly ICurrencyRepository _currencyRepository;
-    private readonly ICacheService _cache;
+    private readonly ICurrencyRepository _repo;
 
-    public PatchCurrencyCommandHandler(ICurrencyRepository currencyRepository, ICacheService cache)
+    public PatchCurrencyCommandHandler(ICurrencyRepository repo)
     {
-        _currencyRepository = currencyRepository;
-        _cache = cache;
+        _repo = repo;
     }
 
-    public async Task<Result<Guid>> Handle(PatchCurrencyCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(PatchCurrencyCommand cmd, CancellationToken ct)
     {
-        var currency = await _currencyRepository.GetByIdAsync(CurrencyId.Of(request.CurrencyId), cancellationToken);
+        var currency = await _repo.GetByIdAsync(CurrencyId.Of(cmd.CurrencyId), ct);
+        if (currency is null)
+            throw new ResourceNotFoundException($"Currency [{cmd.CurrencyId}] not found.");
 
-        if (currency == null)
-            return Result.Failure<Guid>("Currency not found");
-
-        // Check if the code is already used by another currency
-        if (request.Code != null && request.Code != currency.Code)
+        // duplicate Code check
+        if (!string.IsNullOrWhiteSpace(cmd.Code))
         {
-            var existingCurrency = await _currencyRepository.GetByCodeAsync(request.Code, cancellationToken);
-            if (existingCurrency != null && existingCurrency.Id.Value != request.CurrencyId)
-            {
-                throw new CodeAlreadyExistException(request.Code);
-            }
+            var dup = await _repo.GetOneByConditionAsync(c => c.Code == cmd.Code, ct);
+            if (dup is not null && dup.Id != currency.Id)
+                throw new CurrencyCodeAlreadyExistException(cmd.Code);
         }
 
-        // Check if the codeiso is already used by another currency
-        if (request.CodeIso.HasValue && request.CodeIso.Value != currency.CodeIso)
+        // duplicate CodeIso check
+        if (cmd.CodeIso.HasValue)
         {
-            var existingCurrencyByCodeIso = await _currencyRepository.GetByCodeIsoAsync(request.CodeIso.Value, cancellationToken);
-            if (existingCurrencyByCodeIso != null && existingCurrencyByCodeIso.Id!.Value != request.CurrencyId)
-            {
-                throw new CodeIsoAlreadyExistException(request.CodeIso.Value);
-            }
+            var dup = await _repo.GetOneByConditionAsync(c => c.CodeIso == cmd.CodeIso.Value, ct);
+            if (dup is not null && dup.Id != currency.Id)
+                throw new CurrencyCodeIsoAlreadyExistException(cmd.CodeIso.Value);
         }
 
-        // Patch the currency with partial data
+        currency.Patch(
+            cmd.Code,
+            cmd.CodeAR,
+            cmd.CodeEN,
+            cmd.Name,
+            cmd.CodeIso,
+            cmd.IsEnabled);
 
-        currency.Patch(request.Code, request.CodeAR, request.CodeEN, request.Name, request.CodeIso , request.IsEnabled);
+        _repo.Update(currency);
+        await _repo.SaveChangesAsync(ct);
 
-     
-        await _currencyRepository.SaveChangesAsync(cancellationToken);
-
-        await _cache.RemoveByPrefixAsync("ReferentialCache:currencies_", cancellationToken);
-
-        return Result.Success(currency.Id!.Value);
+        return Result.Success(true);
     }
 }

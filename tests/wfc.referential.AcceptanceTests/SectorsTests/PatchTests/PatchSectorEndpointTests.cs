@@ -38,20 +38,16 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
                 services.RemoveAll<ICityRepository>();
                 services.RemoveAll<ICacheService>();
 
-                // Default noop for Patch
-                _repoMock
-                    .Setup(r => r.UpdateSectorAsync(It.IsAny<Sector>(),
-                                                   It.IsAny<CancellationToken>()))
+                // Default setup for Update
+                _repoMock.Setup(r => r.Update(It.IsAny<Sector>()));
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
-                // Set up country, city, region mocks to return valid entities
-                var countryId = CountryId.Of(Guid.Parse("11111111-1111-1111-1111-111111111111"));
-                var cityId = CityId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
-                var regionId = RegionId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
-
-                //_cityRepoMock
-                //    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                //    .ReturnsAsync(City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC"));
+                // FIXED: Set up city mocks to return valid entities with correct parameter type
+                _cityRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<CityId>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((CityId cityId, CancellationToken _) =>
+                        City.Create(cityId, "TEST", "Test City", "GMT",
+                                   new RegionId(Guid.NewGuid()), "TC"));
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(_cityRepoMock.Object);
@@ -77,9 +73,7 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
 
         var city = City.Create(cityId, "CITY1", "Test City", "GMT", regionId, "TC");
 
-        var region = Region.Create(regionId, "REG1", "Test Region", countryId);
-
-        return Sector.Create(new SectorId(id), code, name, city);
+        return Sector.Create(new SectorId(id), code, name, cityId);
     }
 
     [Fact(DisplayName = "PATCH /api/sectors/{id} returns 200 and patches only the provided fields")]
@@ -92,14 +86,12 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(sid => sid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(sector);
 
-        _repoMock.Setup(r => r.GetByCodeAsync("NEW-CODE", It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Sector?)null);   // Code is unique
 
         Sector? updated = null;
-        _repoMock.Setup(r => r.UpdateSectorAsync(It.IsAny<Sector>(),
-                                                It.IsAny<CancellationToken>()))
-                 .Callback<Sector, CancellationToken>((s, _) => updated = s)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.Update(It.IsAny<Sector>()))
+                 .Callback<Sector>(s => updated = s);
 
         var payload = new
         {
@@ -110,18 +102,17 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
 
         // Act
         var response = await _client.PatchAsync($"/api/sectors/{id}", JsonContent.Create(payload));
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().BeTrue();
 
         updated!.Code.Should().Be("NEW-CODE");
         updated.Name.Should().Be("Old Name");  // Name should not change
 
-        _repoMock.Verify(r => r.UpdateSectorAsync(It.IsAny<Sector>(),
-                                                 It.IsAny<CancellationToken>()),
-                          Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<Sector>()), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/sectors/{id} returns 200 and updates IsEnabled")]
@@ -135,10 +126,8 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
                  .ReturnsAsync(sector);
 
         Sector? updated = null;
-        _repoMock.Setup(r => r.UpdateSectorAsync(It.IsAny<Sector>(),
-                                                It.IsAny<CancellationToken>()))
-                 .Callback<Sector, CancellationToken>((s, _) => updated = s)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.Update(It.IsAny<Sector>()))
+                 .Callback<Sector>(s => updated = s);
 
         var payload = new
         {
@@ -148,19 +137,18 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
 
         // Act
         var response = await _client.PatchAsync($"/api/sectors/{id}", JsonContent.Create(payload));
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().BeTrue();
 
         updated!.IsEnabled.Should().BeFalse();
         updated.Code.Should().Be("CODE-ENABLE");  // Code should not change
         updated.Name.Should().Be("Sector Name");  // Name should not change
 
-        _repoMock.Verify(r => r.UpdateSectorAsync(It.IsAny<Sector>(),
-                                                 It.IsAny<CancellationToken>()),
-                          Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<Sector>()), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/sectors/{id} returns 400 when sector doesn't exist")]
@@ -188,13 +176,11 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be("Sector not found");
 
-        _repoMock.Verify(r => r.UpdateSectorAsync(It.IsAny<Sector>(),
-                                                 It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<Sector>()), Times.Never);
     }
 
-    [Fact(DisplayName = "PATCH /api/sectors/{id} returns 400 when new code already exists")]
-    public async Task Patch_ShouldReturn400_WhenNewCodeAlreadyExists()
+    [Fact(DisplayName = "PATCH /api/sectors/{id} returns 409 when new code already exists")]
+    public async Task Patch_ShouldReturn409_WhenNewCodeAlreadyExists()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -206,8 +192,8 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(sid => sid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(target);
 
-        _repoMock.Setup(r => r.GetByCodeAsync("DUPE-CODE", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing); // Duplicate code
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existing); // Duplicate code found via condition
 
         var payload = new
         {
@@ -220,18 +206,16 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be("Sector with code DUPE-CODE already exists.");
 
-        _repoMock.Verify(r => r.UpdateSectorAsync(It.IsAny<Sector>(),
-                                                 It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<Sector>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/sectors/{id} returns 400 when provided City doesn't exist")]
-    public async Task Patch_ShouldReturn400_WhenProvidedCountryDoesNotExist()
+    public async Task Patch_ShouldReturn400_WhenProvidedCityDoesNotExist()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -242,10 +226,10 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(sid => sid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(sector);
 
-        //// Setup country repository to return null for this ID
-        //_cityRepoMock
-        //    .Setup(r => r.GetByIdAsync(nonExistentCityId, It.IsAny<CancellationToken>()))
-        //    .ReturnsAsync((City?)null);
+        // Setup city repository to return null for this ID
+        _cityRepoMock
+            .Setup(r => r.GetByIdAsync(CityId.Of(nonExistentCityId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((City?)null);
 
         var payload = new
         {
@@ -263,8 +247,160 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be($"City with ID {nonExistentCityId} not found");
 
-        _repoMock.Verify(r => r.UpdateSectorAsync(It.IsAny<Sector>(),
-                                                 It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<Sector>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "PATCH /api/sectors/{id} patches only Name field")]
+    public async Task Patch_ShouldUpdateOnlyNameField_WhenOnlyNameProvided()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var sector = CreateTestSector(id, "SEC-001", "Old Name");
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(sid => sid.Value == id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(sector);
+
+        Sector? updated = null;
+        _repoMock.Setup(r => r.Update(It.IsAny<Sector>()))
+                 .Callback<Sector>(s => updated = s);
+
+        var payload = new
+        {
+            SectorId = id,
+            Name = "Updated Name Only"
+        };
+
+        // Act
+        var response = await _client.PatchAsync($"/api/sectors/{id}", JsonContent.Create(payload));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        updated!.Name.Should().Be("Updated Name Only");
+        updated.Code.Should().Be("SEC-001"); // Should remain unchanged
+    }
+
+    [Fact(DisplayName = "PATCH /api/sectors/{id} patches only CityId field")]
+    public async Task Patch_ShouldUpdateOnlyCityField_WhenOnlyCityProvided()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var newCityId = Guid.NewGuid();
+        var sector = CreateTestSector(id, "SEC-001", "Test Sector");
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(sid => sid.Value == id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(sector);
+
+        Sector? updated = null;
+        _repoMock.Setup(r => r.Update(It.IsAny<Sector>()))
+                 .Callback<Sector>(s => updated = s);
+
+        var payload = new
+        {
+            SectorId = id,
+            CityId = newCityId
+        };
+
+        // Act
+        var response = await _client.PatchAsync($"/api/sectors/{id}", JsonContent.Create(payload));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        updated!.CityId.Value.Should().Be(newCityId);
+        updated.Code.Should().Be("SEC-001"); // Should remain unchanged
+        updated.Name.Should().Be("Test Sector"); // Should remain unchanged
+    }
+
+    [Fact(DisplayName = "PATCH /api/sectors/{id} handles multiple field updates")]
+    public async Task Patch_ShouldUpdateMultipleFields_WhenMultipleFieldsProvided()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var newCityId = Guid.NewGuid();
+        var sector = CreateTestSector(id, "OLD-CODE", "Old Name");
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(sid => sid.Value == id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(sector);
+
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((Sector?)null);
+
+        Sector? updated = null;
+        _repoMock.Setup(r => r.Update(It.IsAny<Sector>()))
+                 .Callback<Sector>(s => updated = s);
+
+        var payload = new
+        {
+            SectorId = id,
+            Code = "NEW-CODE",
+            Name = "New Name",
+            CityId = newCityId,
+            IsEnabled = false
+        };
+
+        // Act
+        var response = await _client.PatchAsync($"/api/sectors/{id}", JsonContent.Create(payload));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        updated!.Code.Should().Be("NEW-CODE");
+        updated.Name.Should().Be("New Name");
+        updated.CityId.Value.Should().Be(newCityId);
+        updated.IsEnabled.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "PATCH /api/sectors/{id} allows patching with same code for same sector")]
+    public async Task Patch_ShouldAllowSameCodeForSameSector()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var sector = CreateTestSector(id, "SAME-CODE", "Old Name");
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(sid => sid.Value == id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(sector);
+
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(sector); // Same sector with same code - this should be allowed
+
+        Sector? updated = null;
+        _repoMock.Setup(r => r.Update(It.IsAny<Sector>()))
+                 .Callback<Sector>(s => updated = s);
+
+        var payload = new
+        {
+            SectorId = id,
+            Code = "SAME-CODE", // Same code as existing
+            Name = "New Name"
+        };
+
+        // Act
+        var response = await _client.PatchAsync($"/api/sectors/{id}", JsonContent.Create(payload));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        updated!.Code.Should().Be("SAME-CODE");
+        updated.Name.Should().Be("New Name");
+    }
+
+    [Fact(DisplayName = "PATCH /api/sectors/{id} validates route parameter matches body parameter")]
+    public async Task Patch_ShouldReturnBadRequest_WhenRouteIdDifferentFromBodyId()
+    {
+        // Arrange
+        var routeId = Guid.NewGuid();
+        var bodyId = Guid.NewGuid(); // Different ID
+
+        var payload = new
+        {
+            SectorId = bodyId, // Different from route
+            Name = "New Name"
+        };
+
+        // Act
+        var response = await _client.PatchAsync($"/api/sectors/{routeId}", JsonContent.Create(payload));
+
+        // Assert
+        // Note: This test will fail unless you add endpoint-level validation
+        // The current handler doesn't validate route vs body ID mismatch
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        _repoMock.Verify(r => r.Update(It.IsAny<Sector>()), Times.Never);
     }
 }

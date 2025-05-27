@@ -15,10 +15,10 @@ public record PatchSupportAccountRequest
     public string? Code { get; init; }
 
     /// <summary>
-    /// If provided, updates the name. If omitted, name remains unchanged.
+    /// If provided, updates the description. If omitted, description remains unchanged.
     /// </summary>
     /// <example>Support Secondaire</example>
-    public string? Name { get; init; }
+    public string? Description { get; init; }
 
     /// <summary>
     /// If provided, updates the threshold. If omitted, threshold remains unchanged.
@@ -43,18 +43,6 @@ public record PatchSupportAccountRequest
     /// </summary>
     /// <example>ACC654321</example>
     public string? AccountingNumber { get; init; }
-
-    /// <summary>
-    /// If provided, updates the partner. If omitted, partner remains unchanged.
-    /// </summary>
-    /// <example>9c583b69-6e16-5b2c-9c8f-69627ee725d6</example>
-    public Guid? PartnerId { get; init; }
-
-    /// <summary>
-    /// If provided, updates the support account type. If omitted, support account type remains unchanged.
-    /// </summary>
-    /// <example>Individuel</example>
-    public string? SupportAccountType { get; init; }
 
     /// <summary>
     /// If provided, updates the enabled status. If omitted, enabled status remains unchanged.

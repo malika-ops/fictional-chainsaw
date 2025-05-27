@@ -1033,6 +1033,10 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsEnabled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1047,16 +1051,11 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<decimal>("Limit")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("PartnerId")
+                    b.Property<Guid?>("PartnerId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("SupportAccountType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid?>("SupportAccountTypeId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Threshold")
                         .HasColumnType("decimal(18,2)");
@@ -1070,6 +1069,8 @@ namespace wfc.referential.Infrastructure.Migrations
                         .IsUnique();
 
                     b.HasIndex("PartnerId");
+
+                    b.HasIndex("SupportAccountTypeId");
 
                     b.ToTable("SupportAccounts");
                 });
@@ -1456,10 +1457,16 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.HasOne("wfc.referential.Domain.PartnerAggregate.Partner", "Partner")
                         .WithMany()
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("wfc.referential.Domain.ParamTypeAggregate.ParamType", "SupportAccountType")
+                        .WithMany()
+                        .HasForeignKey("SupportAccountTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Partner");
+
+                    b.Navigation("SupportAccountType");
                 });
 
             modelBuilder.Entity("wfc.referential.Domain.TaxRuleDetailAggregate.TaxRuleDetail", b =>

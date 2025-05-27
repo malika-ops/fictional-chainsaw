@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
@@ -90,7 +91,7 @@ public class DeletePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
             .ReturnsAsync(partner);
 
         _supportAccountRepoMock
-            .Setup(r => r.GetByPartnerIdAsync(id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByConditionAsync(It.IsAny<Expression<Func<SupportAccount, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<SupportAccount>()); // No support accounts associated
 
         // Capture the entity passed to Update
@@ -164,13 +165,13 @@ public class DeletePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
             10000.00m,
             20000.00m,
             5000.00m,
-            "ACC001",
-            partner,
-            SupportAccountType.Commun
+            "ACC001"
         );
 
         _supportAccountRepoMock
-            .Setup(r => r.GetByPartnerIdAsync(id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByConditionAsync(
+                It.IsAny<Expression<Func<SupportAccount, bool>>>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<SupportAccount> { supportAccount });
 
         // Act

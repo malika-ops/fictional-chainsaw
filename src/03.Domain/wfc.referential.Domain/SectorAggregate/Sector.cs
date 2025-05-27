@@ -14,78 +14,84 @@ public class Sector : Aggregate<SectorId>
 
     private Sector() { }
 
-    public static Sector Create(SectorId id, string code, string name, City city)
+    public static Sector Create(
+        SectorId id,
+        string code,
+        string name,
+        CityId cityId)
     {
         var sector = new Sector
         {
             Id = id,
             Code = code,
             Name = name,
-            City = city,
+            CityId = cityId,
             IsEnabled = true
         };
 
-        // raise the creation event
         sector.AddDomainEvent(new SectorCreatedEvent(
             sector.Id.Value,
             sector.Code,
             sector.Name,
-            sector.City.Id.Value,
-            sector.IsEnabled,
-            DateTime.UtcNow
-        ));
+            sector.CityId.Value,
+            DateTime.UtcNow));
+
         return sector;
     }
 
     public void Update(
-            string code,
-            string name,
-            City city)
+        string code,
+        string name,
+        CityId cityId,
+        bool? isEnabled)
     {
         Code = code;
         Name = name;
-        City = city;
+        CityId = cityId;
+        IsEnabled = isEnabled ?? IsEnabled;
 
-        // raise the update event
         AddDomainEvent(new SectorUpdatedEvent(
             Id.Value,
             Code,
             Name,
-            City.Id.Value,
-            DateTime.UtcNow
-        ));
+            CityId.Value,
+            DateTime.UtcNow));
     }
 
-    public void Patch()
+    public void Patch(
+        string? code,
+        string? name,
+        CityId? cityId,
+        bool? isEnabled)
     {
+        Code = code ?? Code;
+        Name = name ?? Name;
+        CityId = cityId ?? CityId;
+        IsEnabled = isEnabled ?? IsEnabled;
+
         AddDomainEvent(new SectorPatchedEvent(
             Id.Value,
             Code,
             Name,
-            City.Id.Value,
-            DateTime.UtcNow
-        ));
+            CityId.Value,
+            DateTime.UtcNow));
     }
 
     public void Disable()
     {
         IsEnabled = false;
 
-        // raise the disable event
         AddDomainEvent(new SectorDisabledEvent(
             Id.Value,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Activate()
     {
         IsEnabled = true;
 
-        // raise the activate event
         AddDomainEvent(new SectorActivatedEvent(
             Id.Value,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 }

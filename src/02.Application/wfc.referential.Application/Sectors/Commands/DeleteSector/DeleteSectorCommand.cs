@@ -1,13 +1,10 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Sectors.Commands.DeleteSector;
 
-public class DeleteSectorCommand : ICommand<bool>
+public record DeleteSectorCommand : ICommand<Result<bool>>
 {
-    public Guid SectorId { get; set; }
-
-    public DeleteSectorCommand(Guid sectorId)
-    {
-        SectorId = sectorId;
-    }
+    public Guid SectorId { get; }
+    public DeleteSectorCommand(Guid sectorId) => SectorId = sectorId;
 }

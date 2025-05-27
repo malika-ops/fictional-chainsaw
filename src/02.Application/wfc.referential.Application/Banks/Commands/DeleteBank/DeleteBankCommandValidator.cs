@@ -6,9 +6,8 @@ public class DeleteBankCommandValidator : AbstractValidator<DeleteBankCommand>
 {
     public DeleteBankCommandValidator()
     {
-        // Ensure the ID is non-empty & parseable as a GUID
         RuleFor(x => x.BankId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage("BankId must be a non-empty GUID.");
     }
 }

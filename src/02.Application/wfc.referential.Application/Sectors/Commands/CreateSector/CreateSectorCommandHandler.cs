@@ -13,31 +13,33 @@ public class CreateSectorCommandHandler : ICommandHandler<CreateSectorCommand, R
     private readonly ISectorRepository _sectorRepository;
     private readonly ICityRepository _cityRepository;
 
-    public CreateSectorCommandHandler(
-        ISectorRepository sectorRepository,
-        ICityRepository cityRepository)
+    public CreateSectorCommandHandler(ISectorRepository sectorRepository, ICityRepository cityRepository)
     {
         _sectorRepository = sectorRepository;
         _cityRepository = cityRepository;
     }
 
-    public async Task<Result<Guid>> Handle(CreateSectorCommand request, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreateSectorCommand command, CancellationToken ct)
     {
-        // Check if the code already exists
-        var existingCode = await _sectorRepository.GetByCodeAsync(request.Code, cancellationToken);
-        if (existingCode is not null)
-            throw new SectorCodeAlreadyExistException(request.Code);
-
-        // Check if the City exist
-        var city = await _cityRepository.GetByIdAsync(CityId.Of(request.CityId), cancellationToken);
+        // Check if city exists first
+        var city = await _cityRepository.GetByIdAsync(CityId.Of(command.CityId), ct);
         if (city is null)
-            throw new BusinessException($"City with ID {request.CityId} not found");
+            throw new BusinessException($"City with ID {command.CityId} not found");
 
-        var id = SectorId.Of(Guid.NewGuid());
-        var sector = Sector.Create(id, request.Code, request.Name, city);
+        // Check if sector code already exists
+        var existingSector = await _sectorRepository.GetOneByConditionAsync(s => s.Code == command.Code, ct);
+        if (existingSector is not null)
+            throw new SectorCodeAlreadyExistException(command.Code);
 
-        await _sectorRepository.AddSectorAsync(sector, cancellationToken);
+        // Create the sector
+        var sector = Sector.Create(
+            SectorId.Of(Guid.NewGuid()),
+            command.Code,
+            command.Name,
+            CityId.Of(command.CityId));
 
-        return Result.Success(sector.Id.Value);
+        await _sectorRepository.AddAsync(sector, ct);
+        await _sectorRepository.SaveChangesAsync(ct);
+        return Result.Success(sector.Id!.Value);
     }
 }

@@ -1,42 +1,16 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
-using wfc.referential.Domain.SupportAccountAggregate;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.SupportAccounts.Commands.UpdateSupportAccount;
 
-public record UpdateSupportAccountCommand : ICommand<Guid>
+public record UpdateSupportAccountCommand : ICommand<Result<bool>>
 {
-    public Guid SupportAccountId { get; }
-    public string Code { get; }
-    public string Name { get; }
-    public decimal Threshold { get; }
-    public decimal Limit { get; }
-    public decimal AccountBalance { get; }
-    public string AccountingNumber { get; }
-    public Guid PartnerId { get; }
-    public SupportAccountType SupportAccountType { get; }
-    public bool IsEnabled { get; }
-
-    public UpdateSupportAccountCommand(
-        Guid supportAccountId,
-        string code,
-        string name,
-        decimal threshold,
-        decimal limit,
-        decimal accountBalance,
-        string accountingNumber,
-        Guid partnerId,
-        SupportAccountType supportAccountType,
-        bool isEnabled)
-    {
-        SupportAccountId = supportAccountId;
-        Code = code;
-        Name = name;
-        Threshold = threshold;
-        Limit = limit;
-        AccountBalance = accountBalance;
-        AccountingNumber = accountingNumber;
-        PartnerId = partnerId;
-        SupportAccountType = supportAccountType;
-        IsEnabled = isEnabled;
-    }
+    public Guid SupportAccountId { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public decimal Threshold { get; set; }
+    public decimal Limit { get; set; }
+    public decimal AccountBalance { get; set; }
+    public string AccountingNumber { get; set; } = string.Empty;
+    public bool IsEnabled { get; set; } = true;
 }

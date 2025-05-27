@@ -3,16 +3,9 @@ using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Sectors.Commands.CreateSector;
 
-public class CreateSectorCommand : ICommand<Result<Guid>>
+public record CreateSectorCommand : ICommand<Result<Guid>>
 {
-    public string Code { get; set; }
-    public string Name { get; set; }
-    public Guid CityId { get; set; }
-
-    public CreateSectorCommand(string code, string name, Guid cityId)
-    {
-        Code = code;
-        Name = name;
-        CityId = cityId;
-    }
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public Guid CityId { get; init; }
 }

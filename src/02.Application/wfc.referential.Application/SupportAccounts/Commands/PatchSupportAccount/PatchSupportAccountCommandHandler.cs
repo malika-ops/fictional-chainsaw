@@ -1,93 +1,49 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.PartnerAggregate;
+using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using wfc.referential.Domain.SupportAccountAggregate.Exceptions;
 
 namespace wfc.referential.Application.SupportAccounts.Commands.PatchSupportAccount;
 
-public record PatchSupportAccountCommandHandler : ICommandHandler<PatchSupportAccountCommand, Guid>
+public class PatchSupportAccountCommandHandler : ICommandHandler<PatchSupportAccountCommand, Result<bool>>
 {
-    private readonly ISupportAccountRepository _supportAccountRepository;
-    private readonly IPartnerRepository _partnerRepository;
+    private readonly ISupportAccountRepository _repo;
 
-    public PatchSupportAccountCommandHandler(
-        ISupportAccountRepository supportAccountRepository,
-        IPartnerRepository partnerRepository)
+    public PatchSupportAccountCommandHandler(ISupportAccountRepository repo)
     {
-        _supportAccountRepository = supportAccountRepository;
-        _partnerRepository = partnerRepository;
+        _repo = repo;
     }
 
-    public async Task<Guid> Handle(PatchSupportAccountCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(PatchSupportAccountCommand cmd, CancellationToken ct)
     {
-        var supportAccount = await _supportAccountRepository.GetByIdAsync(new SupportAccountId(request.SupportAccountId), cancellationToken);
-        if (supportAccount == null)
-            throw new BusinessException("Support account not found");
+        var supportAccount = await _repo.GetByIdAsync(SupportAccountId.Of(cmd.SupportAccountId), ct);
+        if (supportAccount is null)
+            throw new ResourceNotFoundException($"Support account [{cmd.SupportAccountId}] not found.");
 
-        // Check if code is unique if it's being updated
-        if (request.Code != null && request.Code != supportAccount.Code)
+        // duplicate Code check
+        if (!string.IsNullOrWhiteSpace(cmd.Code))
         {
-            var existingWithCode = await _supportAccountRepository.GetByCodeAsync(request.Code, cancellationToken);
-            if (existingWithCode != null && existingWithCode.Id.Value != request.SupportAccountId)
-                throw new SupportAccountAlreadyExistException(request.Code);
+            var dup = await _repo.GetOneByConditionAsync(sa => sa.Code == cmd.Code, ct);
+            if (dup is not null && dup.Id != supportAccount.Id)
+                throw new SupportAccountCodeAlreadyExistException(cmd.Code);
         }
 
-        // Check if accounting number is unique if it's being updated
-        if (request.AccountingNumber != null && request.AccountingNumber != supportAccount.AccountingNumber)
-        {
-            var existingWithAccountingNumber = await _supportAccountRepository.GetByAccountingNumberAsync(request.AccountingNumber, cancellationToken);
-            if (existingWithAccountingNumber != null && existingWithAccountingNumber.Id.Value != request.SupportAccountId)
-                throw new BusinessException($"Support account with accounting number {request.AccountingNumber} already exists.");
-        }
-
-        // Get updated partner if needed
-        var partner = supportAccount.Partner;
-        if (request.PartnerId.HasValue && request.PartnerId.Value != supportAccount.Partner.Id.Value)
-        {
-            var updatedPartner = await _partnerRepository.GetByIdAsync(new PartnerId(request.PartnerId.Value), cancellationToken);
-            if (updatedPartner == null)
-                throw new BusinessException($"Partner with ID {request.PartnerId} not found");
-            partner = updatedPartner;
-        }
-
-        // Collect updates for domain entities
-        var updatedCode = request.Code ?? supportAccount.Code;
-        var updatedName = request.Name ?? supportAccount.Name;
-        var updatedThreshold = request.Threshold ?? supportAccount.Threshold;
-        var updatedLimit = request.Limit ?? supportAccount.Limit;
-        var updatedAccountBalance = request.AccountBalance ?? supportAccount.AccountBalance;
-        var updatedAccountingNumber = request.AccountingNumber ?? supportAccount.AccountingNumber;
-        var updatedSupportAccountType = request.SupportAccountType ?? supportAccount.SupportAccountType;
-
-        // Patch via domain methods
         supportAccount.Patch(
-            updatedCode,
-            updatedName,
-            updatedThreshold,
-            updatedLimit,
-            updatedAccountBalance,
-            updatedAccountingNumber,
-            partner,
-            updatedSupportAccountType
-        );
+            cmd.Code,
+            cmd.Description,
+            cmd.Threshold,
+            cmd.Limit,
+            cmd.AccountBalance,
+            cmd.AccountingNumber,
+            cmd.IsEnabled);
 
-        // Handle IsEnabled status changes separately through the proper domain methods
-        if (request.IsEnabled.HasValue)
-        {
-            if (request.IsEnabled.Value && !supportAccount.IsEnabled)
-            {
-                supportAccount.Activate();
-            }
-            else if (!request.IsEnabled.Value && supportAccount.IsEnabled)
-            {
-                supportAccount.Disable();
-            }
-        }
+        _repo.Update(supportAccount);
+        await _repo.SaveChangesAsync(ct);
 
-        await _supportAccountRepository.UpdateSupportAccountAsync(supportAccount, cancellationToken);
-
-        return supportAccount.Id.Value;
+        return Result.Success(true);
     }
 }

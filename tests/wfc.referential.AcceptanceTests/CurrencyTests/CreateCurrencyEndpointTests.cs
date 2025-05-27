@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -15,55 +14,38 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CurrencyTests.CreateTests;
 
-public class CreateCurrencyEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
     private readonly Mock<ICurrencyRepository> _repoMock = new();
 
-    public CreateCurrencyEndpointTests(WebApplicationFactory<Program> factory)
+    public CreateCurrencyAcceptanceTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
-        // Clone the factory and customize the host
         var customizedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
-
             builder.ConfigureServices(services =>
             {
-                // Remove concrete registrations that hit the DB / Redis
                 services.RemoveAll<ICurrencyRepository>();
-                services.RemoveAll<ICacheService>();
 
-                // Set up mock behavior (echoes entity back, as if EF saved it)
-                _repoMock
-                    .Setup(r => r.AddCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()))
+                _repoMock.Setup(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Currency c, CancellationToken _) => c);
-
-                // GetByCodeAsync should return null for valid test cases
-                _repoMock
-                    .Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
+                _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Currency)null);
 
-                // GetByCodeIsoAsync should return null for valid test cases
-                _repoMock
-                    .Setup(r => r.GetByCodeIsoAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Currency)null);
-
-                // Plug mocks back in
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
             });
         });
-
         _client = customizedFactory.CreateClient();
     }
 
-    [Fact(DisplayName = "POST /api/currencies returns 200 and Guid when request is valid")]
-    public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
+    [Fact(DisplayName = "POST /api/currencies creates currency with all required fields")]
+    public async Task CreateCurrency_Should_CreateNewCurrency_WhenAllRequiredFieldsProvided()
     {
         // Arrange
-        var payload = new CreateCurrencyRequest
+        var createRequest = new CreateCurrencyRequest
         {
             Code = "USD",
             CodeAR = "دولار أمريكي",
@@ -73,196 +55,193 @@ public class CreateCurrencyEndpointTests : IClassFixture<WebApplicationFactory<P
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/currencies", payload);
-        var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
+        var response = await _client.PostAsJsonAsync("/api/currencies", createRequest);
+        var currencyId = await response.Content.ReadFromJsonAsync<Guid>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returnedId.Should().NotBeEmpty();
+        currencyId.Should().NotBeEmpty();
 
-        // Verify repository interaction
-        _repoMock.Verify(r =>
-            r.AddCurrencyAsync(It.Is<Currency>(c =>
-                    c.Code == payload.Code &&
-                    c.CodeAR == payload.CodeAR &&
-                    c.CodeEN == payload.CodeEN &&
-                    c.Name == payload.Name &&
-                    c.CodeIso == payload.CodeIso &&
-                    c.IsEnabled == true),
-                It.IsAny<CancellationToken>()
-            ),
-            Times.Once
-        );
+        _repoMock.Verify(r => r.AddAsync(It.Is<Currency>(c =>
+            c.Code == "USD" &&
+            c.CodeAR == "دولار أمريكي" &&
+            c.CodeEN == "US Dollar" &&
+            c.Name == "United States Dollar" &&
+            c.CodeIso == 840 &&
+            c.IsEnabled == true), It.IsAny<CancellationToken>()), Times.Once);
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "POST /api/currencies returns 400 & problem-details when Code is missing")]
-    public async Task Post_ShouldReturn400_WhenCodeIsMissing()
+    [Fact(DisplayName = "POST /api/currencies returns 400 when Code is empty")]
+    public async Task CreateCurrency_Should_ReturnValidationError_WhenCurrencyCodeIsEmpty()
     {
         // Arrange
-        var invalidPayload = new CreateCurrencyRequest
+        var invalidRequest = new CreateCurrencyRequest
         {
-            // Code intentionally omitted to trigger validation error
-            Name = "United States Dollar",
-            CodeIso = 840
+            Code = "",
+            Name = "Test Currency",
+            CodeAR = "عملة اختبار",
+            CodeEN = "Test Currency",
+            CodeIso = 123
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/currencies", invalidPayload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var response = await _client.PostAsJsonAsync("/api/currencies", invalidRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
-        root.GetProperty("status").GetInt32().Should().Be(400);
-
-        root.GetProperty("errors")
-            .GetProperty("code")[0].GetString()
-            .Should().Be("Code is required");
-
-        // The handler must NOT be reached
-        _repoMock.Verify(r =>
-            r.AddCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()),
-            Times.Never,
-            "when validation fails, the command handler should not be executed");
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact(DisplayName = "POST /api/currencies returns 400 & problem-details when Name is missing")]
-    public async Task Post_ShouldReturn400_WhenNameIsMissing()
-    {
-        // Arrange
-        var invalidPayload = new CreateCurrencyRequest
-        {
-            Code = "USD",
-            // Name intentionally omitted to trigger validation error
-            CodeIso = 840
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/currencies", invalidPayload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
-        root.GetProperty("status").GetInt32().Should().Be(400);
-
-        root.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
-            .Should().Be("Name is required");
-
-        // The handler must NOT be reached
-        _repoMock.Verify(r =>
-            r.AddCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    [Fact(DisplayName = "POST /api/currencies returns 400 when CodeIso is out of range")]
-    public async Task Post_ShouldReturn400_WhenCodeIsoIsOutOfRange()
-    {
-        // Arrange
-        var invalidPayload = new CreateCurrencyRequest
-        {
-            Code = "USD",
-            Name = "United States Dollar",
-            CodeAR = "دولار أمريكي",
-            CodeEN = "US Dollar",
-            CodeIso = 1234, // More than 3 digits
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/currencies", invalidPayload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // The handler must NOT be reached
-        _repoMock.Verify(r =>
-            r.AddCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    [Fact(DisplayName = "POST /api/currencies returns 400 when duplicate code is provided")]
-    public async Task Post_ShouldReturn400_WhenDuplicateCodeIsProvided()
+    [Fact(DisplayName = "POST /api/currencies returns 400 when duplicate Code is provided")]
+    public async Task CreateCurrency_Should_ReturnConflictError_WhenCurrencyCodeAlreadyExists()
     {
         // Arrange
         var existingCurrency = Currency.Create(
             CurrencyId.Of(Guid.NewGuid()),
-            "EUR",
-            "يورو",
-            "Euro",
-            "Euro",
-            978
-        );
+            "EUR", "يورو", "Euro", "Euro", 978);
 
-        // Setup the repository to return an existing currency with the same code
-        _repoMock
-            .Setup(r => r.GetByCodeAsync("EUR", It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCurrency);
 
-        var payload = new CreateCurrencyRequest
+        var duplicateRequest = new CreateCurrencyRequest
         {
-            Code = "EUR", // Using same code as existing currency
+            Code = "EUR",
+            Name = "European Currency",
             CodeAR = "يورو",
             CodeEN = "Euro",
-            Name = "European Currency",
             CodeIso = 978
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/currencies", payload);
+        var response = await _client.PostAsJsonAsync("/api/currencies", duplicateRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // The repository should be checked for an existing currency with that code
-        _repoMock.Verify(r => r.GetByCodeAsync("EUR", It.IsAny<CancellationToken>()), Times.Once);
-
-        // But no new currency should be added
-        _repoMock.Verify(r => r.AddCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact(DisplayName = "POST /api/currencies returns 400 when duplicate codeiso is provided")]
-    public async Task Post_ShouldReturn400_WhenDuplicateCodeIsoIsProvided()
+    [Fact(DisplayName = "POST /api/currencies returns 400 when duplicate CodeIso is provided")]
+    public async Task CreateCurrency_Should_ReturnConflictError_WhenCodeIsoAlreadyExists()
     {
         // Arrange
         var existingCurrency = Currency.Create(
             CurrencyId.Of(Guid.NewGuid()),
-            "EUR",
-            "يورو",
-            "Euro",
-            "Euro",
-            978
-        );
+            "EUR", "يورو", "Euro", "Euro", 978);
 
-        // Setup the repository to return an existing currency with the same codeiso
-        _repoMock
-            .Setup(r => r.GetByCodeIsoAsync(978, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCurrency);
 
-        var payload = new CreateCurrencyRequest
+        var duplicateRequest = new CreateCurrencyRequest
         {
-            Code = "USD", // Different code
+            Code = "USD",
+            Name = "US Dollar",
             CodeAR = "دولار أمريكي",
             CodeEN = "US Dollar",
-            Name = "United States Dollar",
-            CodeIso = 978 // Same codeiso as existing currency
+            CodeIso = 978 // Same ISO code as existing
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/currencies", payload);
+        var response = await _client.PostAsJsonAsync("/api/currencies", duplicateRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "POST /api/currencies auto-generates currency ID")]
+    public async Task CreateCurrency_Should_AutoGenerateCurrencyId_WhenCurrencyIsCreated()
+    {
+        // Arrange
+        var createRequest = new CreateCurrencyRequest
+        {
+            Code = "JPY",
+            Name = "Japanese Yen",
+            CodeAR = "ين ياباني",
+            CodeEN = "Japanese Yen",
+            CodeIso = 392
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/currencies", createRequest);
+        var currencyId = await response.Content.ReadFromJsonAsync<Guid>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        currencyId.Should().NotBeEmpty();
+
+        _repoMock.Verify(r => r.AddAsync(It.Is<Currency>(c =>
+            c.Id != null && c.Id.Value != Guid.Empty), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "POST /api/currencies sets IsEnabled to true by default")]
+    public async Task CreateCurrency_Should_SetIsEnabledToTrue_ByDefault()
+    {
+        // Arrange
+        var createRequest = new CreateCurrencyRequest
+        {
+            Code = "GBP",
+            Name = "British Pound",
+            CodeAR = "جنيه إسترليني",
+            CodeEN = "British Pound",
+            CodeIso = 826
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/currencies", createRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        _repoMock.Verify(r => r.AddAsync(It.Is<Currency>(c =>
+            c.IsEnabled == true), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "POST /api/currencies returns 400 when CodeIso is out of range")]
+    public async Task CreateCurrency_Should_ReturnValidationError_WhenCodeIsoIsOutOfRange()
+    {
+        // Arrange
+        var invalidRequest = new CreateCurrencyRequest
+        {
+            Code = "TEST",
+            Name = "Test Currency",
+            CodeAR = "عملة اختبار",
+            CodeEN = "Test Currency",
+            CodeIso = 1234 // More than 3 digits
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/currencies", invalidRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 
-        // The repository should be checked for an existing currency with that codeiso
-        _repoMock.Verify(r => r.GetByCodeIsoAsync(978, It.IsAny<CancellationToken>()), Times.Once);
+    [Theory(DisplayName = "POST /api/currencies validates all required fields")]
+    [InlineData("", "Name", "CodeAR", "CodeEN", 123)]
+    [InlineData("CODE", "", "CodeAR", "CodeEN", 123)]
+    [InlineData("CODE", "Name", "", "CodeEN", 123)]
+    [InlineData("CODE", "Name", "CodeAR", "", 123)]
+    public async Task CreateCurrency_Should_ReturnValidationError_WhenRequiredFieldsAreMissing(
+        string code, string name, string codeAR, string codeEN, int codeIso)
+    {
+        // Arrange
+        var invalidRequest = new CreateCurrencyRequest
+        {
+            Code = code,
+            Name = name,
+            CodeAR = codeAR,
+            CodeEN = codeEN,
+            CodeIso = codeIso
+        };
 
-        // But no new currency should be added
-        _repoMock.Verify(r => r.AddCurrencyAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/currencies", invalidRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

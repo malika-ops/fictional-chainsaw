@@ -1,31 +1,25 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
+using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.SupportAccountAggregate;
-using wfc.referential.Domain.SupportAccountAggregate.Exceptions;
 
 namespace wfc.referential.Application.SupportAccounts.Commands.DeleteSupportAccount;
 
-public record DeleteSupportAccountCommandHandler : ICommandHandler<DeleteSupportAccountCommand, bool>
+public class DeleteSupportAccountCommandHandler : ICommandHandler<DeleteSupportAccountCommand, Result<bool>>
 {
-    private readonly ISupportAccountRepository _supportAccountRepository;
+    private readonly ISupportAccountRepository _repo;
 
-    public DeleteSupportAccountCommandHandler(ISupportAccountRepository supportAccountRepository)
+    public DeleteSupportAccountCommandHandler(ISupportAccountRepository repo) => _repo = repo;
+
+    public async Task<Result<bool>> Handle(DeleteSupportAccountCommand cmd, CancellationToken ct)
     {
-        _supportAccountRepository = supportAccountRepository;
-    }
+        var supportAccount = await _repo.GetByIdAsync(SupportAccountId.Of(cmd.SupportAccountId), ct);
+        if (supportAccount is null)
+            throw new BusinessException($"Support account [{cmd.SupportAccountId}] not found.");
 
-    public async Task<bool> Handle(DeleteSupportAccountCommand request, CancellationToken cancellationToken)
-    {
-        var supportAccount = await _supportAccountRepository.GetByIdAsync(SupportAccountId.Of(request.SupportAccountId), cancellationToken);
-
-        if (supportAccount == null)
-            throw new InvalidSupportAccountDeletingException("Support account not found");
-
-        // Disable the support account instead of physically deleting it
         supportAccount.Disable();
-
-        await _supportAccountRepository.UpdateSupportAccountAsync(supportAccount, cancellationToken);
-
-        return true;
+        await _repo.SaveChangesAsync(ct);
+        return Result.Success(true);
     }
 }

@@ -11,8 +11,8 @@ public record GetAllSupportAccountsRequest
     /// <summary>Optional filter by code.</summary>
     public string? Code { get; init; }
 
-    /// <summary>Optional filter by name.</summary>
-    public string? Name { get; init; }
+    /// <summary>Optional filter by description.</summary>
+    public string? Description { get; init; }
 
     /// <summary>Optional minimum threshold.</summary>
     public decimal? MinThreshold { get; init; }
@@ -38,7 +38,7 @@ public record GetAllSupportAccountsRequest
     /// <summary>Optional filter by Partner ID.</summary>
     public Guid? PartnerId { get; init; }
 
-    /// <summary>Optional filter by Support Account Type (Commun/Individuel).</summary>
+    /// <summary>Optional filter by Support Account Type value.</summary>
     public string? SupportAccountType { get; init; } = null;
 
     /// <summary>Optional filter by enabled status.</summary>

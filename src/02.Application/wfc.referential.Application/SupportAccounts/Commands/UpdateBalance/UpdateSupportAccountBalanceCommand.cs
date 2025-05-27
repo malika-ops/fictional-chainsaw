@@ -1,15 +1,10 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.SupportAccounts.Commands.UpdateBalance;
 
-public record UpdateSupportAccountBalanceCommand : ICommand<Guid>
+public record UpdateSupportAccountBalanceCommand : ICommand<Result<bool>>
 {
-    public Guid SupportAccountId { get; set; }
-    public decimal NewBalance { get; set; }
-
-    public UpdateSupportAccountBalanceCommand(Guid supportAccountId, decimal newBalance)
-    {
-        SupportAccountId = supportAccountId;
-        NewBalance = newBalance;
-    }
+    public Guid SupportAccountId { get; init; }
+    public decimal NewBalance { get; init; }
 }

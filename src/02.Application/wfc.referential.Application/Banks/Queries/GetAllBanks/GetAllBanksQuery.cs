@@ -4,28 +4,12 @@ using wfc.referential.Application.Banks.Dtos;
 
 namespace wfc.referential.Application.Banks.Queries.GetAllBanks;
 
-public class GetAllBanksQuery : IQuery<PagedResult<BankResponse>>
+public record GetAllBanksQuery : IQuery<PagedResult<GetBanksResponse>>
 {
-    public int PageNumber { get; }
-    public int PageSize { get; }
+    public int PageNumber { get; init; } = 1;
+    public int PageSize { get; init; } = 10;
     public string? Code { get; init; }
     public string? Name { get; init; }
     public string? Abbreviation { get; init; }
-    public bool? IsEnabled { get; init; }
-
-    public GetAllBanksQuery(
-        int pageNumber,
-        int pageSize,
-        string? code = null,
-        string? name = null,
-        string? abbreviation = null,
-        bool? isEnabled = true)
-    {
-        Code = code;
-        Name = name;
-        Abbreviation = abbreviation;
-        PageNumber = pageNumber;
-        PageSize = pageSize;
-        IsEnabled = isEnabled;
-    }
+    public bool? IsEnabled { get; init; } = true;
 }

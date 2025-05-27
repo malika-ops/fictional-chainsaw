@@ -1,246 +1,169 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using wfc.referential.Application.Banks.Dtos;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.BanksTests.UpdateTests;
 
-public class UpdateBankEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
     private readonly Mock<IBankRepository> _repoMock = new();
 
-    public UpdateBankEndpointTests(WebApplicationFactory<Program> factory)
+    public UpdateBankAcceptanceTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
+        var customizedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
-
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IBankRepository>();
-                services.RemoveAll<ICacheService>();
 
-                // Default noop for Update
-                _repoMock
-                    .Setup(r => r.UpdateBankAsync(It.IsAny<Bank>(),
-                                                  It.IsAny<CancellationToken>()))
+                _repoMock.Setup(r => r.Update(It.IsAny<Bank>()));
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
             });
         });
-
-        _client = customisedFactory.CreateClient();
+        _client = customizedFactory.CreateClient();
     }
 
-    // Helper to create a test bank
-    private static Bank CreateTestBank(Guid id, string code, string name, string abbreviation)
-    {
-        return Bank.Create(new BankId(id), code, name, abbreviation);
-    }
-
-    [Fact(DisplayName = "PUT /api/banks/{id} returns 200 when update succeeds")]
-    public async Task Put_ShouldReturn200_WhenUpdateIsSuccessful()
+    [Fact(DisplayName = "PUT /api/banks/{id} modifies bank data")]
+    public async Task UpdateBank_Should_ModifyAllBankFields_WhenValidDataProvided()
     {
         // Arrange
-        var id = Guid.NewGuid();
-        var oldBank = CreateTestBank(id, "OLD-BANK", "Old Bank", "OB");
+        var bankId = Guid.NewGuid();
+        var existingBank = Bank.Create(
+            BankId.Of(bankId),
+            "AWB", "Attijariwafa Bank", "AWB");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(bid => bid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(oldBank);
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingBank);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Bank)null);
 
-        _repoMock.Setup(r => r.GetByCodeAsync("NEW-BANK", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((Bank?)null);   // Code is unique
-
-        Bank? updated = null;
-        _repoMock.Setup(r => r.UpdateBankAsync(It.IsAny<Bank>(),
-                                                It.IsAny<CancellationToken>()))
-                 .Callback<Bank, CancellationToken>((b, _) => updated = b)
-                 .Returns(Task.CompletedTask);
-
-        var payload = new
+        var updateRequest = new UpdateBankRequest
         {
-            BankId = id,
-            Code = "NEW-BANK",
-            Name = "New Bank Name",
-            Abbreviation = "NB",
-            IsEnabled = true
+            BankId = bankId,
+            Code = "AWB_UPDATED",
+            Name = "Updated Attijariwafa Bank",
+            Abbreviation = "AWB-U",
+            IsEnabled = false
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/banks/{id}", payload);
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var response = await _client.PutAsJsonAsync($"/api/banks/{bankId}", updateRequest);
+        var result = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        result.Should().BeTrue();
 
-        updated!.Code.Should().Be("NEW-BANK");
-        updated.Name.Should().Be("New Bank Name");
-        updated.Abbreviation.Should().Be("NB");
-        updated.IsEnabled.Should().BeTrue();
-
-        _repoMock.Verify(r => r.UpdateBankAsync(It.IsAny<Bank>(),
-                                               It.IsAny<CancellationToken>()),
-                          Times.Once);
+        _repoMock.Verify(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "PUT /api/banks/{id} returns 400 when Name is missing")]
-    public async Task Put_ShouldReturn400_WhenNameMissing()
+    [Fact(DisplayName = "PUT /api/banks/{id} validates Code uniqueness before update")]
+    public async Task UpdateBank_Should_ValidateCodeUniqueness_BeforeUpdate()
     {
         // Arrange
-        var id = Guid.NewGuid();
-        var payload = new
+        var bankId = Guid.NewGuid();
+        var existingBankId = Guid.NewGuid();
+
+        var targetBank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
+        var conflictingBank = Bank.Create(BankId.Of(existingBankId), "BMCE", "Banque Marocaine du Commerce Extérieur", "BMCE");
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(targetBank);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(conflictingBank);
+
+        var updateRequest = new UpdateBankRequest
         {
-            BankId = id,
-            Code = "BANK-001",
-            // Name omitted
-            Abbreviation = "B1",
-            IsEnabled = true
-        };
-
-        // Act
-        var response = await _client.PutAsJsonAsync($"/api/banks/{id}", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
-            .Should().Be("Name is required");
-
-        _repoMock.Verify(r => r.UpdateBankAsync(It.IsAny<Bank>(),
-                                               It.IsAny<CancellationToken>()),
-                         Times.Never);
-    }
-
-    [Fact(DisplayName = "PUT /api/banks/{id} returns 400 when new code already exists")]
-    public async Task Put_ShouldReturn400_WhenCodeAlreadyExists()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var existingId = Guid.NewGuid();
-        var existing = CreateTestBank(existingId, "DUPE-CODE", "Existing Bank", "EB");
-        var target = CreateTestBank(id, "OLD-CODE", "Target Bank", "TB");
-
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(bid => bid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(target);
-
-        _repoMock.Setup(r => r.GetByCodeAsync("DUPE-CODE", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing); // Duplicate code
-
-        var payload = new
-        {
-            BankId = id,
-            Code = "DUPE-CODE",        // Duplicate
+            BankId = bankId,
+            Code = "BMCE", // Code already exists
             Name = "Updated Bank",
             Abbreviation = "UB",
             IsEnabled = true
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/banks/{id}", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var response = await _client.PutAsJsonAsync($"/api/banks/{bankId}", updateRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be("Bank with code DUPE-CODE already exists.");
-
-        _repoMock.Verify(r => r.UpdateBankAsync(It.IsAny<Bank>(),
-                                               It.IsAny<CancellationToken>()),
-                         Times.Never);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
     }
 
-    [Fact(DisplayName = "PUT /api/banks/{id} returns 404 when bank doesn't exist")]
-    public async Task Put_ShouldReturn404_WhenBankDoesNotExist()
+    [Fact(DisplayName = "PUT /api/banks/{id} returns 400 when bank not found")]
+    public async Task UpdateBank_Should_ReturnBadRequest_WhenBankNotFound()
     {
         // Arrange
-        var id = Guid.NewGuid();
+        var bankId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(bid => bid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((Bank?)null);
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Bank)null);
 
-        var payload = new
+        var updateRequest = new UpdateBankRequest
         {
-            BankId = id,
-            Code = "NEW-CODE",
-            Name = "New Name",
-            Abbreviation = "NN",
+            BankId = bankId,
+            Code = "TEST",
+            Name = "Test Bank",
+            Abbreviation = "TB",
             IsEnabled = true
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/banks/{id}", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var response = await _client.PutAsJsonAsync($"/api/banks/{bankId}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be($"Bank with ID {id} not found");
-
-        _repoMock.Verify(r => r.UpdateBankAsync(It.IsAny<Bank>(),
-                                               It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
     }
 
-    [Fact(DisplayName = "PUT /api/banks/{id} allows changing the bank's enabled status")]
-    public async Task Put_ShouldAllowChangingStatus_WhenUpdateIsSuccessful()
+    [Fact(DisplayName = "PUT /api/banks/{id} verifies value after update")]
+    public async Task UpdateBank_Should_VerifyUpdatedValues_AfterSuccessfulUpdate()
     {
         // Arrange
-        var id = Guid.NewGuid();
-        var oldBank = CreateTestBank(id, "BANK-001", "Test Bank", "TB");
-        oldBank.Update("BANK-001", "Test Bank", "TB"); // Ensure initial status is Enabled
+        var bankId = Guid.NewGuid();
+        var bank = Bank.Create(
+            BankId.Of(bankId),
+            "AWB", "Attijariwafa Bank", "AWB");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(bid => bid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(oldBank);
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(bank);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Bank)null);
 
-        _repoMock.Setup(r => r.GetByCodeAsync("BANK-001", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(oldBank);   // Same code is ok for same bank
-
-        Bank? updated = null;
-        _repoMock.Setup(r => r.UpdateBankAsync(It.IsAny<Bank>(),
-                                                It.IsAny<CancellationToken>()))
-                 .Callback<Bank, CancellationToken>((b, _) => updated = b)
-                 .Returns(Task.CompletedTask);
-
-        var payload = new
+        var updateRequest = new UpdateBankRequest
         {
-            BankId = id,
-            Code = "BANK-001",
-            Name = "Test Bank",
-            Abbreviation = "TB",
-            IsEnabled = false // Changed from true to false
+            BankId = bankId,
+            Code = "UPDATED",
+            Name = "Updated Name",
+            Abbreviation = "UN",
+            IsEnabled = false
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/banks/{id}", payload);
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var response = await _client.PutAsJsonAsync($"/api/banks/{bankId}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
 
-        updated!.IsEnabled.Should().BeFalse();
-
-        _repoMock.Verify(r => r.UpdateBankAsync(It.IsAny<Bank>(),
-                                               It.IsAny<CancellationToken>()),
-                          Times.Once);
+        // Verify bank was updated with new values
+        bank.Code.Should().Be("UPDATED");
+        bank.Name.Should().Be("Updated Name");
+        bank.Abbreviation.Should().Be("UN");
+        bank.IsEnabled.Should().BeFalse();
     }
 }

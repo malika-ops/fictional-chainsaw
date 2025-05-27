@@ -6,9 +6,8 @@ public class DeleteSectorCommandValidator : AbstractValidator<DeleteSectorComman
 {
     public DeleteSectorCommandValidator()
     {
-        // Ensure the ID is non-empty & parseable as a GUID
         RuleFor(x => x.SectorId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage("SectorId must be a non-empty GUID.");
     }
 }

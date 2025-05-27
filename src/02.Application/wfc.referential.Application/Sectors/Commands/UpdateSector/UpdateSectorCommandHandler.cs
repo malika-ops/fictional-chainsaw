@@ -1,4 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
@@ -7,50 +8,44 @@ using wfc.referential.Domain.SectorAggregate.Exceptions;
 
 namespace wfc.referential.Application.Sectors.Commands.UpdateSector;
 
-public class UpdateSectorCommandHandler : ICommandHandler<UpdateSectorCommand, Guid>
+public class UpdateSectorCommandHandler
+    : ICommandHandler<UpdateSectorCommand, Result<bool>>
 {
-    private readonly ISectorRepository _sectorRepository;
-    private readonly ICityRepository _cityRepository;
+    private readonly ISectorRepository _sectorRepo;
+    private readonly ICityRepository _cityRepo;
 
-    public UpdateSectorCommandHandler(
-        ISectorRepository sectorRepository,
-        ICityRepository cityRepository)
+    public UpdateSectorCommandHandler(ISectorRepository sectorRepo, ICityRepository cityRepo)
     {
-        _sectorRepository = sectorRepository;
-        _cityRepository = cityRepository;
+        _sectorRepo = sectorRepo;
+        _cityRepo = cityRepo;
     }
 
-    public async Task<Guid> Handle(UpdateSectorCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(UpdateSectorCommand cmd, CancellationToken ct)
     {
         // Check if sector exists
-        var sector = await _sectorRepository.GetByIdAsync(new SectorId(request.SectorId), cancellationToken);
+        var sector = await _sectorRepo.GetByIdAsync(SectorId.Of(cmd.SectorId), ct);
         if (sector is null)
-            throw new BusinessException($"Sector with ID {request.SectorId} not found");
+            throw new BusinessException($"Sector [{cmd.SectorId}] not found.");
 
-        // Check if code is unique (if changed)
-        var existingWithCode = await _sectorRepository.GetByCodeAsync(request.Code, cancellationToken);
-        if (existingWithCode is not null && existingWithCode.Id.Value != request.SectorId)
-            throw new SectorCodeAlreadyExistException(request.Code);
-
-        var city = await _cityRepository.GetByIdAsync(CityId.Of(request.CityId), cancellationToken);
+        // Check if city exists
+        var city = await _cityRepo.GetByIdAsync(CityId.Of(cmd.CityId), ct);
         if (city is null)
-            throw new BusinessException($"City with ID {request.CityId} not found");
+            throw new BusinessException($"City with ID {cmd.CityId} not found");
+
+        // Check uniqueness on Code (exclude current sector)
+        var duplicate = await _sectorRepo.GetOneByConditionAsync(s => s.Code == cmd.Code, ct);
+        if (duplicate is not null && duplicate.Id != sector.Id)
+            throw new SectorCodeAlreadyExistException(cmd.Code);
 
         // Update the sector
-        sector.Update(request.Code, request.Name, city);
+        sector.Update(
+            cmd.Code,
+            cmd.Name,
+            CityId.Of(cmd.CityId),
+            cmd.IsEnabled);
 
-        // Update enabled status if necessary
-        if (request.IsEnabled && !sector.IsEnabled)
-        {
-            sector.Activate();
-        }
-        else if (!request.IsEnabled && sector.IsEnabled)
-        {
-            sector.Disable();
-        }
-
-        await _sectorRepository.UpdateSectorAsync(sector, cancellationToken);
-
-        return sector.Id.Value;
+        _sectorRepo.Update(sector);
+        await _sectorRepo.SaveChangesAsync(ct);
+        return Result.Success(true);
     }
 }

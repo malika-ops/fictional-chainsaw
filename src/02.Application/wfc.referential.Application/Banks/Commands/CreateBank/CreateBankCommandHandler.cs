@@ -1,6 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
-using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.BankAggregate.Exceptions;
@@ -12,22 +11,22 @@ public class CreateBankCommandHandler : ICommandHandler<CreateBankCommand, Resul
     private readonly IBankRepository _bankRepository;
 
     public CreateBankCommandHandler(IBankRepository bankRepository)
+        => _bankRepository = bankRepository;
+
+    public async Task<Result<Guid>> Handle(CreateBankCommand command, CancellationToken ct)
     {
-        _bankRepository = bankRepository;
-    }
+        var existingBankByCode = await _bankRepository.GetOneByConditionAsync(b => b.Code == command.Code, ct);
+        if (existingBankByCode is not null)
+            throw new BankCodeAlreadyExistException(command.Code);
 
-    public async Task<Result<Guid>> Handle(CreateBankCommand request, CancellationToken cancellationToken)
-    {
-        // Check if the code already exists
-        var existingCode = await _bankRepository.GetByCodeAsync(request.Code, cancellationToken);
-        if (existingCode is not null)
-            throw new BankCodeAlreadyExistException(request.Code);
+        var bank = Bank.Create(
+            BankId.Of(Guid.NewGuid()),
+            command.Code,
+            command.Name,
+            command.Abbreviation);
 
-        var id = BankId.Of(Guid.NewGuid());
-        var bank = Bank.Create(id, request.Code, request.Name, request.Abbreviation);
-
-        await _bankRepository.AddBankAsync(bank, cancellationToken);
-
-        return Result.Success(bank.Id.Value);
+        await _bankRepository.AddAsync(bank, ct);
+        await _bankRepository.SaveChangesAsync(ct);
+        return Result.Success(bank.Id!.Value);
     }
 }

@@ -16,7 +16,13 @@ public class Currency : Aggregate<CurrencyId>
 
     private Currency() { }
 
-    public static Currency Create(CurrencyId id, string code, string codeAR, string codeEN, string name, int codeiso)
+    public static Currency Create(
+        CurrencyId id,
+        string code,
+        string codeAR,
+        string codeEN,
+        string name,
+        int codeIso)
     {
         var currency = new Currency
         {
@@ -25,12 +31,11 @@ public class Currency : Aggregate<CurrencyId>
             CodeAR = codeAR,
             CodeEN = codeEN,
             Name = name,
-            CodeIso = codeiso,
+            CodeIso = codeIso,
             IsEnabled = true,
             Countries = []
         };
 
-        // Raise the creation event
         currency.AddDomainEvent(new CurrencyCreatedEvent(
             currency.Id.Value,
             currency.Code,
@@ -38,26 +43,26 @@ public class Currency : Aggregate<CurrencyId>
             currency.CodeEN,
             currency.Name,
             currency.CodeIso,
-            currency.IsEnabled,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
 
         return currency;
     }
 
     public void Update(
-            string code,
-            string codeAR,
-            string codeEN,
-            string name,
-            int codeiso)
+        string code,
+        string codeAR,
+        string codeEN,
+        string name,
+        int codeIso,
+        bool? isEnabled)
     {
         Code = code;
         CodeAR = codeAR;
         CodeEN = codeEN;
         Name = name;
-        CodeIso = codeiso;
-        // Raise the update event
+        CodeIso = codeIso;
+        IsEnabled = isEnabled ?? IsEnabled;
+
         AddDomainEvent(new CurrencyUpdatedEvent(
             Id.Value,
             Code,
@@ -65,27 +70,24 @@ public class Currency : Aggregate<CurrencyId>
             CodeEN,
             Name,
             CodeIso,
-            IsEnabled,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Patch(
-            string? code,
-            string? codeAR,
-            string? codeEN,
-            string? name,
-            int? codeiso,
-            bool? isEnabled)
+        string? code,
+        string? codeAR,
+        string? codeEN,
+        string? name,
+        int? codeIso,
+        bool? isEnabled)
     {
         Code = code ?? Code;
         CodeAR = codeAR ?? CodeAR;
         CodeEN = codeEN ?? CodeEN;
         Name = name ?? Name;
-        CodeIso = codeiso ?? CodeIso;
+        CodeIso = codeIso ?? CodeIso;
         IsEnabled = isEnabled ?? IsEnabled;
 
-        // Raise the patch event
         AddDomainEvent(new CurrencyPatchedEvent(
             Id.Value,
             Code,
@@ -93,30 +95,24 @@ public class Currency : Aggregate<CurrencyId>
             CodeEN,
             Name,
             CodeIso,
-            IsEnabled,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Disable()
     {
         IsEnabled = false;
 
-        // Raise the disable event
         AddDomainEvent(new CurrencyDisabledEvent(
             Id.Value,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 
     public void Activate()
     {
         IsEnabled = true;
 
-        // Raise the activate event
         AddDomainEvent(new CurrencyActivatedEvent(
             Id.Value,
-            DateTime.UtcNow
-        ));
+            DateTime.UtcNow));
     }
 }

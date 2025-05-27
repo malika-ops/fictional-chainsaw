@@ -6,25 +6,16 @@ using wfc.referential.Application.Interfaces;
 
 namespace wfc.referential.Application.Banks.Queries.GetAllBanks;
 
-public class GetAllBanksQueryHandler : IQueryHandler<GetAllBanksQuery, PagedResult<BankResponse>>
+public class GetAllBanksHandler
+    : IQueryHandler<GetAllBanksQuery, PagedResult<GetBanksResponse>>
 {
-    private readonly IBankRepository _bankRepository;
+    private readonly IBankRepository _repo;
+    public GetAllBanksHandler(IBankRepository repo) => _repo = repo;
 
-    public GetAllBanksQueryHandler(IBankRepository bankRepository)
+    public async Task<PagedResult<GetBanksResponse>> Handle(
+        GetAllBanksQuery bankQuery, CancellationToken ct)
     {
-        _bankRepository = bankRepository;
-    }
-
-    public async Task<PagedResult<BankResponse>> Handle(GetAllBanksQuery request, CancellationToken cancellationToken)
-    {
-        var banks = await _bankRepository
-            .GetFilteredBanksAsync(request, cancellationToken);
-
-        int totalCount = await _bankRepository
-            .GetCountTotalAsync(request, cancellationToken);
-
-        var bankResponses = banks.Adapt<List<BankResponse>>();
-
-        return new PagedResult<BankResponse>(bankResponses, totalCount, request.PageNumber, request.PageSize);
+        var banks = await _repo.GetPagedByCriteriaAsync(bankQuery, bankQuery.PageNumber, bankQuery.PageSize, ct);
+        return new PagedResult<GetBanksResponse>(banks.Items.Adapt<List<GetBanksResponse>>(), banks.TotalCount, banks.PageNumber, banks.PageSize);
     }
 }

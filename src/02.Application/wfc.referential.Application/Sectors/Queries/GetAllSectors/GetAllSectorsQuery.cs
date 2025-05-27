@@ -4,28 +4,13 @@ using wfc.referential.Application.Sectors.Dtos;
 
 namespace wfc.referential.Application.Sectors.Queries.GetAllSectors;
 
-public class GetAllSectorsQuery : IQuery<PagedResult<SectorResponse>>
+public record GetAllSectorsQuery : IQuery<PagedResult<SectorResponse>>
 {
-    public int PageNumber { get; }
-    public int PageSize { get; }
+    public int PageNumber { get; init; } = 1;
+    public int PageSize { get; init; } = 10;
+
     public string? Code { get; init; }
     public string? Name { get; init; }
     public Guid? CityId { get; init; }
-    public bool? IsEnabled { get; init; }
-
-    public GetAllSectorsQuery(
-        int pageNumber,
-        int pageSize,
-        string? code = null,
-        string? name = null,
-        Guid? cityId = null,
-        bool? isEnabled = true)
-    {
-        Code = code;
-        Name = name;
-        CityId = cityId;
-        PageNumber = pageNumber;
-        PageSize = pageSize;
-        IsEnabled = isEnabled;
-    }
+    public bool? IsEnabled { get; init; } = true;
 }
