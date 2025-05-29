@@ -1,4 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
@@ -8,7 +9,7 @@ using wfc.referential.Domain.PartnerAccountAggregate.Exceptions;
 
 namespace wfc.referential.Application.PartnerAccounts.Commands.PatchPartnerAccount;
 
-public class PatchPartnerAccountCommandHandler : ICommandHandler<PatchPartnerAccountCommand, Guid>
+public class PatchPartnerAccountCommandHandler : ICommandHandler<PatchPartnerAccountCommand, Result<bool>>
 {
     private readonly IPartnerAccountRepository _partnerAccountRepository;
     private readonly IBankRepository _bankRepository;
@@ -24,83 +25,60 @@ public class PatchPartnerAccountCommandHandler : ICommandHandler<PatchPartnerAcc
         _paramTypeRepository = paramTypeRepository;
     }
 
-    public async Task<Guid> Handle(PatchPartnerAccountCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(PatchPartnerAccountCommand cmd, CancellationToken ct)
     {
-        var partnerAccount = await _partnerAccountRepository.GetByIdAsync(new PartnerAccountId(request.PartnerAccountId), cancellationToken);
-        if (partnerAccount == null)
-            throw new BusinessException("Partner account not found");
+        var partnerAccount = await _partnerAccountRepository.GetByIdAsync(PartnerAccountId.Of(cmd.PartnerAccountId), ct);
+        if (partnerAccount is null)
+            throw new ResourceNotFoundException($"Partner account [{cmd.PartnerAccountId}] not found.");
 
-        // Check if account number is unique if it's being updated
-        if (request.AccountNumber != null && request.AccountNumber != partnerAccount.AccountNumber)
+        // Check uniqueness on AccountNumber (if provided and changed)
+        if (!string.IsNullOrWhiteSpace(cmd.AccountNumber) && cmd.AccountNumber != partnerAccount.AccountNumber)
         {
-            var existingWithAccountNumber = await _partnerAccountRepository.GetByAccountNumberAsync(request.AccountNumber, cancellationToken);
-            if (existingWithAccountNumber != null && existingWithAccountNumber.Id.Value != request.PartnerAccountId)
-                throw new PartnerAccountAlreadyExistException(request.AccountNumber);
+            var duplicate = await _partnerAccountRepository.GetOneByConditionAsync(p => p.AccountNumber == cmd.AccountNumber, ct);
+            if (duplicate is not null && duplicate.Id != partnerAccount.Id)
+                throw new PartnerAccountAlreadyExistException(cmd.AccountNumber);
         }
 
-        // Check if RIB is unique if it's being updated
-        if (request.RIB != null && request.RIB != partnerAccount.RIB)
+        // Check uniqueness on RIB (if provided and changed)
+        if (!string.IsNullOrWhiteSpace(cmd.RIB) && cmd.RIB != partnerAccount.RIB)
         {
-            var existingWithRIB = await _partnerAccountRepository.GetByRIBAsync(request.RIB, cancellationToken);
-            if (existingWithRIB != null && existingWithRIB.Id.Value != request.PartnerAccountId)
-                throw new BusinessException($"Partner account with RIB {request.RIB} already exists.");
+            var duplicate = await _partnerAccountRepository.GetOneByConditionAsync(p => p.RIB == cmd.RIB, ct);
+            if (duplicate is not null && duplicate.Id != partnerAccount.Id)
+                throw new PartnerAccountAlreadyExistException(cmd.RIB);
         }
 
         // Get updated bank if needed
-        var bank = partnerAccount.Bank;
-        if (request.BankId.HasValue && request.BankId.Value != partnerAccount.Bank.Id.Value)
+        Bank? bank = null;
+        if (cmd.BankId.HasValue)
         {
-            var updatedBank = await _bankRepository.GetByIdAsync(new BankId(request.BankId.Value), cancellationToken);
-            if (updatedBank == null)
-                throw new BusinessException($"Bank with ID {request.BankId} not found");
-            bank = updatedBank;
+            bank = await _bankRepository.GetByIdAsync(BankId.Of(cmd.BankId.Value), ct);
+            if (bank is null)
+                throw new BusinessException($"Bank with ID {cmd.BankId} not found");
         }
 
         // Get updated account type if needed
-        var accountType = partnerAccount.AccountType;
-        if (request.AccountTypeId.HasValue && request.AccountTypeId.Value != partnerAccount.AccountTypeId.Value)
+        ParamType? accountType = null;
+        if (cmd.AccountTypeId.HasValue)
         {
-            var updatedAccountType = await _paramTypeRepository.GetByIdAsync(new ParamTypeId(request.AccountTypeId.Value), cancellationToken);
-            if (updatedAccountType == null)
-                throw new BusinessException($"Account Type with ID {request.AccountTypeId} not found");
-            accountType = updatedAccountType;
+            accountType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(cmd.AccountTypeId.Value), ct);
+            if (accountType is null)
+                throw new BusinessException($"Account Type with ID {cmd.AccountTypeId} not found");
         }
 
-        // Collect updates for domain entities
-        var updatedAccountNumber = request.AccountNumber ?? partnerAccount.AccountNumber;
-        var updatedRIB = request.RIB ?? partnerAccount.RIB;
-        var updatedDomiciliation = request.Domiciliation ?? partnerAccount.Domiciliation;
-        var updatedBusinessName = request.BusinessName ?? partnerAccount.BusinessName;
-        var updatedShortName = request.ShortName ?? partnerAccount.ShortName;
-        var updatedAccountBalance = request.AccountBalance ?? partnerAccount.AccountBalance;
-
-        // Patch via domain methods
         partnerAccount.Patch(
-            updatedAccountNumber,
-            updatedRIB,
-            updatedDomiciliation,
-            updatedBusinessName,
-            updatedShortName,
-            updatedAccountBalance,
+            cmd.AccountNumber,
+            cmd.RIB,
+            cmd.Domiciliation,
+            cmd.BusinessName,
+            cmd.ShortName,
+            cmd.AccountBalance,
             bank,
-            accountType
-        );
+            accountType,
+            cmd.IsEnabled);
 
-        // Handle IsEnabled status changes separately through the proper domain methods
-        if (request.IsEnabled.HasValue)
-        {
-            if (request.IsEnabled.Value && !partnerAccount.IsEnabled)
-            {
-                partnerAccount.Activate();
-            }
-            else if (!request.IsEnabled.Value && partnerAccount.IsEnabled)
-            {
-                partnerAccount.Disable();
-            }
-        }
+        _partnerAccountRepository.Update(partnerAccount);
+        await _partnerAccountRepository.SaveChangesAsync(ct);
 
-        await _partnerAccountRepository.UpdatePartnerAccountAsync(partnerAccount, cancellationToken);
-
-        return partnerAccount.Id.Value;
+        return Result.Success(true);
     }
 }

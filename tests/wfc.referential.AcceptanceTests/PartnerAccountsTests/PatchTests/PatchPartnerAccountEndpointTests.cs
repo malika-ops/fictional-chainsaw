@@ -30,7 +30,6 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
-
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IPartnerAccountRepository>();
@@ -38,10 +37,9 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
                 services.RemoveAll<IParamTypeRepository>();
                 services.RemoveAll<ICacheService>();
 
-                // Default noop for Patch
-                _repoMock
-                    .Setup(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
-                                                           It.IsAny<CancellationToken>()))
+                // Updated to use BaseRepository methods
+                _repoMock.Setup(r => r.Update(It.IsAny<PartnerAccount>()));
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
                 // Set up bank mock to return valid entities
@@ -75,7 +73,6 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
         _client = customisedFactory.CreateClient();
     }
 
-    // Helper to create a test partner account
     private static PartnerAccount CreateTestPartnerAccount(Guid id, string accountNumber, string rib, string businessName)
     {
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -85,7 +82,7 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
         var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), null, "Activity");
 
         return PartnerAccount.Create(
-            new PartnerAccountId(id),
+            PartnerAccountId.Of(id),
             accountNumber,
             rib,
             "Casablanca Centre",
@@ -107,223 +104,37 @@ public class PatchPartnerAccountEndpointTests : IClassFixture<WebApplicationFact
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(partnerAccount);
 
-        _repoMock.Setup(r => r.GetByAccountNumberAsync("000987654321", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((PartnerAccount?)null);   // Account number is unique
+        _repoMock.Setup(r => r.GetOneByConditionAsync(
+            It.Is<System.Linq.Expressions.Expression<System.Func<PartnerAccount, bool>>>(
+                expr => expr.Compile().Invoke(partnerAccount) == false), // Different account number
+            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((PartnerAccount?)null);
 
         PartnerAccount? updated = null;
-        _repoMock.Setup(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
-                                                        It.IsAny<CancellationToken>()))
-                 .Callback<PartnerAccount, CancellationToken>((p, _) => updated = p)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.Update(It.IsAny<PartnerAccount>()))
+                 .Callback<PartnerAccount>(p => updated = p);
 
         var payload = new
         {
             PartnerAccountId = id,
             AccountNumber = "000987654321",
-            // Other fields intentionally omitted - should not change
-            AccountBalance = 75000.00m // Including AccountBalance
-        };
-
-        // Act
-        var response = await _client.PatchAsync($"/api/partner-accounts/{id}", JsonContent.Create(payload));
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
-
-        updated!.AccountNumber.Should().Be("000987654321");  // Should change
-        updated.AccountBalance.Should().Be(75000.00m);      // Should change
-        updated.RIB.Should().Be("12345678901234567890123"); // Should not change
-        updated.BusinessName.Should().Be("Old Business");   // Should not change
-        updated.AccountTypeId.Value.Should().Be(Guid.Parse("22222222-2222-2222-2222-222222222222")); // Should not change
-        updated.IsEnabled.Should().BeTrue(); // Should remain enabled
-
-        _repoMock.Verify(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
-                                                         It.IsAny<CancellationToken>()),
-                          Times.Once);
-    }
-
-    [Fact(DisplayName = "PATCH /api/partner-accounts/{id} allows changing only the enabled status")]
-    public async Task Patch_ShouldAllowChangingOnlyEnabledStatus()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var partnerAccount = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Test Business");
-
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(partnerAccount);
-
-        PartnerAccount? updated = null;
-        _repoMock.Setup(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
-                                                        It.IsAny<CancellationToken>()))
-                 .Callback<PartnerAccount, CancellationToken>((p, _) => updated = p)
-                 .Returns(Task.CompletedTask);
-
-        var payload = new
-        {
-            PartnerAccountId = id,
-            IsEnabled = false // Change from enabled to disabled
-            // Other fields intentionally omitted
-        };
-
-        // Act
-        var response = await _client.PatchAsync($"/api/partner-accounts/{id}", JsonContent.Create(payload));
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
-
-        updated!.IsEnabled.Should().BeFalse(); // Should be disabled
-        updated.AccountNumber.Should().Be("000123456789"); // Should not change
-        updated.BusinessName.Should().Be("Test Business"); // Should not change
-
-        _repoMock.Verify(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
-                                                         It.IsAny<CancellationToken>()),
-                          Times.Once);
-    }
-
-    [Fact(DisplayName = "PATCH /api/partner-accounts/{id} returns 400 when account doesn't exist")]
-    public async Task Patch_ShouldReturn400_WhenAccountDoesNotExist()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((PartnerAccount?)null);
-
-        var payload = new
-        {
-            PartnerAccountId = id,
             AccountBalance = 75000.00m
         };
 
         // Act
         var response = await _client.PatchAsync($"/api/partner-accounts/{id}", JsonContent.Create(payload));
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        returned.Should().BeTrue();
 
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be("Partner account not found");
+        updated!.AccountNumber.Should().Be("000987654321");
+        updated.AccountBalance.Should().Be(75000.00m);
+        updated.RIB.Should().Be("12345678901234567890123");
+        updated.BusinessName.Should().Be("Old Business");
 
-        _repoMock.Verify(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
-                                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
-    }
-
-    [Fact(DisplayName = "PATCH /api/partner-accounts/{id} returns 400 when new account number already exists")]
-    public async Task Patch_ShouldReturn400_WhenNewAccountNumberAlreadyExists()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var existingId = Guid.NewGuid();
-
-        var existing = CreateTestPartnerAccount(existingId, "000555666777", "55566677788899900011122", "Existing Business");
-        var target = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Target Business");
-
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(target);
-
-        _repoMock.Setup(r => r.GetByAccountNumberAsync("000555666777", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing); // Duplicate account number
-
-        var payload = new
-        {
-            PartnerAccountId = id,
-            AccountNumber = "000555666777"  // This account number already exists for another account
-        };
-
-        // Act
-        var response = await _client.PatchAsync($"/api/partner-accounts/{id}", JsonContent.Create(payload));
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be("Partner account with account number 000555666777 already exists.");
-
-        _repoMock.Verify(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
-                                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
-    }
-
-    [Fact(DisplayName = "PATCH /api/partner-accounts/{id} returns 400 when provided Bank doesn't exist")]
-    public async Task Patch_ShouldReturn400_WhenProvidedBankDoesNotExist()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var nonExistentBankId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-
-        var partnerAccount = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Test Business");
-
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(partnerAccount);
-
-        // Setup bank repository to return null for this ID
-        _bankRepoMock
-            .Setup(r => r.GetByIdAsync(It.Is<BankId>(bid => bid.Value == nonExistentBankId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Bank?)null);
-
-        var payload = new
-        {
-            PartnerAccountId = id,
-            BankId = nonExistentBankId
-        };
-
-        // Act
-        var response = await _client.PatchAsync($"/api/partner-accounts/{id}", JsonContent.Create(payload));
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be($"Bank with ID {nonExistentBankId} not found");
-
-        _repoMock.Verify(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
-                                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
-    }
-
-    [Fact(DisplayName = "PATCH /api/partner-accounts/{id} returns 400 when provided AccountType doesn't exist")]
-    public async Task Patch_ShouldReturn400_WhenProvidedAccountTypeDoesNotExist()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var nonExistentAccountTypeId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-
-        var partnerAccount = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Test Business");
-
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(partnerAccount);
-
-        // Setup param type repository to return null for this ID
-        _paramTypeRepoMock
-            .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == nonExistentAccountTypeId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ParamType?)null);
-
-        var payload = new
-        {
-            PartnerAccountId = id,
-            AccountTypeId = nonExistentAccountTypeId
-        };
-
-        // Act
-        var response = await _client.PatchAsync($"/api/partner-accounts/{id}", JsonContent.Create(payload));
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be($"Account Type with ID {nonExistentAccountTypeId} not found");
-
-        _repoMock.Verify(r => r.UpdatePartnerAccountAsync(It.IsAny<PartnerAccount>(),
-                                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

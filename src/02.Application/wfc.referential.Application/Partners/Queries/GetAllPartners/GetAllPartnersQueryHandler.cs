@@ -6,25 +6,16 @@ using wfc.referential.Application.Partners.Dtos;
 
 namespace wfc.referential.Application.Partners.Queries.GetAllPartners;
 
-public record GetAllPartnersQueryHandler : IQueryHandler<GetAllPartnersQuery, PagedResult<PartnerResponse>>
+public class GetAllPartnersQueryHandler : IQueryHandler<GetAllPartnersQuery, PagedResult<GetPartnersResponse>>
 {
-    private readonly IPartnerRepository _partnerRepository;
+    private readonly IPartnerRepository _repo;
 
-    public GetAllPartnersQueryHandler(IPartnerRepository partnerRepository)
+    public GetAllPartnersQueryHandler(IPartnerRepository repo) => _repo = repo;
+
+    public async Task<PagedResult<GetPartnersResponse>> Handle(
+        GetAllPartnersQuery partnerQuery, CancellationToken ct)
     {
-        _partnerRepository = partnerRepository;
-    }
-
-    public async Task<PagedResult<PartnerResponse>> Handle(GetAllPartnersQuery request, CancellationToken cancellationToken)
-    {
-        var partners = await _partnerRepository
-            .GetFilteredPartnersAsync(request, cancellationToken);
-
-        int totalCount = await _partnerRepository
-            .GetCountTotalAsync(request, cancellationToken);
-
-        var partnerResponses = partners.Adapt<List<PartnerResponse>>();
-
-        return new PagedResult<PartnerResponse>(partnerResponses, totalCount, request.PageNumber, request.PageSize);
+        var partners = await _repo.GetPagedByCriteriaAsync(partnerQuery, partnerQuery.PageNumber, partnerQuery.PageSize, ct);
+        return new PagedResult<GetPartnersResponse>(partners.Items.Adapt<List<GetPartnersResponse>>(), partners.TotalCount, partners.PageNumber, partners.PageSize);
     }
 }

@@ -25,42 +25,41 @@ public class CreatePartnerAccountCommandHandler : ICommandHandler<CreatePartnerA
         _paramTypeRepository = paramTypeRepository;
     }
 
-    public async Task<Result<Guid>> Handle(CreatePartnerAccountCommand request, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreatePartnerAccountCommand command, CancellationToken ct)
     {
-        // Check if the account number already exists
-        var existingAccountNumber = await _partnerAccountRepository.GetByAccountNumberAsync(request.AccountNumber, cancellationToken);
+        // Check uniqueness on AccountNumber
+        var existingAccountNumber = await _partnerAccountRepository.GetOneByConditionAsync(p => p.AccountNumber == command.AccountNumber, ct);
         if (existingAccountNumber is not null)
-            throw new PartnerAccountAlreadyExistException(request.AccountNumber);
+            throw new PartnerAccountAlreadyExistException(command.AccountNumber);
 
-        // Check if the RIB already exists
-        var existingRIB = await _partnerAccountRepository.GetByRIBAsync(request.RIB, cancellationToken);
+        // Check uniqueness on RIB  
+        var existingRIB = await _partnerAccountRepository.GetOneByConditionAsync(p => p.RIB == command.RIB, ct);
         if (existingRIB is not null)
-            throw new BusinessException($"Partner account with RIB {request.RIB} already exists.");
+            throw new PartnerAccountAlreadyExistException(command.RIB);
 
-        // Check if the Bank exists
-        var bank = await _bankRepository.GetByIdAsync(new BankId(request.BankId), cancellationToken);
+        // Validate Bank exists
+        var bank = await _bankRepository.GetByIdAsync(BankId.Of(command.BankId), ct);
         if (bank is null)
-            throw new BusinessException($"Bank with ID {request.BankId} not found");
+            throw new BusinessException($"Bank with ID {command.BankId} not found");
 
-        // Check if the AccountType exists
-        var accountType = await _paramTypeRepository.GetByIdAsync(new ParamTypeId(request.AccountTypeId), cancellationToken);
+        // Validate AccountType exists
+        var accountType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(command.AccountTypeId), ct);
         if (accountType is null)
-            throw new BusinessException($"Account Type with ID {request.AccountTypeId} not found");
+            throw new BusinessException($"Account Type with ID {command.AccountTypeId} not found");
 
-        var id = PartnerAccountId.Of(Guid.NewGuid());
         var partnerAccount = PartnerAccount.Create(
-            id,
-            request.AccountNumber,
-            request.RIB,
-            request.Domiciliation,
-            request.BusinessName,
-            request.ShortName,
-            request.AccountBalance,
+            PartnerAccountId.Of(Guid.NewGuid()),
+            command.AccountNumber,
+            command.RIB,
+            command.Domiciliation,
+            command.BusinessName,
+            command.ShortName,
+            command.AccountBalance,
             bank,
-            accountType
-        );
+            accountType);
 
-        await _partnerAccountRepository.AddPartnerAccountAsync(partnerAccount, cancellationToken);
+        await _partnerAccountRepository.AddAsync(partnerAccount, ct);
+        await _partnerAccountRepository.SaveChangesAsync(ct);
 
         return Result.Success(partnerAccount.Id.Value);
     }

@@ -1,44 +1,18 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.PartnerAccounts.Commands.PatchPartnerAccount;
 
-public class PatchPartnerAccountCommand : ICommand<Guid>
+public record PatchPartnerAccountCommand : ICommand<Result<bool>>
 {
-    // The ID from the route
-    public Guid PartnerAccountId { get; }
-
-    // The optional fields to update
-    public string? AccountNumber { get; }
-    public string? RIB { get; }
-    public string? Domiciliation { get; }
-    public string? BusinessName { get; }
-    public string? ShortName { get; }
-    public decimal? AccountBalance { get; }
-    public Guid? BankId { get; }
-    public Guid? AccountTypeId { get; }
-    public bool? IsEnabled { get; }
-
-    public PatchPartnerAccountCommand(
-        Guid partnerAccountId,
-        string? accountNumber = null,
-        string? rib = null,
-        string? domiciliation = null,
-        string? businessName = null,
-        string? shortName = null,
-        decimal? accountBalance = null,
-        Guid? bankId = null,
-        Guid? accountTypeId = null,
-        bool? isEnabled = null)
-    {
-        PartnerAccountId = partnerAccountId;
-        AccountNumber = accountNumber;
-        RIB = rib;
-        Domiciliation = domiciliation;
-        BusinessName = businessName;
-        ShortName = shortName;
-        AccountBalance = accountBalance;
-        BankId = bankId;
-        AccountTypeId = accountTypeId;
-        IsEnabled = isEnabled;
-    }
+    public Guid PartnerAccountId { get; init; }
+    public string? AccountNumber { get; init; }
+    public string? RIB { get; init; }
+    public string? Domiciliation { get; init; }
+    public string? BusinessName { get; init; }
+    public string? ShortName { get; init; }
+    public decimal? AccountBalance { get; init; }
+    public Guid? BankId { get; init; }
+    public Guid? AccountTypeId { get; init; }
+    public bool? IsEnabled { get; init; }
 }

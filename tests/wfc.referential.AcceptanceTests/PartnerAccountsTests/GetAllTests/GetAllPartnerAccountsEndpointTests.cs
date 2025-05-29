@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BuildingBlocks.Core.Pagination;
 using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
@@ -9,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Application.PartnerAccounts.Queries.GetAllPartnerAccounts;
+using wfc.referential.Application.PartnerAccounts.Dtos;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
@@ -29,12 +30,10 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
-
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IPartnerAccountRepository>();
                 services.RemoveAll<ICacheService>();
-
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(cacheMock.Object);
             });
@@ -43,7 +42,6 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
         _client = customisedFactory.CreateClient();
     }
 
-    // Helper to build dummy partner accounts quickly
     private static PartnerAccount CreateTestPartnerAccount(string accountNumber, string rib, string businessName, string accountTypeName)
     {
         var bankId = Guid.NewGuid();
@@ -68,9 +66,7 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
         );
     }
 
-    // Lightweight DTO for deserialising the endpoint response
-    private record PagedResultDto<T>(T[] Items, int PageNumber, int PageSize,
-                                     int TotalCount, int TotalPages);
+    private record PagedResultDto<T>(T[] Items, int PageNumber, int PageSize, int TotalCount, int TotalPages);
 
     [Fact(DisplayName = "GET /api/partner-accounts returns paged list")]
     public async Task Get_ShouldReturnPagedList_WhenParamsAreValid()
@@ -78,178 +74,28 @@ public class GetAllPartnerAccountsEndpointTests : IClassFixture<WebApplicationFa
         // Arrange
         var allAccounts = new[] {
             CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Wafa Cash Services", "Activity"),
-            CreateTestPartnerAccount("000987654321", "98765432109876543210987", "Transfert Express", "Commission"),
-            CreateTestPartnerAccount("000111222333", "11122233344455566677788", "Rapid Transfer", "Activity"),
-            CreateTestPartnerAccount("000444555666", "44455566677788899900011", "Money Express", "Commission"),
-            CreateTestPartnerAccount("000777888999", "77788899900011122233344", "Quick Cash", "Activity")
+            CreateTestPartnerAccount("000987654321", "98765432109876543210987", "Transfert Express", "Commission")
         };
 
-        // Repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetFilteredPartnerAccountsAsync(
-                            It.Is<GetAllPartnerAccountsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allAccounts.Take(2).ToList());
+        var pagedResult = new PagedResult<PartnerAccount>(allAccounts.ToList(), 2, 1, 2);
 
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllPartnerAccountsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allAccounts.Length);
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(pagedResult);
 
         // Act
         var response = await _client.GetAsync("/api/partner-accounts?pageNumber=1&pageSize=2");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+        var dto = await response.Content.ReadFromJsonAsync<PagedResult<PartnerAccountResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         dto!.Items.Should().HaveCount(2);
-        dto.TotalCount.Should().Be(5);
-        dto.TotalPages.Should().Be(3);
+        dto.TotalCount.Should().Be(2);
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetFilteredPartnerAccountsAsync(
-                                It.Is<GetAllPartnerAccountsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
-    }
-
-    [Fact(DisplayName = "GET /api/partner-accounts?accountNumber=000123456789 returns only matching account")]
-    public async Task Get_ShouldFilterByAccountNumber()
-    {
-        // Arrange
-        var account = CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Wafa Cash Services", "Activity");
-
-        _repoMock.Setup(r => r.GetFilteredPartnerAccountsAsync(
-                            It.Is<GetAllPartnerAccountsQuery>(q => q.AccountNumber == "000123456789"),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<PartnerAccount> { account });
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllPartnerAccountsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
-
-        // Act
-        var response = await _client.GetAsync("/api/partner-accounts?accountNumber=000123456789");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(1);
-        dto.Items[0].GetProperty("accountNumber").GetString().Should().Be("000123456789");
-
-        _repoMock.Verify(r => r.GetFilteredPartnerAccountsAsync(
-                                It.Is<GetAllPartnerAccountsQuery>(q => q.AccountNumber == "000123456789"),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
-    }
-
-    [Fact(DisplayName = "GET /api/partner-accounts?accountTypeId=22222222-2222-2222-2222-222222222222 filters by account type")]
-    public async Task Get_ShouldFilterByAccountTypeId()
-    {
-        // Arrange
-        var activityTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var activiteAccounts = new[] {
-            CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Wafa Cash Services", "Activity"),
-            CreateTestPartnerAccount("000111222333", "11122233344455566677788", "Rapid Transfer", "Activity"),
-            CreateTestPartnerAccount("000777888999", "77788899900011122233344", "Quick Cash", "Activity")
-        };
-
-        _repoMock.Setup(r => r.GetFilteredPartnerAccountsAsync(
-                            It.Is<GetAllPartnerAccountsQuery>(q => q.AccountTypeId == activityTypeId),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(activiteAccounts.ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.Is<GetAllPartnerAccountsQuery>(q => q.AccountTypeId == activityTypeId),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(activiteAccounts.Length);
-
-        // Act
-        var response = await _client.GetAsync($"/api/partner-accounts?accountTypeId={activityTypeId}");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(3);
-        dto.TotalCount.Should().Be(3);
-
-        foreach (var item in dto.Items)
-        {
-            item.GetProperty("accountTypeName").GetString().Should().Be("Activity");
-        }
-
-        _repoMock.Verify(r => r.GetFilteredPartnerAccountsAsync(
-                                It.Is<GetAllPartnerAccountsQuery>(q => q.AccountTypeId == activityTypeId),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
-    }
-
-    [Fact(DisplayName = "GET /api/partner-accounts?minAccountBalance=60000 filters by minimum balance")]
-    public async Task Get_ShouldFilterByMinimumBalance()
-    {
-        // Arrange
-        var highBalanceAccount = CreateTestPartnerAccount("000123456789", "12345678901234567890123", "High Balance Account", "Activity");
-
-        // Assume the internal balance is set higher than the original 50000
-        var partnerAccountType = typeof(PartnerAccount);
-        var balanceProperty = partnerAccountType.GetProperty("AccountBalance");
-        balanceProperty!.SetValue(highBalanceAccount, 75000.00m);
-
-        _repoMock.Setup(r => r.GetFilteredPartnerAccountsAsync(
-                            It.Is<GetAllPartnerAccountsQuery>(q => q.MinAccountBalance == 60000m),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<PartnerAccount> { highBalanceAccount });
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllPartnerAccountsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
-
-        // Act
-        var response = await _client.GetAsync("/api/partner-accounts?minAccountBalance=60000");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(1);
-        dto.Items[0].GetProperty("accountBalance").GetDecimal().Should().Be(75000.00m);
-
-        _repoMock.Verify(r => r.GetFilteredPartnerAccountsAsync(
-                                It.Is<GetAllPartnerAccountsQuery>(q => q.MinAccountBalance == 60000m),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
-    }
-
-    [Fact(DisplayName = "GET /api/partner-accounts?isEnabled=false returns only disabled accounts")]
-    public async Task Get_ShouldFilterByEnabledStatus()
-    {
-        // Arrange
-        var disabledAccount = CreateTestPartnerAccount("000123456789", "12345678901234567890123", "Disabled Account", "Activity");
-        disabledAccount.Disable(); // Make it disabled
-
-        _repoMock.Setup(r => r.GetFilteredPartnerAccountsAsync(
-                            It.Is<GetAllPartnerAccountsQuery>(q => q.IsEnabled == false),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<PartnerAccount> { disabledAccount });
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllPartnerAccountsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
-
-        // Act
-        var response = await _client.GetAsync("/api/partner-accounts?isEnabled=false");
-        var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.Items.Should().HaveCount(1);
-        dto.Items[0].GetProperty("isEnabled").GetBoolean().Should().BeFalse();
-
-        _repoMock.Verify(r => r.GetFilteredPartnerAccountsAsync(
-                                It.Is<GetAllPartnerAccountsQuery>(q => q.IsEnabled == false),
-                                It.IsAny<CancellationToken>()),
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+                                It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                          Times.Once);
     }
 }

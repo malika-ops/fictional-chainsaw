@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
-using wfc.referential.Application.Partners.Commands.UpdatePartner;
+
+namespace wfc.referential.Application.Partners.Commands.UpdatePartner;
 
 public class UpdatePartnerCommandValidator : AbstractValidator<UpdatePartnerCommand>
 {
@@ -11,10 +12,10 @@ public class UpdatePartnerCommandValidator : AbstractValidator<UpdatePartnerComm
         RuleFor(x => x.Code)
             .NotEmpty().WithMessage("Code is required");
 
-        RuleFor(x => x.Label)
-            .NotEmpty().WithMessage("Label is required");
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Name is required");
 
-        RuleFor(x => x.Type)
-            .NotEmpty().WithMessage("Type is required");
+        RuleFor(x => x.PersonType)
+            .NotEmpty().WithMessage("PersonType is required");
     }
 }

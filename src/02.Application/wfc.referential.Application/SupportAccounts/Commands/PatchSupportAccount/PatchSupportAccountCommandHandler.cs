@@ -2,8 +2,6 @@
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using wfc.referential.Domain.SupportAccountAggregate.Exceptions;
 
@@ -24,12 +22,20 @@ public class PatchSupportAccountCommandHandler : ICommandHandler<PatchSupportAcc
         if (supportAccount is null)
             throw new ResourceNotFoundException($"Support account [{cmd.SupportAccountId}] not found.");
 
-        // duplicate Code check
+        // Check uniqueness on Code (if provided)
         if (!string.IsNullOrWhiteSpace(cmd.Code))
         {
-            var dup = await _repo.GetOneByConditionAsync(sa => sa.Code == cmd.Code, ct);
-            if (dup is not null && dup.Id != supportAccount.Id)
+            var duplicateCode = await _repo.GetOneByConditionAsync(sa => sa.Code == cmd.Code, ct);
+            if (duplicateCode is not null && duplicateCode.Id != supportAccount.Id)
                 throw new SupportAccountCodeAlreadyExistException(cmd.Code);
+        }
+
+        // Check uniqueness on AccountingNumber (if provided)
+        if (!string.IsNullOrWhiteSpace(cmd.AccountingNumber))
+        {
+            var duplicateAccountingNumber = await _repo.GetOneByConditionAsync(sa => sa.AccountingNumber == cmd.AccountingNumber, ct);
+            if (duplicateAccountingNumber is not null && duplicateAccountingNumber.Id != supportAccount.Id)
+                throw new SupportAccountAccountingNumberAlreadyExistException(cmd.AccountingNumber);
         }
 
         supportAccount.Patch(

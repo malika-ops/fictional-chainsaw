@@ -185,9 +185,6 @@ namespace wfc.referential.Infrastructure.Migrations
 
                     b.HasIndex("TierId");
 
-                    b.HasIndex("AgencyId", "TierId")
-                        .IsUnique();
-
                     b.HasIndex("AgencyId", "TierId", "Code")
                         .IsUnique();
 
@@ -706,6 +703,10 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<Guid?>("ActivityAccountId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AuthenticationMode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("AuxiliaryAccount")
                         .IsRequired()
                         .HasColumnType("text");
@@ -723,6 +724,22 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FunctionContact")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("HeadquartersAddress")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("HeadquartersCity")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("ICE")
                         .IsRequired()
                         .HasColumnType("text");
@@ -735,38 +752,54 @@ namespace wfc.referential.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime?>("LastModified")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("text");
 
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Logo")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("NetworkMode")
+                    b.Property<string>("MailContact")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("PaymentMode")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("RASRate")
+                    b.Property<Guid?>("NetworkModeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PartnerTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PaymentModeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PersonType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumberContact")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProfessionalTaxNumber")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid?>("SupportAccountId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("SupportAccountType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid?>("SupportAccountTypeId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("TaxIdentificationNumber")
                         .IsRequired()
@@ -776,7 +809,11 @@ namespace wfc.referential.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Type")
+                    b.Property<string>("TransferType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WithholdingTaxRate")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -787,6 +824,14 @@ namespace wfc.referential.Infrastructure.Migrations
 
                     b.HasIndex("ICE")
                         .IsUnique();
+
+                    b.HasIndex("NetworkModeId");
+
+                    b.HasIndex("PartnerTypeId");
+
+                    b.HasIndex("PaymentModeId");
+
+                    b.HasIndex("SupportAccountTypeId");
 
                     b.HasIndex("TaxIdentificationNumber")
                         .IsUnique();
@@ -1033,6 +1078,10 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsEnabled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1047,16 +1096,11 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<decimal>("Limit")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("PartnerId")
+                    b.Property<Guid?>("PartnerId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("SupportAccountType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid?>("SupportAccountTypeId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Threshold")
                         .HasColumnType("decimal(18,2)");
@@ -1070,6 +1114,8 @@ namespace wfc.referential.Infrastructure.Migrations
                         .IsUnique();
 
                     b.HasIndex("PartnerId");
+
+                    b.HasIndex("SupportAccountTypeId");
 
                     b.ToTable("SupportAccounts");
                 });
@@ -1405,6 +1451,37 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Navigation("Bank");
                 });
 
+            modelBuilder.Entity("wfc.referential.Domain.PartnerAggregate.Partner", b =>
+                {
+                    b.HasOne("wfc.referential.Domain.ParamTypeAggregate.ParamType", "NetworkMode")
+                        .WithMany()
+                        .HasForeignKey("NetworkModeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("wfc.referential.Domain.ParamTypeAggregate.ParamType", "PartnerType")
+                        .WithMany()
+                        .HasForeignKey("PartnerTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("wfc.referential.Domain.ParamTypeAggregate.ParamType", "PaymentMode")
+                        .WithMany()
+                        .HasForeignKey("PaymentModeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("wfc.referential.Domain.ParamTypeAggregate.ParamType", "SupportAccountType")
+                        .WithMany()
+                        .HasForeignKey("SupportAccountTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("NetworkMode");
+
+                    b.Navigation("PartnerType");
+
+                    b.Navigation("PaymentMode");
+
+                    b.Navigation("SupportAccountType");
+                });
+
             modelBuilder.Entity("wfc.referential.Domain.PartnerCountryAggregate.PartnerCountry", b =>
                 {
                     b.HasOne("wfc.referential.Domain.Countries.Country", "Country")
@@ -1456,10 +1533,16 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.HasOne("wfc.referential.Domain.PartnerAggregate.Partner", "Partner")
                         .WithMany()
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("wfc.referential.Domain.ParamTypeAggregate.ParamType", "SupportAccountType")
+                        .WithMany()
+                        .HasForeignKey("SupportAccountTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Partner");
+
+                    b.Navigation("SupportAccountType");
                 });
 
             modelBuilder.Entity("wfc.referential.Domain.TaxRuleDetailAggregate.TaxRuleDetail", b =>

@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace wfc.referential.Application.PartnerAccounts.Dtos;
+﻿namespace wfc.referential.Application.PartnerAccounts.Dtos;
 
 public record CreatePartnerAccountRequest
 {
