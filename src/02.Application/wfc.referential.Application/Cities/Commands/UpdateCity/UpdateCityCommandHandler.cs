@@ -12,7 +12,7 @@ using wfc.referential.Domain.RegionAggregate.Exceptions;
 namespace wfc.referential.Application.Cities.Commands.UpdateCity;
 
 public class UpdateCityCommandHandler(ICityRepository cityRepository,
-    IRegionRepository _regionRepository)
+    IRegionRepository _regionRepository, ICacheService _cacheService)
     : ICommandHandler<UpdateCityCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(UpdateCityCommand request, CancellationToken cancellationToken)
@@ -35,6 +35,8 @@ public class UpdateCityCommandHandler(ICityRepository cityRepository,
 
         cityRepository.Update(city);
         await cityRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.City.Prefix, cancellationToken);
 
         return Result.Success(true);
     }

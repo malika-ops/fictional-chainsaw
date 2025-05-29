@@ -2,12 +2,14 @@
 using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
+using BuildingBlocks.Infrastructure.CachingManagement;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CorridorAggregate;
 
 namespace wfc.referential.Application.Corridors.Commands.UpdateCorridor;
 
-public class UpdateCorridorCommandHandler(ICorridorRepository _corridorRepository, ICacheService cacheService)
+public class UpdateCorridorCommandHandler(ICorridorRepository _corridorRepository, ICacheService _cacheService)
     : ICommandHandler<UpdateCorridorCommand, Result<bool>>
 {
 
@@ -24,6 +26,8 @@ public class UpdateCorridorCommandHandler(ICorridorRepository _corridorRepositor
 
         _corridorRepository.Update(corridor);
         await _corridorRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.Corridor.Prefix, cancellationToken);
 
         return Result.Success(true);
     }

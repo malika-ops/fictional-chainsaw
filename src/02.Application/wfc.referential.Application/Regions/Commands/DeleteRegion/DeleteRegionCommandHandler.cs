@@ -2,6 +2,7 @@
 using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.RegionAggregate;
 using wfc.referential.Domain.RegionAggregate.Exceptions;
@@ -9,7 +10,7 @@ using wfc.referential.Domain.RegionAggregate.Exceptions;
 namespace wfc.referential.Application.Regions.Commands.DeleteRegion;
 
 public class DeleteRegionCommandHandler(IRegionRepository _regionRepository,
-    ICityRepository _cityRepository) 
+    ICityRepository _cityRepository, ICacheService _cacheService) 
     : ICommandHandler<DeleteRegionCommand, Result<bool>>
 {
     
@@ -29,6 +30,8 @@ public class DeleteRegionCommandHandler(IRegionRepository _regionRepository,
 
         _regionRepository.Update(region);
         await _regionRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.Region.Prefix, cancellationToken);
 
         return Result.Success(true);
     }

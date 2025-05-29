@@ -1,13 +1,14 @@
 ﻿using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.RegionAggregate;
 using wfc.referential.Domain.RegionAggregate.Exceptions;
 
 namespace wfc.referential.Application.Regions.Commands.CreateRegion;
 
-public class CreateRegionCommandHandler(IRegionRepository regionRepository) 
+public class CreateRegionCommandHandler(IRegionRepository regionRepository, ICacheService _cacheService) 
     : ICommandHandler<CreateRegionCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateRegionCommand request, CancellationToken cancellationToken)
@@ -20,6 +21,8 @@ public class CreateRegionCommandHandler(IRegionRepository regionRepository)
 
         await regionRepository.AddAsync(region, cancellationToken);
         await regionRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.Region.Prefix, cancellationToken);
 
         return Result.Success(region.Id!.Value);
     }

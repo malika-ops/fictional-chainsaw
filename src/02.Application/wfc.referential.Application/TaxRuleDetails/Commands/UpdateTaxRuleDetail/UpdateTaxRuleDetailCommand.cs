@@ -11,7 +11,7 @@ namespace wfc.referential.Application.TaxRuleDetails.Commands.UpdateTaxRuleDetai
 /// <summary>
 /// Command to update all details of a TaxRuleDetail entity.
 /// </summary>
-public record UpdateTaxRuleDetailCommand : ICommand<Result<Guid>>, ICacheableQuery
+public record UpdateTaxRuleDetailCommand : ICommand<Result<Guid>>
 {
     public Guid TaxRuleDetailsId { get; init; }
 
@@ -22,8 +22,4 @@ public record UpdateTaxRuleDetailCommand : ICommand<Result<Guid>>, ICacheableQue
     public ApplicationRule? AppliedOn { get; init; }
 
     public bool IsEnabled { get; init; }
-
-    public string CacheKey => $"{nameof(TaxRuleDetail)}_{TaxRuleDetailsId}";
-
-    public int CacheExpiration => 5;
 }

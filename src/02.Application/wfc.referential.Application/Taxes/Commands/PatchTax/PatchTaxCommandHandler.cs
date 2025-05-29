@@ -1,12 +1,14 @@
-﻿using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TaxAggregate;
 
 namespace wfc.referential.Application.Taxes.Commands.PatchTax;
 
-public class PatchTaxCommandHandler(ITaxRepository taxRepository) 
+public class PatchTaxCommandHandler(ITaxRepository taxRepository, ICacheService _cacheService) 
     : ICommandHandler<PatchTaxCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(PatchTaxCommand request, CancellationToken cancellationToken)
@@ -21,6 +23,8 @@ public class PatchTaxCommandHandler(ITaxRepository taxRepository)
 
         taxRepository.Update(tax);
         await taxRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.Tax.Prefix, cancellationToken);
 
         return Result.Success(true);
     }

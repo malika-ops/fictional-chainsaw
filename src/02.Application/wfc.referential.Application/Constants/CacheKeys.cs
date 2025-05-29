@@ -45,4 +45,22 @@ public static class CacheKeys
     {
         public const string Prefix = InstancePrefix + "CountryIdentityDocument_";
     }
+
+    // 🔹 Entité : Corridor
+    public static class Corridor
+    {
+        public const string Prefix = InstancePrefix + "Corridor_";
+    }
+
+    // 🔹 Entité : Tax
+    public static class Tax
+    {
+        public const string Prefix = InstancePrefix + "Tax_";
+    }
+
+    // 🔹 Entité : TaxRuleDetail
+    public static class TaxRuleDetail
+    {
+        public const string Prefix = InstancePrefix + "TaxRuleDetail_";
+    }
 }

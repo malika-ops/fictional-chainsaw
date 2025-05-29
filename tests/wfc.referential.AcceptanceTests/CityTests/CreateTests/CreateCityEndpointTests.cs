@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Cities.Dtos;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
@@ -24,6 +25,7 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
     private readonly HttpClient _client;
     private readonly Mock<ICityRepository> _repoCityMock = new();
     private readonly Mock<IRegionRepository> _repoRegionMock = new();
+    private readonly Mock<ICacheService> _cacheMock = new();
 
     public CreateCityEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -47,6 +49,7 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
                 // 🔌 Plug mocks back in
                 services.AddSingleton(_repoCityMock.Object);
                 services.AddSingleton(_repoRegionMock.Object);
+                services.AddSingleton(_cacheMock.Object);
             });
         });
 
@@ -91,6 +94,8 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             Times.Once
         );
 
+
+        _cacheMock.Verify(c => c.RemoveByPrefixAsync(CacheKeys.City.Prefix, It.IsAny<CancellationToken>()), Times.Once);
 
     }
 

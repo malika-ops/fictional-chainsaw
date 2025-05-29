@@ -1,6 +1,7 @@
 ﻿using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TaxRuleDetailAggregate;
 
@@ -23,11 +24,7 @@ public class CreateTaxRuleDetailCommandHandler(
 
         await _taxRuleDetailsRepository.AddTaxRuleDetailAsync(taxRuleDetails, cancellationToken);
 
-        await _cacheService.SetAsync(
-            request.CacheKey,
-            taxRuleDetails,
-            TimeSpan.FromMinutes(request.CacheExpiration),
-            cancellationToken);
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.TaxRuleDetail.Prefix, cancellationToken);
 
         return Result.Success(taxRuleDetails.Id!.Value);
     }

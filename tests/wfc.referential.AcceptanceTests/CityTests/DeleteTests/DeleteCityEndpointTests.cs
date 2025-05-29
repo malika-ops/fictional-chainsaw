@@ -118,6 +118,9 @@ public class DeleteCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         _repoMock.Verify(r => r.Update(It.Is<City>(c => c.IsEnabled == false)), Times.Once);
+
+
+        _cacheMock.Verify(c => c.RemoveByPrefixAsync(CacheKeys.City.Prefix, It.IsAny<CancellationToken>()), Times.Once);
     }
 
 }

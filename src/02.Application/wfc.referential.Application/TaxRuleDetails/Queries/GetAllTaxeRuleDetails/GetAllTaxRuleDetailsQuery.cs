@@ -21,7 +21,7 @@ public record GetAllTaxRuleDetailsQuery : IQuery<PagedResult<GetAllTaxRuleDetail
     public int PageSize { get; init; } = 10;
 
     public string CacheKey =>
-        $"TaxRuleDetails_Corridor{CorridorId?.Value}_Tax{TaxId?.Value}_Service{ServiceId?.Value}_AppliedOn{AppliedOn}_Enabled{IsEnabled}_Page{PageNumber}_Size{PageSize}";
+        $"{nameof(TaxRuleDetail)}_Corridor{CorridorId?.Value}_Tax{TaxId?.Value}_Service{ServiceId?.Value}_AppliedOn{AppliedOn}_Enabled{IsEnabled}_Page{PageNumber}_Size{PageSize}";
 
     public int CacheExpiration => 5;
 }

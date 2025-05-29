@@ -5,10 +5,8 @@ using wfc.referential.Domain.TaxRuleDetailAggregate;
 
 namespace wfc.referential.Application.TaxRuleDetails.Commands.DeleteTaxRuleDetail;
 
-public record DeleteTaxRuleDetailCommand : ICommand<Result<bool>>, ICacheableQuery
+public record DeleteTaxRuleDetailCommand : ICommand<Result<bool>>
 {
     public Guid TaxRuleDetailsId { get; init; }
 
-    public string CacheKey => $"{nameof(TaxRuleDetail)}_{TaxRuleDetailsId}";
-    public int CacheExpiration => 5;
 }

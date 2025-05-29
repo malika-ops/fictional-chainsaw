@@ -10,7 +10,7 @@ namespace wfc.referential.Application.TaxRuleDetails.Commands.PatchTaxRuleDetail
 /// <summary>
 /// Command to partially update a TaxRuleDetails entity.
 /// </summary>
-public record PatchTaxRuleDetailCommand : ICommand<Result<Guid>>, ICacheableQuery
+public record PatchTaxRuleDetailCommand : ICommand<Result<Guid>>
 {
     /// <summary>
     /// The ID of the TaxRuleDetails to update.
@@ -42,8 +42,4 @@ public record PatchTaxRuleDetailCommand : ICommand<Result<Guid>>, ICacheableQuer
     /// Optional IsEnabled flag to update.
     /// </summary>
     public bool? IsEnabled { get; init; }
-
-    public string CacheKey => $"{nameof(TaxRuleDetail)}_{TaxRuleDetailsId}";
-
-    public int CacheExpiration => 5;
 }

@@ -1,12 +1,14 @@
-﻿using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CorridorAggregate;
 
 namespace wfc.referential.Application.Corridors.Commands.DeleteCorridor;
 
-public class DeleteCorridorCommandHandler(ICorridorRepository _corridorRepository) 
+public class DeleteCorridorCommandHandler(ICorridorRepository _corridorRepository, ICacheService _cacheService) 
     : ICommandHandler<DeleteCorridorCommand, Result<bool>>
 {
     
@@ -21,7 +23,9 @@ public class DeleteCorridorCommandHandler(ICorridorRepository _corridorRepositor
 
         corridor.SetInactive();
         _corridorRepository.Update(corridor);
-        await _corridorRepository.SaveChangesAsync(cancellationToken);  
+        await _corridorRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.Corridor.Prefix, cancellationToken);
 
         return Result.Success(true);
     }

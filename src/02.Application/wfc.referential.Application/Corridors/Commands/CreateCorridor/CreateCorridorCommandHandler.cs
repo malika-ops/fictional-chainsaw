@@ -1,11 +1,13 @@
-﻿using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CorridorAggregate;
 
 namespace wfc.referential.Application.Corridors.Commands.CreateCorridor;
 
-public class CreateCorridorCommandHandler(ICorridorRepository corridorRepository) 
+public class CreateCorridorCommandHandler(ICorridorRepository corridorRepository, ICacheService _cacheService) 
     : ICommandHandler<CreateCorridorCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateCorridorCommand request, CancellationToken cancellationToken)
@@ -16,6 +18,8 @@ public class CreateCorridorCommandHandler(ICorridorRepository corridorRepository
 
         await corridorRepository.AddAsync(corridor, cancellationToken);
         await corridorRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.Corridor.Prefix, cancellationToken);
 
         return Result.Success(corridor.Id!.Value);
     }

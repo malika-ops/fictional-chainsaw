@@ -11,25 +11,17 @@ namespace wfc.referential.Application.TaxRuleDetails.Queries.GetAllTaxRuleDetail
 public class GetAllTaxRuleDetailsQueryHandler : IQueryHandler<GetAllTaxRuleDetailsQuery, PagedResult<GetAllTaxRuleDetailsResponse>>
 {
     private readonly ITaxRuleDetailRepository _taxRuleDetailsRepository;
-    private readonly ICacheService _cacheService;
 
     public GetAllTaxRuleDetailsQueryHandler(
-        ITaxRuleDetailRepository taxRuleDetailsRepository,
-        ICacheService cacheService)
+        ITaxRuleDetailRepository taxRuleDetailsRepository)
     {
         _taxRuleDetailsRepository = taxRuleDetailsRepository;
-        _cacheService = cacheService;
     }
 
     public async Task<PagedResult<GetAllTaxRuleDetailsResponse>> Handle(
         GetAllTaxRuleDetailsQuery request,
         CancellationToken cancellationToken)
     {
-        var cachedResult = await _cacheService.GetAsync<PagedResult<GetAllTaxRuleDetailsResponse>>(
-            request.CacheKey, cancellationToken);
-
-        if (cachedResult is not null)
-            return cachedResult;
 
         var taxRuleDetails = await _taxRuleDetailsRepository
             .GetTaxRuleDetailsByCriteriaAsync(request, cancellationToken);
@@ -44,12 +36,6 @@ public class GetAllTaxRuleDetailsQueryHandler : IQueryHandler<GetAllTaxRuleDetai
             totalCount,
             request.PageNumber,
             request.PageSize);
-
-        await _cacheService.SetAsync(
-            request.CacheKey,
-            result,
-            TimeSpan.FromMinutes(request.CacheExpiration),
-            cancellationToken);
 
         return result;
     }

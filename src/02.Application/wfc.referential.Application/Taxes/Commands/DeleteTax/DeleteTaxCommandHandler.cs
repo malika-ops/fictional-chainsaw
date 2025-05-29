@@ -1,13 +1,16 @@
-﻿using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TaxAggregate;
 using wfc.referential.Domain.TaxAggregate.Exceptions;
 
 namespace wfc.referential.Application.Taxes.Commands.DeleteTax;
 
-public class DeleteTaxCommandHandler(ITaxRepository taxRepository, ITaxRuleDetailRepository taxRuleDetailRepository) 
+public class DeleteTaxCommandHandler(ITaxRepository taxRepository, 
+    ICacheService _cacheService, ITaxRuleDetailRepository taxRuleDetailRepository) 
     : ICommandHandler<DeleteTaxCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(DeleteTaxCommand request, CancellationToken cancellationToken)
@@ -25,6 +28,8 @@ public class DeleteTaxCommandHandler(ITaxRepository taxRepository, ITaxRuleDetai
         tax.SetInactive();
         taxRepository.Update(tax);
         await taxRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.Tax.Prefix, cancellationToken);
 
         return Result.Success(true);
     }

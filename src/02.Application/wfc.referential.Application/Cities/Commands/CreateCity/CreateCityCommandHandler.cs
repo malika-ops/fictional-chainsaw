@@ -1,6 +1,8 @@
-﻿using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.CityAggregate.Exceptions;
@@ -8,7 +10,7 @@ using wfc.referential.Domain.RegionAggregate;
 
 namespace wfc.referential.Application.Cities.Commands.CreateCity;
 
-public class CreateCityCommandHandler(ICityRepository cityRepository,
+public class CreateCityCommandHandler(ICityRepository cityRepository, ICacheService _cacheService,
     IRegionRepository _regionRepository)
     : ICommandHandler<CreateCityCommand, Result<Guid>>
 {
@@ -30,6 +32,8 @@ public class CreateCityCommandHandler(ICityRepository cityRepository,
 
         await cityRepository.AddAsync(city, cancellationToken);
         await cityRepository.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.City.Prefix, cancellationToken);
 
         return Result.Success(city.Id!.Value);
     }

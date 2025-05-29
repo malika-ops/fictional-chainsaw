@@ -1,6 +1,8 @@
-﻿using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.RegionAggregate;
@@ -8,7 +10,7 @@ using wfc.referential.Domain.RegionAggregate;
 namespace wfc.referential.Application.Cities.Commands.PatchCity;
 
 public class PatchCityCommandHandler(ICityRepository cityRepository,
-    IRegionRepository _regionRepository)
+    IRegionRepository _regionRepository, ICacheService _cacheService)
     : ICommandHandler<PatchCityCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(PatchCityCommand request, CancellationToken cancellationToken)
@@ -31,6 +33,9 @@ public class PatchCityCommandHandler(ICityRepository cityRepository,
 
         cityRepository.Update(city);
         await cityRepository.SaveChangesAsync(cancellationToken);
+
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.City.Prefix, cancellationToken);
 
         return Result.Success(true);
     }

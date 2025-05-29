@@ -3,6 +3,7 @@ using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using Mapster;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TaxRuleDetailAggregate;
 using wfc.referential.Domain.TaxRuleDetailAggregate.Exceptions;
@@ -34,11 +35,7 @@ public class UpdateTaxRuleDetailCommandHandler(
 
         await _taxRuleDetailsRepository.UpdateTaxRuleDetailAsync(taxRuleDetail, cancellationToken);
 
-        await _cacheService.SetAsync(
-            request.CacheKey,
-            taxRuleDetail,
-            TimeSpan.FromMinutes(request.CacheExpiration),
-            cancellationToken);
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.TaxRuleDetail.Prefix, cancellationToken);
 
         return Result.Success(taxRuleDetail.Id!.Value);
     }
