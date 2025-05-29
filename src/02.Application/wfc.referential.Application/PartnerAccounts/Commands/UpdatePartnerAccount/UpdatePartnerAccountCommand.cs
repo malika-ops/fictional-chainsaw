@@ -1,41 +1,18 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.PartnerAccounts.Commands.UpdatePartnerAccount;
 
-public class UpdatePartnerAccountCommand : ICommand<Guid>
+public record UpdatePartnerAccountCommand : ICommand<Result<bool>>
 {
-    public Guid PartnerAccountId { get; }
-    public string AccountNumber { get; }
-    public string RIB { get; }
-    public string? Domiciliation { get; }
-    public string? BusinessName { get; }
-    public string? ShortName { get; }
-    public decimal AccountBalance { get; }
-    public Guid BankId { get; }
-    public Guid AccountTypeId { get; }
-    public bool IsEnabled { get; }
-
-    public UpdatePartnerAccountCommand(
-        Guid partnerAccountId,
-        string accountNumber,
-        string rib,
-        string? domiciliation,
-        string? businessName,
-        string? shortName,
-        decimal accountBalance,
-        Guid bankId,
-        Guid accountTypeId,
-        bool isEnabled)
-    {
-        PartnerAccountId = partnerAccountId;
-        AccountNumber = accountNumber;
-        RIB = rib;
-        Domiciliation = domiciliation;
-        BusinessName = businessName;
-        ShortName = shortName;
-        AccountBalance = accountBalance;
-        BankId = bankId;
-        AccountTypeId = accountTypeId;
-        IsEnabled = isEnabled;
-    }
+    public Guid PartnerAccountId { get; init; }
+    public string AccountNumber { get; init; } = string.Empty;
+    public string RIB { get; init; } = string.Empty;
+    public string? Domiciliation { get; init; }
+    public string? BusinessName { get; init; }
+    public string? ShortName { get; init; }
+    public decimal AccountBalance { get; init; }
+    public Guid BankId { get; init; }
+    public Guid AccountTypeId { get; init; }
+    public bool IsEnabled { get; init; } = true;
 }

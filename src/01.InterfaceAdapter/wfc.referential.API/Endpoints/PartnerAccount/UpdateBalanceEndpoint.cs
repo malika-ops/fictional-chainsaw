@@ -6,7 +6,7 @@ using wfc.referential.Application.PartnerAccounts.Dtos;
 
 namespace wfc.referential.API.Endpoints.PartnerAccount;
 
-public class UpdateBalance(IMediator _mediator) : Endpoint<UpdateBalanceRequest, Guid>
+public class UpdateBalanceEndpoint(IMediator _mediator) : Endpoint<UpdateBalanceRequest, bool>
 {
     public override void Configure()
     {
@@ -15,21 +15,19 @@ public class UpdateBalance(IMediator _mediator) : Endpoint<UpdateBalanceRequest,
         Summary(s =>
         {
             s.Summary = "Update a Partner Account's balance";
-            s.Description = "Updates only the balance of the specified partner account ID.";
-            s.Params["PartnerAccountId"] = "Partner Account ID (GUID) from route";
-
-            s.Response<Guid>(200, "The ID of the updated partner account");
-            s.Response(400, "If validation fails or the ID is invalid");
+            s.Description = "Updates only the balance of the partner account identified by {PartnerAccountId}.";
+            s.Params["PartnerAccountId"] = "Partner Account GUID from route";
+            s.Response<bool>(200, "Returns true if balance update succeeded");
+            s.Response(400, "Validation failure or negative balance");
             s.Response(404, "Partner account not found");
         });
-
-        Options(o => o.WithTags("PartnerAccounts"));
+        Options(o => o.WithTags(EndpointGroups.PartnerAccounts));
     }
 
     public override async Task HandleAsync(UpdateBalanceRequest req, CancellationToken ct)
     {
         var command = req.Adapt<UpdateBalanceCommand>();
-        var updatedId = await _mediator.Send(command, ct);
-        await SendAsync(updatedId, cancellation: ct);
+        var result = await _mediator.Send(command, ct);
+        await SendAsync(result.Value, cancellation: ct);
     }
 }

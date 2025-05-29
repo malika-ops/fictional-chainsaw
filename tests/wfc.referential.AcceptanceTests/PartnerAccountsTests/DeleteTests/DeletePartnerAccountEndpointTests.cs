@@ -1,105 +1,56 @@
-﻿using BuildingBlocks.Core.Exceptions;
+﻿using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Application.PartnerAccounts.Commands.DeletePartnerAccount;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.PartnerAccountAggregate.Exceptions;
-using Xunit;
 using wfc.referential.Domain.SupportAccountAggregate;
+using Xunit;
 
-namespace wfc.referential.UnitTests.Application.Commands.PartnerAccounts.DeletePartnerAccount;
+namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.DeleteTests;
 
-public class DeletePartnerAccountCommandHandlerTests
+public class DeletePartnerAccountEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
+    private readonly HttpClient _client;
     private readonly Mock<IPartnerAccountRepository> _partnerAccountRepoMock = new();
     private readonly Mock<IPartnerRepository> _partnerRepoMock = new();
-    private readonly DeletePartnerAccountCommandHandler _handler;
 
-    public DeletePartnerAccountCommandHandlerTests()
+    public DeletePartnerAccountEndpointTests(WebApplicationFactory<Program> factory)
     {
-        _handler = new DeletePartnerAccountCommandHandler(_partnerAccountRepoMock.Object, _partnerRepoMock.Object);
+        var cacheMock = new Mock<ICacheService>();
+
+        var customisedFactory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Testing");
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IPartnerAccountRepository>();
+                services.RemoveAll<IPartnerRepository>();
+                services.RemoveAll<ICacheService>();
+
+                // Setup BaseRepository methods
+                _partnerAccountRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
+
+                services.AddSingleton(_partnerAccountRepoMock.Object);
+                services.AddSingleton(_partnerRepoMock.Object);
+                services.AddSingleton(cacheMock.Object);
+            });
+        });
+
+        _client = customisedFactory.CreateClient();
     }
 
-    [Fact]
-    public async Task Handle_ShouldDisableAccount_WhenAccountExists()
-    {
-        // Arrange
-        var accountId = Guid.NewGuid();
-        var partnerAccount = CreateTestPartnerAccount(accountId);
-
-        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(
-            It.Is<PartnerAccountId>(id => id.Value == accountId),
-            It.IsAny<CancellationToken>()))
-        .ReturnsAsync(partnerAccount);
-
-        _partnerRepoMock.Setup(r => r.GetAllPartnersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Partner>());
-
-        // Act
-        var result = await _handler.Handle(new DeletePartnerAccountCommand(accountId), CancellationToken.None);
-
-        // Assert
-        result.Should().BeTrue();
-        partnerAccount.IsEnabled.Should().BeFalse();
-
-        _partnerAccountRepoMock.Verify(r => r.UpdatePartnerAccountAsync(
-            It.Is<PartnerAccount>(p => p.Id.Value == accountId && p.IsEnabled == false),
-            It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldThrowException_WhenAccountDoesNotExist()
-    {
-        // Arrange
-        var accountId = Guid.NewGuid();
-
-        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(
-            It.IsAny<PartnerAccountId>(),
-            It.IsAny<CancellationToken>()))
-        .ReturnsAsync((PartnerAccount)null);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidPartnerAccountDeletingException>(() =>
-            _handler.Handle(new DeletePartnerAccountCommand(accountId), CancellationToken.None));
-
-        _partnerAccountRepoMock.Verify(r => r.UpdatePartnerAccountAsync(
-            It.IsAny<PartnerAccount>(),
-            It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldThrowException_WhenAccountIsLinkedToPartner()
-    {
-        // Arrange
-        var accountId = Guid.NewGuid();
-        var partnerAccount = CreateTestPartnerAccount(accountId);
-        var partner = CreateTestPartner(Guid.NewGuid(), "TEST01", commissionAccountId: accountId);
-
-        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(
-            It.Is<PartnerAccountId>(id => id.Value == accountId),
-            It.IsAny<CancellationToken>()))
-        .ReturnsAsync(partnerAccount);
-
-        _partnerRepoMock.Setup(r => r.GetAllPartnersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Partner> { partner });
-
-        // Act & Assert
-        await Assert.ThrowsAsync<BusinessException>(() =>
-            _handler.Handle(new DeletePartnerAccountCommand(accountId), CancellationToken.None));
-
-        _partnerAccountRepoMock.Verify(r => r.UpdatePartnerAccountAsync(
-            It.IsAny<PartnerAccount>(),
-            It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    private PartnerAccount CreateTestPartnerAccount(Guid id)
+    private static PartnerAccount CreateTestPartnerAccount(Guid id)
     {
         var bankId = Guid.NewGuid();
         var bank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
@@ -108,7 +59,7 @@ public class DeletePartnerAccountCommandHandlerTests
         var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), null, "Activity");
 
         return PartnerAccount.Create(
-            new PartnerAccountId(id),
+            PartnerAccountId.Of(id),
             "000123456789",
             "12345678901234567890123",
             "Casablanca Centre",
@@ -120,30 +71,248 @@ public class DeletePartnerAccountCommandHandlerTests
         );
     }
 
-    private Partner CreateTestPartner(
+    private static Partner CreateTestPartner(
         Guid id,
         string code,
         Guid? commissionAccountId = null,
         Guid? activityAccountId = null)
     {
+        // Use the new Partner.Create method with all required parameters
         return Partner.Create(
-            new PartnerId(id),
+            PartnerId.Of(id),
             code,
             "Test Partner",
-            NetworkMode.VRP,
-            PaymentMode.PostPaye,
-            "Partner Type",
-            SupportAccountType.Individuel,
-            "123456789",
-            "IR",
-            "AUX001",
-            "ICE123456",
-            "20%",
-            "",
-            null,
-            commissionAccountId,
-            activityAccountId,
-            null
+            "Natural Person",           // PersonType
+            "PTX123456",               // ProfessionalTaxNumber
+            "10.5",                    // WithholdingTaxRate
+            "Casablanca",              // HeadquartersCity
+            "123 Main Street",         // HeadquartersAddress
+            "Doe",                     // LastName
+            "John",                    // FirstName
+            "+212612345678",           // PhoneNumberContact
+            "contact@partner.com",     // MailContact
+            "Manager",                 // FunctionContact
+            "Bank Transfer",           // TransferType
+            "SMS",                     // AuthenticationMode
+            "123456789",               // TaxIdentificationNumber
+            "IR",                      // TaxRegime
+            "AUX001",                  // AuxiliaryAccount
+            "ICE123456",               // ICE
+            ""                         // Logo
         );
+    }
+
+    [Fact(DisplayName = "DELETE /api/partner-accounts/{id} returns 200 and disables account")]
+    public async Task Delete_ShouldReturn200_AndDisableAccount_WhenAccountExists()
+    {
+        // Arrange
+        var accountId = Guid.NewGuid();
+        var partnerAccount = CreateTestPartnerAccount(accountId);
+
+        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(
+            It.Is<PartnerAccountId>(id => id.Value == accountId),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(partnerAccount);
+
+        // No linked partners - use GetOneByConditionAsync from BaseRepository
+        _partnerRepoMock.Setup(r => r.GetOneByConditionAsync(
+            It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Partner?)null);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/partner-accounts/{accountId}");
+        var result = await response.Content.ReadFromJsonAsync<bool>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().BeTrue();
+
+        // Verify account was disabled (soft delete)
+        partnerAccount.IsEnabled.Should().BeFalse();
+
+        _partnerAccountRepoMock.Verify(r => r.GetByIdAsync(
+            It.Is<PartnerAccountId>(id => id.Value == accountId),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact(DisplayName = "DELETE /api/partner-accounts/{id} returns 400 when account not found")]
+    public async Task Delete_ShouldReturn400_WhenAccountNotFound()
+    {
+        // Arrange
+        var accountId = Guid.NewGuid();
+
+        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(
+            It.Is<PartnerAccountId>(id => id.Value == accountId),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PartnerAccount?)null);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/partner-accounts/{accountId}");
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        doc!.RootElement.GetProperty("errors").GetString()
+           .Should().Be($"Partner account [{accountId}] not found.");
+
+        _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact(DisplayName = "DELETE /api/partner-accounts/{id} returns 409 when account is linked to partner")]
+    public async Task Delete_ShouldReturn409_WhenAccountIsLinkedToPartner()
+    {
+        // Arrange
+        var accountId = Guid.NewGuid();
+        var partnerAccount = CreateTestPartnerAccount(accountId);
+        var linkedPartner = CreateTestPartner(Guid.NewGuid(), "TEST01");
+
+        // Manually set the commission account relationship
+        linkedPartner.SetCommissionAccount(accountId);
+
+        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(
+            It.Is<PartnerAccountId>(id => id.Value == accountId),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(partnerAccount);
+
+        // Partner is linked to this account
+        _partnerRepoMock.Setup(r => r.GetOneByConditionAsync(
+            It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(linkedPartner);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/partner-accounts/{accountId}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact(DisplayName = "DELETE /api/partner-accounts/{id} performs soft delete not hard delete")]
+    public async Task Delete_ShouldPerformSoftDelete_NotHardDelete()
+    {
+        // Arrange
+        var accountId = Guid.NewGuid();
+        var partnerAccount = CreateTestPartnerAccount(accountId);
+
+        // Verify account starts as enabled
+        partnerAccount.IsEnabled.Should().BeTrue();
+
+        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(
+            It.Is<PartnerAccountId>(id => id.Value == accountId),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(partnerAccount);
+
+        _partnerRepoMock.Setup(r => r.GetOneByConditionAsync(
+            It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Partner?)null);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/partner-accounts/{accountId}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Verify soft delete - account still exists but disabled
+        partnerAccount.Should().NotBeNull();
+        partnerAccount.IsEnabled.Should().BeFalse();
+        partnerAccount.AccountNumber.Should().Be("000123456789"); // Data still intact
+    }
+
+    [Fact(DisplayName = "DELETE /api/partner-accounts/{id} returns 400 for invalid GUID format")]
+    public async Task Delete_ShouldReturn400_ForInvalidGuidFormat()
+    {
+        // Act
+        var response = await _client.DeleteAsync("/api/partner-accounts/invalid-guid-format");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        // Verify no repository operations were attempted
+        _partnerAccountRepoMock.Verify(r => r.GetByIdAsync(
+            It.IsAny<PartnerAccountId>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact(DisplayName = "DELETE /api/partner-accounts/{id} checks both commission and activity account links")]
+    public async Task Delete_ShouldCheckBothCommissionAndActivityAccountLinks()
+    {
+        // Arrange
+        var accountId = Guid.NewGuid();
+        var partnerAccount = CreateTestPartnerAccount(accountId);
+        var linkedPartner = CreateTestPartner(Guid.NewGuid(), "TEST01");
+
+        // Set as activity account instead of commission account
+        linkedPartner.SetActivityAccount(accountId);
+
+        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(
+            It.Is<PartnerAccountId>(id => id.Value == accountId),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(partnerAccount);
+
+        // Partner is linked to this account as activity account
+        _partnerRepoMock.Setup(r => r.GetOneByConditionAsync(
+            It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(linkedPartner);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/partner-accounts/{accountId}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact(DisplayName = "DELETE /api/partner-accounts/{id} validates business rules before deletion")]
+    public async Task Delete_ShouldValidateBusinessRules_BeforeDeletion()
+    {
+        // Arrange
+        var accountId = Guid.NewGuid();
+        var partnerAccount = CreateTestPartnerAccount(accountId);
+
+        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(
+            It.Is<PartnerAccountId>(id => id.Value == accountId),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(partnerAccount);
+
+        // No linked partners
+        _partnerRepoMock.Setup(r => r.GetOneByConditionAsync(
+            It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Partner?)null);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/partner-accounts/{accountId}");
+        var result = await response.Content.ReadFromJsonAsync<bool>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().BeTrue();
+
+        // Verify business rule validation was performed
+        _partnerRepoMock.Verify(r => r.GetOneByConditionAsync(
+            It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+
+        // Verify account was disabled (soft delete)
+        partnerAccount.IsEnabled.Should().BeFalse();
+
+        _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

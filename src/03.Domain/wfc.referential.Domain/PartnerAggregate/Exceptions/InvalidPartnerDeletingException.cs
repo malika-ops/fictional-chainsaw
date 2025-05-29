@@ -2,9 +2,5 @@
 
 namespace wfc.referential.Domain.PartnerAggregate.Exceptions;
 
-public class InvalidPartnerDeletingException : BusinessException
-{
-    public InvalidPartnerDeletingException(string validationMessage) : base(validationMessage)
-    {
-    }
-}
+public class InvalidPartnerDeletingException(string validationMessage)
+    : BusinessException(validationMessage);

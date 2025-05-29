@@ -1,69 +1,37 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
-using wfc.referential.Domain.PartnerAggregate;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Partners.Commands.PatchPartner;
 
-public record PatchPartnerCommand : ICommand<Guid>
+public record PatchPartnerCommand : ICommand<Result<bool>>
 {
-    // The ID from the route
-    public Guid PartnerId { get; }
-
-    // The optional fields to update
-    public string? Code { get; }
-    public string? Label { get; }
-    public NetworkMode? NetworkMode { get; }
-    public PaymentMode? PaymentMode { get; }
-    public string? Type { get; }
-    public wfc.referential.Domain.SupportAccountAggregate.SupportAccountType? SupportAccountType { get; }
-    public string? IdentificationNumber { get; }
-    public string? TaxRegime { get; }
-    public string? AuxiliaryAccount { get; }
-    public string? ICE { get; }
-    public string? RASRate { get; }
-    public bool? IsEnabled { get; }
-    public string? Logo { get; }
-    public Guid? IdParent { get; }
-    public Guid? CommissionAccountId { get; }
-    public Guid? ActivityAccountId { get; }
-    public Guid? SupportAccountId { get; }
-
-    public PatchPartnerCommand(
-        Guid partnerId,
-        string? code = null,
-        string? label = null,
-        NetworkMode? networkMode = null,
-        PaymentMode? paymentMode = null,
-        string? type = null,
-        wfc.referential.Domain.SupportAccountAggregate.SupportAccountType? supportAccountType = null,
-        string? identificationNumber = null,
-        string? taxRegime = null,
-        string? auxiliaryAccount = null,
-        string? ice = null,
-        string? rasRate = null,
-        bool? isEnabled = null,
-        string? logo = null,
-        Guid? idParent = null,
-        Guid? commissionAccountId = null,
-        Guid? activityAccountId = null,
-        Guid? supportAccountId = null)
-    {
-        PartnerId = partnerId;
-        Code = code;
-        Label = label;
-        NetworkMode = networkMode;
-        PaymentMode = paymentMode;
-        Type = type;
-        SupportAccountType = supportAccountType;
-        IdentificationNumber = identificationNumber;
-        TaxRegime = taxRegime;
-        AuxiliaryAccount = auxiliaryAccount;
-        ICE = ice;
-        RASRate = rasRate;
-        IsEnabled = isEnabled;
-        Logo = logo;
-        IdParent = idParent;
-        CommissionAccountId = commissionAccountId;
-        ActivityAccountId = activityAccountId;
-        SupportAccountId = supportAccountId;
-    }
+    public Guid PartnerId { get; init; }
+    public string? Code { get; init; }
+    public string? Name { get; init; }
+    public string? PersonType { get; init; }
+    public string? ProfessionalTaxNumber { get; init; }
+    public string? WithholdingTaxRate { get; init; }
+    public string? HeadquartersCity { get; init; }
+    public string? HeadquartersAddress { get; init; }
+    public string? LastName { get; init; }
+    public string? FirstName { get; init; }
+    public string? PhoneNumberContact { get; init; }
+    public string? MailContact { get; init; }
+    public string? FunctionContact { get; init; }
+    public string? TransferType { get; init; }
+    public string? AuthenticationMode { get; init; }
+    public string? TaxIdentificationNumber { get; init; }
+    public string? TaxRegime { get; init; }
+    public string? AuxiliaryAccount { get; init; }
+    public string? ICE { get; init; }
+    public string? Logo { get; init; }
+    public bool? IsEnabled { get; init; }
+    public Guid? NetworkModeId { get; init; }
+    public Guid? PaymentModeId { get; init; }
+    public Guid? PartnerTypeId { get; init; }
+    public Guid? SupportAccountTypeId { get; init; }
+    public Guid? CommissionAccountId { get; init; }
+    public Guid? ActivityAccountId { get; init; }
+    public Guid? SupportAccountId { get; init; }
+    public Guid? IdParent { get; init; }
 }

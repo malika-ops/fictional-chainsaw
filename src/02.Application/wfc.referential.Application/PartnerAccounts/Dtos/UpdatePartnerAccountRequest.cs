@@ -57,7 +57,7 @@ public record UpdatePartnerAccountRequest
     public Guid AccountTypeId { get; init; }
 
     /// <summary>
-    /// Whether the account is enabled or not.
+    /// Whether the account is enabled or disabled.
     /// </summary>
     /// <example>true</example>
     public bool IsEnabled { get; init; } = true;

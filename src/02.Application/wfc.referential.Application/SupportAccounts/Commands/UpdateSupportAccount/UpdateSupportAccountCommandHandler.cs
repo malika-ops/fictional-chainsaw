@@ -2,8 +2,6 @@
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using wfc.referential.Domain.SupportAccountAggregate.Exceptions;
 
@@ -22,10 +20,15 @@ public class UpdateSupportAccountCommandHandler
         if (supportAccount is null)
             throw new BusinessException($"Support account [{cmd.SupportAccountId}] not found.");
 
-        // uniqueness on Code
+        // Check uniqueness on Code
         var duplicateCode = await _repo.GetOneByConditionAsync(sa => sa.Code == cmd.Code, ct);
         if (duplicateCode is not null && duplicateCode.Id != supportAccount.Id)
             throw new SupportAccountCodeAlreadyExistException(cmd.Code);
+
+        // Check uniqueness on AccountingNumber
+        var duplicateAccountingNumber = await _repo.GetOneByConditionAsync(sa => sa.AccountingNumber == cmd.AccountingNumber, ct);
+        if (duplicateAccountingNumber is not null && duplicateAccountingNumber.Id != supportAccount.Id)
+            throw new SupportAccountAccountingNumberAlreadyExistException(cmd.AccountingNumber);
 
         supportAccount.Update(
             cmd.Code,

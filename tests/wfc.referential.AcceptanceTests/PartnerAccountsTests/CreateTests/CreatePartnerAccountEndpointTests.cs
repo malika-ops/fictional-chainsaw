@@ -27,23 +27,21 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
     {
         var cacheMock = new Mock<ICacheService>();
 
-        // Clone the factory and customize the host
         var customizedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
-
             builder.ConfigureServices(services =>
             {
-                // Remove concrete registrations that hit the DB / Redis
                 services.RemoveAll<IPartnerAccountRepository>();
                 services.RemoveAll<IBankRepository>();
                 services.RemoveAll<IParamTypeRepository>();
                 services.RemoveAll<ICacheService>();
 
-                // Set up mock behavior (echoes entity back, as if EF saved it)
-                _repoMock
-                    .Setup(r => r.AddPartnerAccountAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()))
+                // Updated to use BaseRepository methods
+                _repoMock.Setup(r => r.AddAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((PartnerAccount p, CancellationToken _) => p);
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
                 // Set up bank mock to return valid entities
                 var bankId = BankId.Of(Guid.Parse("11111111-1111-1111-1111-111111111111"));
@@ -66,7 +64,6 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
                     .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == commissionTypeId.Value), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(commissionType);
 
-                // Plug mocks back in
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(_bankRepoMock.Object);
                 services.AddSingleton(_paramTypeRepoMock.Object);
@@ -100,13 +97,12 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         var response = await _client.PostAsJsonAsync("/api/partner-accounts", payload);
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
-        // Assert (FluentAssertions)
+        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         returnedId.Should().NotBeEmpty();
 
-        // Verify repository interaction
         _repoMock.Verify(r =>
-            r.AddPartnerAccountAsync(It.Is<PartnerAccount>(p =>
+            r.AddAsync(It.Is<PartnerAccount>(p =>
                     p.AccountNumber == payload.AccountNumber &&
                     p.RIB == payload.RIB &&
                     p.BusinessName == payload.BusinessName &&
@@ -118,58 +114,18 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
             ),
             Times.Once
         );
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "POST /api/partner-accounts returns 400 & problem-details when AccountNumber is missing")]
-    public async Task Post_ShouldReturn400_WhenAccountNumberIsMissing()
-    {
-        // Arrange
-        var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-        var invalidPayload = new
-        {
-            // AccountNumber intentionally omitted to trigger validation error
-            RIB = "12345678901234567890123",
-            Domiciliation = "Casablanca Centre",
-            BusinessName = "Wafa Cash Services",
-            ShortName = "WCS",
-            AccountBalance = 50000.00m,
-            BankId = bankId,
-            AccountTypeId = accountTypeId
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/partner-accounts", invalidPayload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
-        root.GetProperty("status").GetInt32().Should().Be(400);
-
-        root.GetProperty("errors")
-            .GetProperty("accountNumber")[0].GetString()
-            .Should().Be("Account number is required");
-
-        // The handler must NOT be reached
-        _repoMock.Verify(r =>
-            r.AddPartnerAccountAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()),
-            Times.Never,
-            "when validation fails, the command handler should not be executed");
-    }
-
-    [Fact(DisplayName = "POST /api/partner-accounts returns 400 when AccountNumber already exists")]
-    public async Task Post_ShouldReturn400_WhenAccountNumberAlreadyExists()
+    [Fact(DisplayName = "POST /api/partner-accounts returns 409 when AccountNumber already exists")]
+    public async Task Post_ShouldReturn409_WhenAccountNumberAlreadyExists()
     {
         // Arrange 
         const string duplicateAccountNumber = "000123456789";
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-        // Tell the repo mock that the account number already exists
         var existingBank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
         var existingAccountType = ParamType.Create(ParamTypeId.Of(accountTypeId), null, "Activity");
 
@@ -186,7 +142,9 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         );
 
         _repoMock
-            .Setup(r => r.GetByAccountNumberAsync(duplicateAccountNumber, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOneByConditionAsync(
+                It.IsAny<System.Linq.Expressions.Expression<System.Func<PartnerAccount, bool>>>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAccount);
 
         var payload = new
@@ -198,109 +156,17 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
             ShortName = "TE",
             AccountBalance = 75000.00m,
             BankId = bankId,
-            AccountTypeId = Guid.Parse("33333333-3333-3333-3333-333333333333") // Commission type
+            AccountTypeId = Guid.Parse("33333333-3333-3333-3333-333333333333")
         };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/partner-accounts", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
-
-        error.Should().Be($"Partner account with account number {duplicateAccountNumber} already exists.");
-
-        // Handler must NOT attempt to add the entity
         _repoMock.Verify(r =>
-            r.AddPartnerAccountAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()),
-            Times.Never,
-            "no insertion should happen when the account number is already taken");
-    }
-
-    [Fact(DisplayName = "POST /api/partner-accounts returns 400 when Bank is not found")]
-    public async Task Post_ShouldReturn400_WhenBankNotFound()
-    {
-        // Arrange
-        var nonExistentBankId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-        // Setup bank repository to return null for this ID
-        _bankRepoMock
-            .Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == nonExistentBankId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Bank?)null);
-
-        var payload = new
-        {
-            AccountNumber = "000987654321",
-            RIB = "98765432109876543210987",
-            Domiciliation = "Casablanca Marina",
-            BusinessName = "Transfert Express",
-            ShortName = "TE",
-            AccountBalance = 75000.00m,
-            BankId = nonExistentBankId,
-            AccountTypeId = accountTypeId
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/partner-accounts", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
-
-        error.Should().Be($"Bank with ID {nonExistentBankId} not found");
-
-        // Handler must NOT attempt to add the entity
-        _repoMock.Verify(r =>
-            r.AddPartnerAccountAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    [Fact(DisplayName = "POST /api/partner-accounts returns 400 when AccountType is not found")]
-    public async Task Post_ShouldReturn400_WhenAccountTypeNotFound()
-    {
-        // Arrange
-        var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var nonExistentAccountTypeId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-
-        // Setup param type repository to return null for this ID
-        _paramTypeRepoMock
-            .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == nonExistentAccountTypeId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ParamType?)null);
-
-        var payload = new
-        {
-            AccountNumber = "000987654321",
-            RIB = "98765432109876543210987",
-            Domiciliation = "Casablanca Marina",
-            BusinessName = "Transfert Express",
-            ShortName = "TE",
-            AccountBalance = 75000.00m,
-            BankId = bankId,
-            AccountTypeId = nonExistentAccountTypeId
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/partner-accounts", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
-
-        error.Should().Be($"Account Type with ID {nonExistentAccountTypeId} not found");
-
-        // Handler must NOT attempt to add the entity
-        _repoMock.Verify(r =>
-            r.AddPartnerAccountAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

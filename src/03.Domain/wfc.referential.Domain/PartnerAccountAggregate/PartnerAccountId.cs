@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using BuildingBlocks.Core.Abstraction.Domain;
+using BuildingBlocks.Core.Exceptions;
 
 namespace wfc.referential.Domain.PartnerAccountAggregate;
 
@@ -20,7 +21,7 @@ public record PartnerAccountId : IValueObject
         ArgumentNullException.ThrowIfNull(value);
         if (value == Guid.Empty)
         {
-            throw new Exception("PartnerAccountId cannot be empty.");
+            throw new BusinessException("PartnerAccountId cannot be empty.");
         }
 
         return new PartnerAccountId(value);

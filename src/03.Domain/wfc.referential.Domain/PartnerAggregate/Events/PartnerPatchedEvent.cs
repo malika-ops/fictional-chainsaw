@@ -1,54 +1,27 @@
 ﻿using BuildingBlocks.Core.Abstraction.Domain;
-using wfc.referential.Domain.SupportAccountAggregate;
 
 namespace wfc.referential.Domain.PartnerAggregate.Events;
 
-public record PartnerPatchedEvent : IDomainEvent
-{
-    public Guid PartnerId { get; }
-    public string Code { get; }
-    public string Label { get; }
-    public NetworkMode NetworkMode { get; }
-    public PaymentMode PaymentMode { get; }
-    public string IdPartner { get; }
-    public SupportAccountType SupportAccountType { get; }
-    public string IdentificationNumber { get; }
-    public string TaxRegime { get; }
-    public string AuxiliaryAccount { get; }
-    public string ICE { get; }
-    public bool IsEnabled { get; }
-    public string Logo { get; }
-    public DateTime OccurredOn { get; }
-
-    public PartnerPatchedEvent(
-        Guid partnerId,
-        string code,
-        string label,
-        NetworkMode networkMode,
-        PaymentMode paymentMode,
-        string idPartner,
-        SupportAccountType supportAccountType,
-        string identificationNumber,
-        string taxRegime,
-        string auxiliaryAccount,
-        string ice,
-        bool isEnabled,
-        string logo,
-        DateTime occurredOn)
-    {
-        PartnerId = partnerId;
-        Code = code;
-        Label = label;
-        NetworkMode = networkMode;
-        PaymentMode = paymentMode;
-        IdPartner = idPartner;
-        SupportAccountType = supportAccountType;
-        IdentificationNumber = identificationNumber;
-        TaxRegime = taxRegime;
-        AuxiliaryAccount = auxiliaryAccount;
-        ICE = ice;
-        IsEnabled = isEnabled;
-        Logo = logo;
-        OccurredOn = occurredOn;
-    }
-}
+public record PartnerPatchedEvent(
+    Guid PartnerId,
+    string Code,
+    string Name,
+    string PersonType,
+    string ProfessionalTaxNumber,
+    string WithholdingTaxRate,
+    string HeadquartersCity,
+    string HeadquartersAddress,
+    string LastName,
+    string FirstName,
+    string PhoneNumberContact,
+    string MailContact,
+    string FunctionContact,
+    string TransferType,
+    string AuthenticationMode,
+    string TaxIdentificationNumber,
+    string TaxRegime,
+    string AuxiliaryAccount,
+    string ICE,
+    string Logo,
+    bool IsEnabled,
+    DateTime OccurredOn) : IDomainEvent;

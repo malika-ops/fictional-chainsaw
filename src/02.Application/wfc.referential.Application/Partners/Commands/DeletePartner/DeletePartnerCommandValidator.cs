@@ -6,9 +6,7 @@ public class DeletePartnerCommandValidator : AbstractValidator<DeletePartnerComm
 {
     public DeletePartnerCommandValidator()
     {
-        // Ensure the ID is non-empty & parseable as a GUID
         RuleFor(x => x.PartnerId)
-            .NotEmpty()
-            .WithMessage("PartnerId must be a non-empty GUID.");
+            .NotEqual(Guid.Empty).WithMessage("PartnerId must be a non-empty GUID.");
     }
 }

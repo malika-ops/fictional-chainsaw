@@ -6,7 +6,7 @@ using wfc.referential.Application.PartnerAccounts.Dtos;
 
 namespace wfc.referential.API.Endpoints.PartnerAccount;
 
-public class CreatePartnerAccount(IMediator _mediator) : Endpoint<CreatePartnerAccountRequest, Guid>
+public class CreatePartnerAccountEndpoint(IMediator _mediator) : Endpoint<CreatePartnerAccountRequest, Guid>
 {
     public override void Configure()
     {
@@ -16,18 +16,17 @@ public class CreatePartnerAccount(IMediator _mediator) : Endpoint<CreatePartnerA
         {
             s.Summary = "Create a new Partner Account";
             s.Description = "Creates a partner account with account number, RIB, domiciliation, business name, short name, account balance, bank ID and account type.";
-
-            s.Response<Guid>(200, "Returns the ID of the newly created Partner Account if successful");
-            s.Response(400, "Returned if validation fails (missing fields or duplicate account number/RIB)");
-            s.Response(500, "Server error if an unexpected exception occurs");
+            s.Response<Guid>(200, "Identifier of the newly created partner account");
+            s.Response(400, "Validation failed");
+            s.Response(409, "Account number or RIB already exists");
+            s.Response(500, "Unexpected server error");
         });
-
         Options(o => o.WithTags(EndpointGroups.PartnerAccounts));
     }
 
-    public override async Task HandleAsync(CreatePartnerAccountRequest dto, CancellationToken ct)
+    public override async Task HandleAsync(CreatePartnerAccountRequest req, CancellationToken ct)
     {
-        var command = dto.Adapt<CreatePartnerAccountCommand>();
+        var command = req.Adapt<CreatePartnerAccountCommand>();
         var result = await _mediator.Send(command, ct);
         await SendAsync(result.Value, cancellation: ct);
     }

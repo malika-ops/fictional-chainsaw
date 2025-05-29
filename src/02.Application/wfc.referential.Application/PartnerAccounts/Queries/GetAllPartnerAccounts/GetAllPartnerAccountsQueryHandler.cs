@@ -8,23 +8,17 @@ namespace wfc.referential.Application.PartnerAccounts.Queries.GetAllPartnerAccou
 
 public class GetAllPartnerAccountsQueryHandler : IQueryHandler<GetAllPartnerAccountsQuery, PagedResult<PartnerAccountResponse>>
 {
-    private readonly IPartnerAccountRepository _partnerAccountRepository;
+    private readonly IPartnerAccountRepository _repo;
 
-    public GetAllPartnerAccountsQueryHandler(IPartnerAccountRepository partnerAccountRepository)
+    public GetAllPartnerAccountsQueryHandler(IPartnerAccountRepository repo) => _repo = repo;
+
+    public async Task<PagedResult<PartnerAccountResponse>> Handle(GetAllPartnerAccountsQuery query, CancellationToken ct)
     {
-        _partnerAccountRepository = partnerAccountRepository;
-    }
-
-    public async Task<PagedResult<PartnerAccountResponse>> Handle(GetAllPartnerAccountsQuery request, CancellationToken cancellationToken)
-    {
-        var partnerAccounts = await _partnerAccountRepository
-            .GetFilteredPartnerAccountsAsync(request, cancellationToken);
-
-        int totalCount = await _partnerAccountRepository
-            .GetCountTotalAsync(request, cancellationToken);
-
-        var partnerAccountResponses = partnerAccounts.Adapt<List<PartnerAccountResponse>>();
-
-        return new PagedResult<PartnerAccountResponse>(partnerAccountResponses, totalCount, request.PageNumber, request.PageSize);
+        var partnerAccounts = await _repo.GetPagedByCriteriaAsync(query, query.PageNumber, query.PageSize, ct);
+        return new PagedResult<PartnerAccountResponse>(
+            partnerAccounts.Items.Adapt<List<PartnerAccountResponse>>(),
+            partnerAccounts.TotalCount,
+            partnerAccounts.PageNumber,
+            partnerAccounts.PageSize);
     }
 }

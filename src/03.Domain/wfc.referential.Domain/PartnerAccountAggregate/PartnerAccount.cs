@@ -103,25 +103,34 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
     }
 
     public void Patch(
-        string accountNumber,
-        string rib,
+        string? accountNumber,
+        string? rib,
         string? domiciliation,
         string? businessName,
         string? shortName,
-        decimal accountBalance,
-        Bank bank,
-        ParamType accountType)
+        decimal? accountBalance,
+        Bank? bank,
+        ParamType? accountType,
+        bool? isEnabled)
     {
-        AccountNumber = accountNumber;
-        RIB = rib;
-        Domiciliation = domiciliation;
-        BusinessName = businessName;
-        ShortName = shortName;
-        AccountBalance = accountBalance;
-        Bank = bank;
-        BankId = bank.Id;
-        AccountType = accountType;
-        AccountTypeId = accountType.Id;
+        AccountNumber = accountNumber ?? AccountNumber;
+        RIB = rib ?? RIB;
+        Domiciliation = domiciliation ?? Domiciliation;
+        BusinessName = businessName ?? BusinessName;
+        ShortName = shortName ?? ShortName;
+        AccountBalance = accountBalance ?? AccountBalance;
+
+        if (bank is not null)
+        {
+            Bank = bank;
+            BankId = bank.Id;
+        }
+
+        if (accountType is not null)
+        {
+            AccountType = accountType;
+            AccountTypeId = accountType.Id;
+        }
 
         AddDomainEvent(new PartnerAccountPatchedEvent(
             Id.Value,

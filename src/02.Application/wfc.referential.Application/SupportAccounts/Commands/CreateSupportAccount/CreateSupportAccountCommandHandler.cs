@@ -1,8 +1,6 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using wfc.referential.Domain.SupportAccountAggregate.Exceptions;
 
@@ -19,9 +17,15 @@ public class CreateSupportAccountCommandHandler : ICommandHandler<CreateSupportA
 
     public async Task<Result<Guid>> Handle(CreateSupportAccountCommand command, CancellationToken ct)
     {
+        // Check uniqueness on Code
         var existingSupportAccountByCode = await _supportAccountRepository.GetOneByConditionAsync(sa => sa.Code == command.Code, ct);
         if (existingSupportAccountByCode is not null)
             throw new SupportAccountCodeAlreadyExistException(command.Code);
+
+        // Check uniqueness on AccountingNumber
+        var existingSupportAccountByAccountingNumber = await _supportAccountRepository.GetOneByConditionAsync(sa => sa.AccountingNumber == command.AccountingNumber, ct);
+        if (existingSupportAccountByAccountingNumber is not null)
+            throw new SupportAccountAccountingNumberAlreadyExistException(command.AccountingNumber);
 
         var supportAccount = SupportAccount.Create(
             SupportAccountId.Of(Guid.NewGuid()),
@@ -31,7 +35,7 @@ public class CreateSupportAccountCommandHandler : ICommandHandler<CreateSupportA
             command.Limit,
             command.AccountBalance,
             command.AccountingNumber
-          );
+        );
 
         await _supportAccountRepository.AddAsync(supportAccount, ct);
         await _supportAccountRepository.SaveChangesAsync(ct);

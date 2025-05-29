@@ -1,4 +1,6 @@
 ﻿using Mapster;
+using wfc.referential.Application.PartnerAccounts.Dtos;
+using wfc.referential.Domain.PartnerAccountAggregate;
 
 namespace wfc.referential.Application.PartnerAccounts.Mappings;
 
@@ -6,96 +8,17 @@ public class PartnerAccountMappings
 {
     public static void Register()
     {
-        // PartnerAccount mappings
-        TypeAdapterConfig<Domain.PartnerAccountAggregate.PartnerAccount, PartnerAccounts.Dtos.PartnerAccountResponse>
+        TypeAdapterConfig<PartnerAccountId, Guid>
             .NewConfig()
-            .Map(dest => dest.PartnerAccountId, src => src.Id.Value)
-            .Map(dest => dest.RIB, src => src.RIB)
-            .Map(dest => dest.BankId, src => src.Bank.Id.Value)
-            .Map(dest => dest.BankName, src => src.Bank.Name)
-            .Map(dest => dest.BankCode, src => src.Bank.Code)
-            .Map(dest => dest.AccountTypeId, src => src.AccountTypeId.Value)
-            .Map(dest => dest.AccountTypeName, src => src.AccountType.Value)
-            .Map(dest => dest.IsEnabled, src => src.IsEnabled);
+            .MapWith(src => src.Value);
 
-        TypeAdapterConfig<PartnerAccounts.Dtos.CreatePartnerAccountRequest, PartnerAccounts.Commands.CreatePartnerAccount.CreatePartnerAccountCommand>
+        TypeAdapterConfig<PartnerAccount, PartnerAccountResponse>
             .NewConfig()
-            .ConstructUsing(src => new PartnerAccounts.Commands.CreatePartnerAccount.CreatePartnerAccountCommand(
-                src.AccountNumber,
-                src.RIB,
-                src.Domiciliation,
-                src.BusinessName,
-                src.ShortName,
-                src.AccountBalance,
-                src.BankId,
-                src.AccountTypeId
-            ));
-
-        TypeAdapterConfig<PartnerAccounts.Dtos.UpdatePartnerAccountRequest, PartnerAccounts.Commands.UpdatePartnerAccount.UpdatePartnerAccountCommand>
-            .NewConfig()
-            .ConstructUsing(src => new PartnerAccounts.Commands.UpdatePartnerAccount.UpdatePartnerAccountCommand(
-                src.PartnerAccountId,
-                src.AccountNumber,
-                src.RIB,
-                src.Domiciliation,
-                src.BusinessName,
-                src.ShortName,
-                src.AccountBalance,
-                src.BankId,
-                src.AccountTypeId,
-                src.IsEnabled
-            ));
-
-        TypeAdapterConfig<PartnerAccounts.Dtos.DeletePartnerAccountRequest, PartnerAccounts.Commands.DeletePartnerAccount.DeletePartnerAccountCommand>
-            .NewConfig()
-            .ConstructUsing(src => new PartnerAccounts.Commands.DeletePartnerAccount.DeletePartnerAccountCommand(
-                src.PartnerAccountId
-            ));
-
-        TypeAdapterConfig<PartnerAccounts.Dtos.PatchPartnerAccountRequest, PartnerAccounts.Commands.PatchPartnerAccount.PatchPartnerAccountCommand>
-            .NewConfig()
-            .IgnoreNullValues(true)
-            .MapToConstructor(true)
-            .ConstructUsing(src => new PartnerAccounts.Commands.PatchPartnerAccount.PatchPartnerAccountCommand(
-                src.PartnerAccountId,
-                src.AccountNumber,
-                src.RIB,
-                src.Domiciliation,
-                src.BusinessName,
-                src.ShortName,
-                src.AccountBalance,
-                src.BankId,
-                src.AccountTypeId,
-                src.IsEnabled
-            ));
-
-        TypeAdapterConfig<PartnerAccounts.Commands.PatchPartnerAccount.PatchPartnerAccountCommand, Domain.PartnerAccountAggregate.PartnerAccount>
-            .NewConfig()
-            .IgnoreNullValues(true);
-
-        TypeAdapterConfig<PartnerAccounts.Dtos.GetAllPartnerAccountsRequest, PartnerAccounts.Queries.GetAllPartnerAccounts.GetAllPartnerAccountsQuery>
-            .NewConfig()
-            .Map(dest => dest.PageNumber, src => src.PageNumber ?? 1)
-            .Map(dest => dest.PageSize, src => src.PageSize ?? 10)
-            .ConstructUsing(src => new PartnerAccounts.Queries.GetAllPartnerAccounts.GetAllPartnerAccountsQuery(
-                src.PageNumber ?? 1,
-                src.PageSize ?? 10,
-                src.AccountNumber,
-                src.RIB,
-                src.BusinessName,
-                src.ShortName,
-                src.MinAccountBalance,
-                src.MaxAccountBalance,
-                src.BankId,
-                src.AccountTypeId,
-                src.IsEnabled
-            ));
-
-        TypeAdapterConfig<PartnerAccounts.Dtos.UpdateBalanceRequest, PartnerAccounts.Commands.UpdateBalance.UpdateBalanceCommand>
-            .NewConfig()
-            .ConstructUsing(src => new PartnerAccounts.Commands.UpdateBalance.UpdateBalanceCommand(
-                src.PartnerAccountId,
-                src.NewBalance
-            ));
+            .Map(d => d.PartnerAccountId, s => s.Id.Value)
+            .Map(d => d.BankId, s => s.BankId.Value)
+            .Map(d => d.BankName, s => s.Bank.Name)
+            .Map(d => d.BankCode, s => s.Bank.Code)
+            .Map(d => d.AccountTypeId, s => s.AccountTypeId.Value)
+            .Map(d => d.AccountTypeName, s => s.AccountType.Value);
     }
 }

@@ -1,31 +1,28 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.PartnerAccountAggregate;
 
 namespace wfc.referential.Application.PartnerAccounts.Commands.UpdateBalance;
 
-public class UpdateBalanceCommandHandler : ICommandHandler<UpdateBalanceCommand, Guid>
+public class UpdateBalanceCommandHandler : ICommandHandler<UpdateBalanceCommand, Result<bool>>
 {
-    private readonly IPartnerAccountRepository _partnerAccountRepository;
+    private readonly IPartnerAccountRepository _repo;
 
-    public UpdateBalanceCommandHandler(IPartnerAccountRepository partnerAccountRepository)
-    {
-        _partnerAccountRepository = partnerAccountRepository;
-    }
+    public UpdateBalanceCommandHandler(IPartnerAccountRepository repo) => _repo = repo;
 
-    public async Task<Guid> Handle(UpdateBalanceCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(UpdateBalanceCommand cmd, CancellationToken ct)
     {
-        // Check if partner account exists
-        var partnerAccount = await _partnerAccountRepository.GetByIdAsync(new PartnerAccountId(request.PartnerAccountId), cancellationToken);
+        var partnerAccount = await _repo.GetByIdAsync(PartnerAccountId.Of(cmd.PartnerAccountId), ct);
         if (partnerAccount is null)
-            throw new BusinessException($"Partner account with ID {request.PartnerAccountId} not found");
+            throw new BusinessException($"Partner account [{cmd.PartnerAccountId}] not found.");
 
-        // Update the balance using dedicated domain method
-        partnerAccount.UpdateBalance(request.NewBalance);
+        partnerAccount.UpdateBalance(cmd.NewBalance);
 
-        await _partnerAccountRepository.UpdatePartnerAccountAsync(partnerAccount, cancellationToken);
+        _repo.Update(partnerAccount);
+        await _repo.SaveChangesAsync(ct);
 
-        return partnerAccount.Id.Value;
+        return Result.Success(true);
     }
 }
