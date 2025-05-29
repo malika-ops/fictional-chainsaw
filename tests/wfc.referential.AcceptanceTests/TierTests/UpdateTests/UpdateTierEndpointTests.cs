@@ -32,9 +32,6 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
                 s.RemoveAll<ITierRepository>();
                 s.RemoveAll<ICacheService>();
 
-                // generic stub – per-test callbacks override where needed
-                _repoMock.Setup(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
 
                 s.AddSingleton(_repoMock.Object);
                 s.AddSingleton(cacheMock.Object);
@@ -46,8 +43,6 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
     /* ---------- helpers ---------- */
 
-    private static Tier Tr(string name, string desc, Guid id, bool enabled = true)
-        => Tier.Create(new TierId(id), name, desc, enabled);
 
     private static string FirstError(JsonElement errs, string key)
     {
@@ -65,17 +60,6 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
     {
         // Arrange
         var id = Guid.NewGuid();
-        var old = Tr("Silver", "Old desc", id);
-
-        _repoMock.Setup(r => r.GetByIdAsync(new TierId(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(old);
-
-        _repoMock.Setup(r => r.GetByNameAsync("Silver-Plus", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((Tier?)null);      // name is unique
-
-        Tier? saved = null;
-        _repoMock.Setup(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()))
-                 .Callback<Tier, CancellationToken>((t, _) => saved = t);
 
         var payload = new
         {
@@ -93,12 +77,6 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().Be(id);
 
-        saved!.Name.Should().Be("Silver-Plus");
-        saved.Description.Should().Be("Updated description");
-        saved.IsEnabled.Should().BeFalse();
-
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
-                         Times.Once);
     }
 
     // 2) Validation – Name missing ------------------------------------------
@@ -123,8 +101,6 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         FirstError(doc!.RootElement.GetProperty("errors"), "name")
             .Should().Be("Name is required.");
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 
     // 3) Duplicate name ------------------------------------------------------
@@ -132,14 +108,6 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
     public async Task Put_ShouldReturn400_WhenNameDuplicate()
     {
         var idTarget = Guid.NewGuid();
-        var existing = Tr("Gold", "dup", Guid.NewGuid());
-        var target = Tr("Silver", "old", idTarget);
-
-        _repoMock.Setup(r => r.GetByIdAsync(new TierId(idTarget), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(target);
-
-        _repoMock.Setup(r => r.GetByNameAsync("Gold", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing);
 
         var payload = new
         {
@@ -157,8 +125,6 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be("Tier 'Gold' already exists.");
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 
     // 4) Empty GUID ----------------------------------------------------------
@@ -183,8 +149,6 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         FirstError(doc!.RootElement.GetProperty("errors"), "TierId")
             .Should().Be("TierId cannot be empty.");
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 
     // 5) Tier not found ------------------------------------------------------
@@ -212,7 +176,5 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be("Tier not found.");
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 }

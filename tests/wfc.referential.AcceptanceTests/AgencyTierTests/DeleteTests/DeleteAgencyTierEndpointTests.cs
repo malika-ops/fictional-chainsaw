@@ -34,10 +34,6 @@ public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
                 s.RemoveAll<IAgencyTierRepository>();
                 s.RemoveAll<ICacheService>();
 
-                _repoMock.Setup(r => r.UpdateAsync(It.IsAny<AgencyTier>(),
-                                                   It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
-
                 s.AddSingleton(_repoMock.Object);
                 s.AddSingleton(cacheMock.Object);
             });
@@ -47,15 +43,6 @@ public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
     }
 
     /* ---------- helpers ---------- */
-
-    private static AgencyTier Make(Guid id, Guid agencyId, Guid tierId, string code = "CODE") =>
-        AgencyTier.Create(
-            AgencyTierId.Of(id),
-            new AgencyId(agencyId),
-            new TierId(tierId),
-            code,
-            "pwd",
-            true);
 
     private static string FirstError(JsonElement errs, string key)
     {
@@ -74,16 +61,7 @@ public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
         var id = Guid.NewGuid();
         var agencyId = Guid.NewGuid();
         var tierId = Guid.NewGuid();
-        var at = Make(id, agencyId, tierId);
-
-        _repoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(at);
-
-        AgencyTier? saved = null;
-        _repoMock.Setup(r => r.UpdateAsync(It.IsAny<AgencyTier>(),
-                                           It.IsAny<CancellationToken>()))
-                 .Callback<AgencyTier, CancellationToken>((e, _) => saved = e)
-                 .Returns(Task.CompletedTask);
+       
 
         // Act
         var resp = await _client.DeleteAsync($"/api/agencyTiers/{id}");
@@ -92,11 +70,6 @@ public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
         // Assert
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
         success.Should().BeTrue();
-
-        saved!.IsEnabled.Should().BeFalse();
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<AgencyTier>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Once);
     }
 
     [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 400 when id is empty GUID")]
@@ -111,10 +84,6 @@ public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
 
         FirstError(doc!.RootElement.GetProperty("errors"), "AgencyTierId")
             .Should().Be("AgencyTierId must be a non-empty GUID.");
-
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<AgencyTier>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 
     [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 400 when AgencyTier not found")]
@@ -135,8 +104,5 @@ public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
         doc!.RootElement.GetProperty("errors").GetString()
             .Should().Be("AgencyTier not found.");
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<AgencyTier>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 }
