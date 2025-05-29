@@ -8,16 +8,14 @@ using wfc.referential.Domain.Countries;
 
 namespace wfc.referential.Application.Corridors.Commands.UpdateCorridor;
 
-public record UpdateCorridorCommand : ICommand<Result<Guid>>, ICacheableQuery
+public record UpdateCorridorCommand : ICommand<Result<bool>>
 {
     public Guid CorridorId { get; set; } = default!;
     public CountryId SourceCountryId { get; init; } = default!;
     public CountryId DestinationCountryId { get; init; } = default!;
     public CityId SourceCityId { get; init; } = default!;
     public CityId DestinationCityId { get; init; } = default!;
-    public AgencyId SourceAgencyId { get; init; } = default!;
-    public AgencyId DestinationAgencyId { get; init; } = default!;
+    public AgencyId SourceBranchId { get; init; } = default!;
+    public AgencyId DestinationBranchId { get; init; } = default!;
     public bool IsEnabled { get; init; } = default!;
-    public string CacheKey => $"{nameof(Corridor)}_{CorridorId}";
-    public int CacheExpiration => 5;
 }

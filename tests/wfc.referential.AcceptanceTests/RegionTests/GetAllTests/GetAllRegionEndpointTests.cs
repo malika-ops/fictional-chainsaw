@@ -2,6 +2,8 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
+using Castle.Components.DictionaryAdapter.Xml;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -60,15 +62,11 @@ public class GetAllRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
                                DummyRegion("CAD", "Canadian") };
 
         // repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetRegionsByCriteriaAsync(
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetAllRegionsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                            1, 2,
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allRegions.Take(2).ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllRegionsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allRegions.Length);
+                 .ReturnsAsync(new PagedResult<Region>(allRegions.Take(2).ToList(), 5, 1, 2));
 
         // Act
         var response = await _client.GetAsync("/api/regions?pageNumber=1&pageSize=2");
@@ -82,8 +80,9 @@ public class GetAllRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetRegionsByCriteriaAsync(
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetAllRegionsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                                1, 2,
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
     }
@@ -95,16 +94,10 @@ public class GetAllRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         // Arrange
         var usd = DummyRegion("USD", "US Dollar");
 
-        _repoMock.Setup(r => r.GetRegionsByCriteriaAsync(
-                            It.Is<GetAllRegionsQuery>(q => q.Code == "USD"),
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllRegionsQuery>(q => q.Code == "USD"),1,10,
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<Region> { usd });
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllRegionsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
-
+                 .ReturnsAsync(new PagedResult<Region>(new List<Region> { usd }, 1,1, 10));
         // Act
         var response = await _client.GetAsync("/api/regions?code=USD");
         var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
@@ -114,8 +107,9 @@ public class GetAllRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("code").GetString().Should().Be("USD");
 
-        _repoMock.Verify(r => r.GetRegionsByCriteriaAsync(
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetAllRegionsQuery>(q => q.Code == "USD"),
+                                1, 10,
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
     }
@@ -130,15 +124,11 @@ public class GetAllRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
                         DummyRegion("EUR", "Euro"),
                         DummyRegion("GBP", "Pound") };
 
-        _repoMock.Setup(r => r.GetRegionsByCriteriaAsync(
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetAllRegionsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(zones.ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllRegionsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(zones.Length);
+                            1, 10,
+        It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(new PagedResult<Region>(zones.ToList(), zones.Count(), 1, 10));
 
         // Act
         var response = await _client.GetAsync("/api/regions");
@@ -152,8 +142,9 @@ public class GetAllRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         dto.Items.Should().HaveCount(3);
 
         // repository must have been called with default paging values
-        _repoMock.Verify(r => r.GetRegionsByCriteriaAsync(
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetAllRegionsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
+                                1, 10,
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
     }

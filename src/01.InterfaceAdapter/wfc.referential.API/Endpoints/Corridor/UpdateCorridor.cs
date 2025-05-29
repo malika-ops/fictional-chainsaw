@@ -6,7 +6,7 @@ using wfc.referential.Application.Corridors.Dtos;
 
 namespace wfc.referential.API.Endpoints.Corridor;
 
-public class UpdateCorridor(IMediator _mediator) : Endpoint<UpdateCorridorRequest, Guid>
+public class UpdateCorridor(IMediator _mediator) : Endpoint<UpdateCorridorRequest, bool>
 {
     public override void Configure()
     {

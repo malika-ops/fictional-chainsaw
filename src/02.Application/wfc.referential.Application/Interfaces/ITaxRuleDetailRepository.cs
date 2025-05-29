@@ -1,4 +1,5 @@
-﻿using wfc.referential.Application.TaxRuleDetails.Queries.GetAllTaxeRuleDetails;
+﻿using BuildingBlocks.Core.Abstraction.Repositories;
+using wfc.referential.Application.TaxRuleDetails.Queries.GetAllTaxeRuleDetails;
 using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.ServiceAggregate;
 using wfc.referential.Domain.TaxAggregate;
@@ -6,7 +7,7 @@ using wfc.referential.Domain.TaxRuleDetailAggregate;
 
 namespace wfc.referential.Application.Interfaces;
 
-public interface ITaxRuleDetailRepository
+public interface ITaxRuleDetailRepository : IRepositoryBase<TaxRuleDetail, TaxRuleDetailsId>
 {
     Task<List<TaxRuleDetail>> GetAllTaxRuleDetailsAsync(CancellationToken cancellationToken);
     Task<TaxRuleDetail?> GetTaxRuleDetailByIdAsync(Guid id, CancellationToken cancellationToken);

@@ -72,8 +72,15 @@ public class City : Aggregate<CityId>
             DateTime.UtcNow
         ));
     }
-    public void Patch()
+    public void Patch(string? code, string? name, string? abbreviation, string? timeZone, bool? isEnabled, RegionId? regionId)
     {
+        Code = code ?? Code;
+        Name = name ?? Name;
+        Abbreviation = abbreviation ?? Abbreviation;
+        TimeZone = timeZone ?? TimeZone;
+        RegionId = regionId ?? RegionId;
+        IsEnabled = isEnabled ?? IsEnabled;
+
         AddDomainEvent(new CityPatchedEvent(
             Id.Value,
             Code,

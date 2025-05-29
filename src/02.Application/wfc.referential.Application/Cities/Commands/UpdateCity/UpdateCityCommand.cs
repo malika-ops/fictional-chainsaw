@@ -4,7 +4,7 @@ using wfc.referential.Domain.RegionAggregate;
 
 namespace wfc.referential.Application.Cities.Commands.UpdateCity;
 
-public record UpdateCityCommand : ICommand<Result<Guid>>
+public record UpdateCityCommand : ICommand<Result<bool>>
 {
     public Guid CityId { get; set; }
     public string Code { get; set; } = default!;

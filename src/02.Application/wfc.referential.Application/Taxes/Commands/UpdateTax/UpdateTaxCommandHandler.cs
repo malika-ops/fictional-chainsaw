@@ -8,34 +8,27 @@ using wfc.referential.Domain.TaxAggregate;
 using wfc.referential.Domain.TaxAggregate.Exceptions;
 
 namespace wfc.referential.Application.Taxes.Commands.UpdateTax;
-public class UpdateTaxCommandHandler(
-    ITaxRepository _taxRepository,
-    ICacheService _cacheService
-) : ICommandHandler<UpdateTaxCommand, Result<Guid>>
+public class UpdateTaxCommandHandler(ITaxRepository _taxRepository) 
+    : ICommandHandler<UpdateTaxCommand, Result<bool>>
 {
-    public async Task<Result<Guid>> Handle(UpdateTaxCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(UpdateTaxCommand request, CancellationToken cancellationToken)
     {
-        var tax = await _taxRepository.GetByIdAsync(request.TaxId, cancellationToken);
+        var taxId = TaxId.Of(request.TaxId);
+        var tax = await _taxRepository.GetOneByConditionAsync(t => t.Id == taxId, cancellationToken);
         if (tax is null)
             throw new ResourceNotFoundException($"{nameof(Tax)} with ID {request.TaxId} not found.");
 
-        var existingTaxWithSameCode = await _taxRepository.GetByCodeAsync(request.Code, cancellationToken);
+        var existingTaxWithSameCode = await _taxRepository.GetOneByConditionAsync(t => t.Code.Equals(request.Code), cancellationToken);
         if (existingTaxWithSameCode is not null && existingTaxWithSameCode.Id != tax.Id)
             throw new CodeAlreadyExistException(request.Code);
 
-        request.Adapt(tax);
-        tax.Update();
+        tax.Update(request.Code, request.CodeAr, request.CodeEn, request.Description,
+            request.FixedAmount, request.Rate, request.IsEnabled);
 
-        await _taxRepository.UpdateTaxAsync(tax, cancellationToken);
+        _taxRepository.Update(tax);
+        await _taxRepository.SaveChangesAsync(cancellationToken);
 
-        await _cacheService.SetAsync(
-            request.CacheKey,
-            tax,
-            TimeSpan.FromMinutes(request.CacheExpiration),
-            cancellationToken
-        );
-
-        return Result.Success(tax.Id!.Value);
+        return Result.Success(true);
     }
 }
 

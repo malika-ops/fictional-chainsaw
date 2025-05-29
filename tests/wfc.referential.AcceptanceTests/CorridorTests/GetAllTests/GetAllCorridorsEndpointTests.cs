@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Corridors.Dtos;
 using wfc.referential.Application.Corridors.Queries.GetAllCorridors;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
@@ -73,27 +72,14 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
                 CreateDummyCorridor(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid())
             };
 
-            _repoMock.Setup(r => r.GetCorridorsByCriteriaAsync(
+            _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetAllCorridorsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                                1,2,
                                 It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(allCorridors.Take(2).ToList());
+                     .ReturnsAsync(new PagedResult<Corridor>(
+                            allCorridors.Take(2).ToList(),
+                            5, 1, 2));
 
-            _repoMock.Setup(r => r.GetCountTotalAsync(
-                                It.IsAny<GetAllCorridorsQuery>(),
-                                It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(allCorridors.Length);
-
-            _cacheMock.Setup(c => c.GetAsync<PagedResult<GetAllCorridorsResponse>>(
-                                    It.IsAny<string>(),
-                                    It.IsAny<CancellationToken>()))
-                      .ReturnsAsync((PagedResult<GetAllCorridorsResponse>)null);
-
-            _cacheMock.Setup(c => c.SetAsync(
-                                    It.IsAny<string>(),
-                                    It.IsAny<object>(),
-                                    It.IsAny<TimeSpan>(),
-                                    It.IsAny<CancellationToken>()))
-                      .Returns(Task.CompletedTask);
 
             // Act
             var response = await _client.GetAsync($"{BaseUrl}?pageNumber=1&pageSize=2");
@@ -107,20 +93,9 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             dto.PageNumber.Should().Be(1);
             dto.PageSize.Should().Be(2);
 
-            _repoMock.Verify(r => r.GetCorridorsByCriteriaAsync(
+            _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                     It.Is<GetAllCorridorsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                                    It.IsAny<CancellationToken>()),
-                             Times.Once);
-
-            _repoMock.Verify(r => r.GetCountTotalAsync(
-                                    It.IsAny<GetAllCorridorsQuery>(),
-                                    It.IsAny<CancellationToken>()),
-                             Times.Once);
-
-            _cacheMock.Verify(c => c.SetAsync(
-                                    It.IsAny<string>(),
-                                    It.IsAny<object>(),
-                                    It.IsAny<TimeSpan>(),
+                                    1, 2,
                                     It.IsAny<CancellationToken>()),
                              Times.Once);
         }
@@ -132,27 +107,13 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             var sourceCountryId = Guid.NewGuid();
             var filteredCorridor = CreateDummyCorridor(Guid.NewGuid(), sourceCountryId, Guid.NewGuid());
 
-            _repoMock.Setup(r => r.GetCorridorsByCriteriaAsync(
+            _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetAllCorridorsQuery>(q => q.SourceCountryId != null && q.SourceCountryId.Value == sourceCountryId),
+                                1, 10,
                                 It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new List<Corridor> { filteredCorridor });
-
-            _repoMock.Setup(r => r.GetCountTotalAsync(
-                                It.IsAny<GetAllCorridorsQuery>(),
-                                It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(1);
-
-            _cacheMock.Setup(c => c.GetAsync<PagedResult<GetAllCorridorsResponse>>(
-                                    It.IsAny<string>(),
-                                    It.IsAny<CancellationToken>()))
-                      .ReturnsAsync((PagedResult<GetAllCorridorsResponse>)null);
-
-            _cacheMock.Setup(c => c.SetAsync(
-                                    It.IsAny<string>(),
-                                    It.IsAny<object>(),
-                                    It.IsAny<TimeSpan>(),
-                                    It.IsAny<CancellationToken>()))
-                      .Returns(Task.CompletedTask);
+                     .ReturnsAsync(new PagedResult<Corridor>(
+                            new List<Corridor> { filteredCorridor },
+                            5, 1, 2));
 
             // Act
             var response = await _client.GetAsync($"{BaseUrl}?sourceCountryId={sourceCountryId}");
@@ -163,8 +124,9 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             dto!.Items.Should().HaveCount(1);
             dto.Items[0].GetProperty("sourceCountryId").GetGuid().Should().Be(sourceCountryId);
 
-            _repoMock.Verify(r => r.GetCorridorsByCriteriaAsync(
+            _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                     It.Is<GetAllCorridorsQuery>(q => q.SourceCountryId != null && q.SourceCountryId.Value == sourceCountryId),
+                                    1, 10,
                                     It.IsAny<CancellationToken>()),
                              Times.Once);
         }

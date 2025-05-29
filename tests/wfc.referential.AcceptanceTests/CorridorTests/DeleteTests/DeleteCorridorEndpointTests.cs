@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
@@ -20,7 +21,6 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
     {
         private readonly HttpClient _client;
         private readonly Mock<ICorridorRepository> _repoMock = new();
-        private readonly Mock<ICacheService> _cacheMock = new();
         private const string BaseUrl = "api/corridors";
 
         public DeleteCorridorEndpointTests(WebApplicationFactory<Program> factory)
@@ -32,10 +32,8 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
                 builder.ConfigureServices(services =>
                 {
                     services.RemoveAll<ICorridorRepository>();
-                    services.RemoveAll<ICacheService>();
 
                     services.AddSingleton(_repoMock.Object);
-                    services.AddSingleton(_cacheMock.Object);
                 });
             });
 
@@ -57,14 +55,10 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
                 AgencyId.Of(Guid.NewGuid()),
                 AgencyId.Of(Guid.NewGuid()));
 
-            _repoMock.Setup(r => r.GetByIdAsync(corridorId, It.IsAny<CancellationToken>()))
+            _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Corridor, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(corridor);
 
-            _repoMock.Setup(r => r.UpdateCorridorAsync(It.IsAny<Corridor>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-
-            _cacheMock.Setup(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+            _repoMock.Setup(r => r.Update(It.IsAny<Corridor>()));
 
             // Act
             var response = await _client.DeleteAsync($"{BaseUrl}/{corridorId}");
@@ -74,9 +68,8 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             result.Should().BeTrue();
 
-            _repoMock.Verify(r => r.GetByIdAsync(corridorId, It.IsAny<CancellationToken>()), Times.Once);
-            _repoMock.Verify(r => r.UpdateCorridorAsync(It.Is<Corridor>(c => c.Id == CorridorId.Of(corridorId) && c.IsEnabled == false), It.IsAny<CancellationToken>()), Times.Once);
-            _cacheMock.Verify(c => c.RemoveAsync(It.Is<string>(key => key.Contains(corridorId.ToString())), It.IsAny<CancellationToken>()), Times.Once);
+            _repoMock.Verify(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Corridor, bool>>>(), It.IsAny<CancellationToken>()), Times.Once);
+            _repoMock.Verify(r => r.Update(It.IsAny<Corridor>()), Times.Once);
         }
 
         [Fact(DisplayName = $"DELETE {BaseUrl}/id returns 404 when corridor does not exist")]
@@ -85,7 +78,7 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             // Arrange
             var corridorId = Guid.NewGuid();
 
-            _repoMock.Setup(r => r.GetByIdAsync(corridorId, It.IsAny<CancellationToken>()))
+            _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Corridor, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Corridor)null);
 
             // Act
@@ -94,9 +87,8 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-            _repoMock.Verify(r => r.GetByIdAsync(corridorId, It.IsAny<CancellationToken>()), Times.Once);
-            _repoMock.Verify(r => r.UpdateCorridorAsync(It.IsAny<Corridor>(), It.IsAny<CancellationToken>()), Times.Never);
-            _cacheMock.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repoMock.Verify(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Corridor, bool>>>(), It.IsAny<CancellationToken>()), Times.Once);
+            _repoMock.Verify(r => r.Update(It.IsAny<Corridor>()), Times.Never);
         }
     }
 }

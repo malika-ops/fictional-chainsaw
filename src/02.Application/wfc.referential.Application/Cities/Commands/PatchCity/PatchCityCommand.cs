@@ -4,7 +4,7 @@ using wfc.referential.Domain.RegionAggregate;
 
 namespace wfc.referential.Application.Cities.Commands.PatchCity;
 
-public record PatchCityCommand : ICommand<Result<Guid>>
+public record PatchCityCommand : ICommand<Result<bool>>
 {
     // The ID from the route
     public Guid CityId { get; init; }

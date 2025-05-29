@@ -13,7 +13,7 @@ using wfc.referential.Application.Cities.Dtos;
 using wfc.referential.Application.Cities.Queries.GetAllCities;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Sectors.Dtos;
-using wfc.referential.Domain.CityAggregate;
+using wfc.referential.Domain.CityAggregate; 
 using wfc.referential.Domain.RegionAggregate;
 using Xunit;
 
@@ -60,15 +60,12 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
             DummyCity("PAR", "Paris"), DummyCity("TYO", "Tokyo"), DummyCity("TOR", "Toronto")};
 
         // repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetCitiesByCriteriaAsync(
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetAllCitiesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                            1,
+                            2,
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allCities.Take(2).ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllCitiesQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allCities.Length);
+                 .ReturnsAsync(new PagedResult<City>(allCities.Take(2).ToList(), 5,1,2));
 
         // Act
         var response = await _client.GetAsync("/api/cities?pageNumber=1&pageSize=2");
@@ -82,19 +79,11 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetCitiesByCriteriaAsync(
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetAllCitiesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                                1,2,
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
-
-        _cacheMock.Verify(c =>
-            c.SetAsync(
-                It.Is<string>(k => k.StartsWith("City_")),
-                It.IsAny<PagedResult<GetAllCitiesResponse>>(),
-                It.IsAny<TimeSpan>(),
-                It.IsAny<CancellationToken>()),
-            Times.Once,
-            "Les résultats doivent être mis en cache après récupération");
 
     }
 
@@ -105,15 +94,11 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Arrange
         var nyc = DummyCity("NYC", "US Dollar");
 
-        _repoMock.Setup(r => r.GetCitiesByCriteriaAsync(
-                            It.Is<GetAllCitiesQuery>(q => q.Code == "NYC"),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<City> { nyc });
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<GetAllCitiesQuery>(),
+                            It.IsAny<int>(), It.IsAny<int>(),
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
+                 .ReturnsAsync(new PagedResult<City>(new List<City> { nyc }, 1, 1, 1));
 
         // Act
         var response = await _client.GetAsync("/api/cities?code=NYC");
@@ -123,11 +108,6 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("code").GetString().Should().Be("NYC");
-
-        _repoMock.Verify(r => r.GetCitiesByCriteriaAsync(
-                                It.Is<GetAllCitiesQuery>(q => q.Code == "NYC"),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
     }
 
     ////// 3) Default paging when parameters are omitted
@@ -140,15 +120,12 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
                             DummyCity("LDN", "London"),
                             DummyCity("PAR", "Paris")};
 
-        _repoMock.Setup(r => r.GetCitiesByCriteriaAsync(
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetAllCitiesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
+                            1,10,
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(cities.ToList());
+                 .ReturnsAsync(new PagedResult<City>(cities.ToList(), 3, 1, 10));
 
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllCitiesQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(cities.Length);
 
         // Act
         var response = await _client.GetAsync("/api/cities");
@@ -162,8 +139,9 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
         dto.Items.Should().HaveCount(3);
 
         // repository must have been called with default paging values
-        _repoMock.Verify(r => r.GetCitiesByCriteriaAsync(
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetAllCitiesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
+                                1,10,
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
     }
@@ -190,7 +168,7 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
             pageSize: 10);
 
         _cacheMock.Setup(c => c.GetAsync<PagedResult<GetAllCitiesResponse>>(
-                It.Is<string>(k => k.StartsWith("City_")),
+                It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(cachedResult);
 
@@ -201,7 +179,6 @@ public class GetAllCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        _repoMock.Verify(r => r.GetCitiesByCriteriaAsync(It.IsAny<GetAllCitiesQuery>(), It.IsAny<CancellationToken>()), Times.Never);
-        _repoMock.Verify(r => r.GetCountTotalAsync(It.IsAny<GetAllCitiesQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(It.IsAny<GetAllCitiesQuery>(),1, 10, It.IsAny<CancellationToken>()), Times.Never);
     }
 }

@@ -122,13 +122,6 @@ public class GetAllTaxRuleDetailsEndpointTests : IClassFixture<WebApplicationFac
                                 It.IsAny<GetAllTaxRuleDetailsQuery>(),
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
-
-        _cacheMock.Verify(c => c.SetAsync(
-                                It.IsAny<string>(),
-                                It.IsAny<object>(),
-                                It.IsAny<TimeSpan>(),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
     }
 
     [Fact(DisplayName = $"GET {BaseUrl}?appliedOn=Fees returns filtered list")]

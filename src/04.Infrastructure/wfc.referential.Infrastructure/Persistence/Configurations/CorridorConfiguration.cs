@@ -22,8 +22,8 @@ public class CorridorConfiguration : IEntityTypeConfiguration<Corridor>
         builder.Property(x => x.SourceCityId).HasConversion(id => id.Value, value => CityId.Of(value));
         builder.Property(x => x.DestinationCityId).HasConversion(id => id.Value, value => CityId.Of(value));
 
-        builder.Property(x => x.SourceAgencyId).HasConversion(id => id.Value, value => AgencyId.Of(value));
-        builder.Property(x => x.DestinationAgencyId).HasConversion(id => id.Value, value => AgencyId.Of(value));
+        builder.Property(x => x.SourceBranchId).HasConversion(id => id.Value, value => AgencyId.Of(value));
+        builder.Property(x => x.DestinationBranchId).HasConversion(id => id.Value, value => AgencyId.Of(value));
 
         builder.Property(x => x.IsEnabled).IsRequired().HasDefaultValue(true);
 
@@ -47,14 +47,14 @@ public class CorridorConfiguration : IEntityTypeConfiguration<Corridor>
             .HasForeignKey(x => x.DestinationCityId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(x => x.SourceAgency)
+        builder.HasOne(x => x.SourceBranch)
             .WithMany()
-            .HasForeignKey(x => x.SourceAgencyId)
+            .HasForeignKey(x => x.SourceBranchId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(x => x.DestinationAgency)
+        builder.HasOne(x => x.DestinationBranch)
             .WithMany()
-            .HasForeignKey(x => x.DestinationAgencyId)
+            .HasForeignKey(x => x.DestinationBranchId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

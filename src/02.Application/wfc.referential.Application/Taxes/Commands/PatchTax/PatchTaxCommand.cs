@@ -1,14 +1,12 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
-using BuildingBlocks.Core.Caching.Interface;
-using wfc.referential.Domain.TaxAggregate;
 
 namespace wfc.referential.Application.Taxes.Commands.PatchTax;
 
 /// <summary>
 /// Command to update a tax's details.
 /// </summary>
-public record PatchTaxCommand : ICommand<Result<Guid>>, ICacheableQuery
+public record PatchTaxCommand : ICommand<Result<bool>>
 {
     /// <summary>
     /// The ID of the tax to be updated.
@@ -35,9 +33,5 @@ public record PatchTaxCommand : ICommand<Result<Guid>>, ICacheableQuery
 
     /// <summary>Optional tax status to update.</summary>
     public bool? IsEnabled { get; init; }
-
-    public string CacheKey => $"{nameof(Tax)}_{TaxId}";
-
-    public int CacheExpiration => 5;
 }
 

@@ -1,6 +1,5 @@
 ﻿using Mapster;
-using wfc.referential.Application.Corridors.Commands.PatchCorridor;
-using wfc.referential.Application.Corridors.Commands.UpdateCorridor;
+using wfc.referential.Application.Corridors.Dtos;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.CorridorAggregate;
@@ -13,12 +12,12 @@ public class CorridorMappings
     public static void Register()
     {
 
-        TypeAdapterConfig<PatchCorridorCommand, Corridor>
+        TypeAdapterConfig<Corridor, GetAllCorridorsResponse>.NewConfig()
+            .Map(dest => dest.CorridorId, src => src.Id!.Value);
+
+        TypeAdapterConfig<CorridorId, Guid?>
             .NewConfig()
-            .IgnoreNullValues(true);
-        TypeAdapterConfig<UpdateCorridorCommand, Corridor>
-            .NewConfig()
-            .IgnoreNullValues(true);
+            .MapWith(src => src == null ? (Guid?)null : src.Value);
 
         TypeAdapterConfig<CountryId, Guid?>
             .NewConfig()
@@ -32,6 +31,9 @@ public class CorridorMappings
             .NewConfig()
             .MapWith(src => src == null ? (Guid?)null : src.Value);
 
+        TypeAdapterConfig<Guid?, CorridorId>
+            .NewConfig()
+            .MapWith(src => src.HasValue ? CorridorId.Of(src.Value) : null);
         TypeAdapterConfig<Guid?, AgencyId>
             .NewConfig()
             .MapWith(src => src.HasValue ? AgencyId.Of(src.Value) : null);

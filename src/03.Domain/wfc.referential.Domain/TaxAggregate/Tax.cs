@@ -33,9 +33,16 @@ public class Tax : Aggregate<TaxId>
         tax.AddDomainEvent(new TaxCreatedEvent(tax));
         return tax;
     }
-
-    public void Update()
+    public void Update(string code, string codeAr, string codeEn, string description, double fixedAmount, double rate, bool isEnabled)
     {
+        Code = code;
+        CodeEn = codeEn;
+        CodeAr = codeAr;
+        Description = description;
+        FixedAmount = fixedAmount;
+        Rate = rate;
+        IsEnabled = isEnabled;
+
         AddDomainEvent(new TaxUpdatedEvent(this));
     }
     public void SetInactive()
@@ -44,8 +51,16 @@ public class Tax : Aggregate<TaxId>
 
         AddDomainEvent(new TaxStatusChangedEvent(this));
     }
-    public void Patch()
+    public void Patch(string? code, string? codeAr, string? codeEn, string? description, double? fixedAmount, double? rate, bool? isEnabled)
     {
+        Code = code ?? Code;
+        CodeAr = codeAr ?? CodeAr;
+        CodeEn = codeEn ?? CodeEn;
+        Description = description ?? Description;
+        FixedAmount = fixedAmount ?? FixedAmount;
+        Rate = rate ?? Rate;
+        IsEnabled = isEnabled ?? IsEnabled;
+
         AddDomainEvent(new TaxPatchedEvent(this));
     }
 

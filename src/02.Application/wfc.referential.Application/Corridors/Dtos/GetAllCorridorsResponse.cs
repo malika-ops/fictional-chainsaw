@@ -21,10 +21,10 @@ public record GetAllCorridorsResponse
     public Guid? DestinationCityId { get; set; }
 
     /// <summary>Source agency ID.</summary>
-    public Guid? SourceAgencyId { get; set; }
+    public Guid? SourceBranchId { get; set; }
 
     /// <summary>Destination agency ID.</summary>
-    public Guid? DestinationAgencyId { get; set; }
+    public Guid? DestinationBranchId { get; set; }
 
     /// <summary>Whether the corridor is enabled.</summary>
     public bool IsEnabled { get; set; }

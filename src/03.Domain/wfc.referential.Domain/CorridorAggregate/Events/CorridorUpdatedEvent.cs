@@ -7,5 +7,5 @@ namespace wfc.referential.Domain.CorridorAggregate.Events;
 
 public record CorridorUpdatedEvent
     (Guid CorridorId, CountryId SourceCountryId, CountryId DestinationCountryId,
-    CityId SourceCityId, CityId DestinationCityId, AgencyId SourceAgencyId,
-    AgencyId DestinationAgencyId, bool IsEnabled, DateTime UpdatedAt) : IDomainEvent;
+    CityId SourceCityId, CityId DestinationCityId, AgencyId SourceBranchId,
+    AgencyId DestinationBranchId, bool IsEnabled, DateTime UpdatedAt) : IDomainEvent;

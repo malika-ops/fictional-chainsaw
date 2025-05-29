@@ -1,22 +1,21 @@
-﻿using wfc.referential.Application.Cities.Queries.GetAllCities;
-using wfc.referential.Application.RegionManagement.Queries.GetAllRegions;
+﻿using BuildingBlocks.Core.Abstraction.Repositories;
+using BuildingBlocks.Core.Pagination;
+using wfc.referential.Application.Cities.Queries.GetAllCities;
 using wfc.referential.Domain.CityAggregate;
 
 namespace wfc.referential.Application.Interfaces;
 
-public interface ICityRepository
+public interface ICityRepository : IRepositoryBase<City, CityId>
 {
-    Task<List<City>> GetAllCitiesAsync(CancellationToken cancellationToken);
-    Task<City?> GetByIdAsync(CityId id, CancellationToken cancellationToken);
-    Task<City?> GetByCodeAsync(string cityCode, CancellationToken cancellationToken);
+    //Task<City?> GetCityByIdAsync(CityId id, CancellationToken cancellationToken);
+    //Task<City?> GetByCodeAsync(string cityCode, CancellationToken cancellationToken);
 
-    Task<City> AddCityAsync(City city, CancellationToken cancellationToken);
-    Task UpdateCityAsync(City city, CancellationToken cancellationToken);
-    Task DeleteCityAsync(City city, CancellationToken cancellationToken);
+    //Task<City> AddCityAsync(City city, CancellationToken cancellationToken);
+    //void UpdateCity(City city);
+    //void DeleteCity(City city);
 
-    Task<List<City>> GetCitiesByCriteriaAsync(GetAllCitiesQuery request, CancellationToken cancellationToken);
-    Task<int> GetCountTotalAsync(GetAllCitiesQuery request, CancellationToken cancellationToken);
-    Task<bool> HasAgencyAsync(CityId cityId, CancellationToken cancellationToken);
-    Task<bool> HasSectorAsync(CityId cityId, CancellationToken cancellationToken);
-    Task<bool> HasCorridorAsync(CityId cityId, CancellationToken cancellationToken);
+    //Task<PagedResult<City>> GetCitiesByCriteriaAsync(GetAllCitiesQuery request, CancellationToken cancellationToken);
+    //Task<bool> HasAgencyAsync(CityId cityId, CancellationToken cancellationToken);
+    //Task<bool> HasSectorAsync(CityId cityId, CancellationToken cancellationToken);
+    //Task<bool> HasCorridorAsync(CityId cityId, CancellationToken cancellationToken);
 }

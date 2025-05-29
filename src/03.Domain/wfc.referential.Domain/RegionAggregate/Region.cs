@@ -65,8 +65,13 @@ public class Region : Aggregate<RegionId>
             DateTime.UtcNow
         ));
     }
-    public void Patch()
+    public void Patch(string? code, string? name, bool? isEnabled, CountryId? countryId)
     {
+        this.Code = code ?? Code;
+        this.Name = name ?? Name;
+        this.IsEnabled = isEnabled ?? IsEnabled;
+        CountryId = countryId ?? CountryId;
+
         AddDomainEvent(new RegionPatchedEvent(
             Id.Value,
             Code,

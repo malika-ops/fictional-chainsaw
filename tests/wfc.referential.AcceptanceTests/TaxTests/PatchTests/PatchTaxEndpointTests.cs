@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
@@ -63,16 +64,16 @@ public class PatchTaxEndpointTests : IClassFixture<WebApplicationFactory<Program
             15
         );
 
-        _repoMock.Setup(r => r.GetByIdAsync(taxId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(tax);
 
         // Act
         var response = await _client.PatchAsync($"{BaseUrl}/{taxId}", JsonContent.Create(patchRequest));
-        var updatedTaxId = await response.Content.ReadFromJsonAsync<Guid>();
+        var updatedTaxId = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        updatedTaxId.Should().Be(taxId);
+        updatedTaxId.Should().Be(true);
         tax.Code.Should().BeEquivalentTo(patchRequest.Code);
         tax.CodeEn.Should().BeEquivalentTo(patchRequest.CodeEn);
         tax.CodeAr.Should().BeEquivalentTo(patchRequest.CodeAr);
@@ -91,7 +92,7 @@ public class PatchTaxEndpointTests : IClassFixture<WebApplicationFactory<Program
             CodeEn = "TestAABEN",
         };
 
-        _repoMock.Setup(r => r.GetByIdAsync(taxId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Tax)null); 
 
         // Act

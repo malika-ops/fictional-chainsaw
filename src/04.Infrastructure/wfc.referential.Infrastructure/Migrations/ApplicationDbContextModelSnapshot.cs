@@ -296,7 +296,7 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("DestinationAgencyId")
+                    b.Property<Guid?>("DestinationBranchId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("DestinationCityId")
@@ -316,7 +316,7 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("SourceAgencyId")
+                    b.Property<Guid?>("SourceBranchId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("SourceCityId")
@@ -327,13 +327,13 @@ namespace wfc.referential.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DestinationAgencyId");
+                    b.HasIndex("DestinationBranchId");
 
                     b.HasIndex("DestinationCityId");
 
                     b.HasIndex("DestinationCountryId");
 
-                    b.HasIndex("SourceAgencyId");
+                    b.HasIndex("SourceBranchId");
 
                     b.HasIndex("SourceCityId");
 
@@ -1033,10 +1033,6 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsEnabled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1051,11 +1047,16 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<decimal>("Limit")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid?>("PartnerId")
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PartnerId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("SupportAccountTypeId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("SupportAccountType")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<decimal>("Threshold")
                         .HasColumnType("decimal(18,2)");
@@ -1069,8 +1070,6 @@ namespace wfc.referential.Infrastructure.Migrations
                         .IsUnique();
 
                     b.HasIndex("PartnerId");
-
-                    b.HasIndex("SupportAccountTypeId");
 
                     b.ToTable("SupportAccounts");
                 });
@@ -1300,9 +1299,9 @@ namespace wfc.referential.Infrastructure.Migrations
 
             modelBuilder.Entity("wfc.referential.Domain.CorridorAggregate.Corridor", b =>
                 {
-                    b.HasOne("wfc.referential.Domain.AgencyAggregate.Agency", "DestinationAgency")
+                    b.HasOne("wfc.referential.Domain.AgencyAggregate.Agency", "DestinationBranch")
                         .WithMany()
-                        .HasForeignKey("DestinationAgencyId")
+                        .HasForeignKey("DestinationBranchId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("wfc.referential.Domain.CityAggregate.City", "DestinationCity")
@@ -1316,9 +1315,9 @@ namespace wfc.referential.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("wfc.referential.Domain.AgencyAggregate.Agency", "SourceAgency")
+                    b.HasOne("wfc.referential.Domain.AgencyAggregate.Agency", "SourceBranch")
                         .WithMany()
-                        .HasForeignKey("SourceAgencyId")
+                        .HasForeignKey("SourceBranchId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("wfc.referential.Domain.CityAggregate.City", "SourceCity")
@@ -1332,13 +1331,13 @@ namespace wfc.referential.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("DestinationAgency");
+                    b.Navigation("DestinationBranch");
 
                     b.Navigation("DestinationCity");
 
                     b.Navigation("DestinationCountry");
 
-                    b.Navigation("SourceAgency");
+                    b.Navigation("SourceBranch");
 
                     b.Navigation("SourceCity");
 
@@ -1457,16 +1456,10 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.HasOne("wfc.referential.Domain.PartnerAggregate.Partner", "Partner")
                         .WithMany()
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("wfc.referential.Domain.ParamTypeAggregate.ParamType", "SupportAccountType")
-                        .WithMany()
-                        .HasForeignKey("SupportAccountTypeId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Partner");
-
-                    b.Navigation("SupportAccountType");
                 });
 
             modelBuilder.Entity("wfc.referential.Domain.TaxRuleDetailAggregate.TaxRuleDetail", b =>

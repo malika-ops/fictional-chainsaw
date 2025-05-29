@@ -12,31 +12,30 @@ using wfc.referential.Domain.RegionAggregate.Exceptions;
 namespace wfc.referential.Application.Cities.Commands.UpdateCity;
 
 public class UpdateCityCommandHandler(ICityRepository cityRepository,
-    IRegionRepository _regionRepository,
-    ICacheService _cacheService)
-    : ICommandHandler<UpdateCityCommand, Result<Guid>>
+    IRegionRepository _regionRepository)
+    : ICommandHandler<UpdateCityCommand, Result<bool>>
 {
-    public async Task<Result<Guid>> Handle(UpdateCityCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(UpdateCityCommand request, CancellationToken cancellationToken)
     {
-        var city = await cityRepository.GetByIdAsync(CityId.Of(request.CityId) , cancellationToken);
+        var city = await cityRepository.GetOneByConditionAsync(c => c.Id == CityId.Of(request.CityId), cancellationToken);
         if (city is null) throw new ResourceNotFoundException($"{nameof(City)} with Id : {request.CityId} is not found");
 
-        if (request.RegionId != null)
+        var regionId = request.RegionId;
+        if (regionId != null)
         {
-            var updatedRegion = await _regionRepository.GetByIdAsync(request.RegionId!.Value, cancellationToken);
+            var updatedRegion = await _regionRepository.GetOneByConditionAsync(r => r.Id == regionId, cancellationToken);
             if (updatedRegion is null)
-                throw new ResourceNotFoundException($"{nameof(Region)} with Id : {request.RegionId} is not found");
+                throw new ResourceNotFoundException($"{nameof(Region)} with Id : {regionId} is not found");
         }
 
-        var hasDuplicatedCode = await cityRepository.GetByCodeAsync(request.Code, cancellationToken);
+        var hasDuplicatedCode = await cityRepository.GetOneByConditionAsync(c => c.Code == request.Code, cancellationToken);
         if (hasDuplicatedCode is not null) throw new CodeAlreadyExistException(request.Code);
 
-        city.Update(request.Code, request.Name, request.Abbreviation, request.TimeZone, request.RegionId);
+        city.Update(request.Code, request.Name, request.Abbreviation, request.TimeZone, regionId!);
 
-        await cityRepository.UpdateCityAsync(city, cancellationToken);
+        cityRepository.Update(city);
+        await cityRepository.SaveChangesAsync(cancellationToken);
 
-        await _cacheService.RemoveByPrefixAsync(CacheKeys.City.Prefix, cancellationToken);
-
-        return Result.Success(city.Id!.Value);
+        return Result.Success(true);
     }
 }

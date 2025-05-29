@@ -1,10 +1,6 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
-using Mapster;
-using wfc.referential.Application.Constants;
-using Microsoft.Extensions.Logging;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.RegionAggregate;
@@ -12,34 +8,30 @@ using wfc.referential.Domain.RegionAggregate;
 namespace wfc.referential.Application.Cities.Commands.PatchCity;
 
 public class PatchCityCommandHandler(ICityRepository cityRepository,
-    IRegionRepository _regionRepository,
-    ILogger<PatchCityCommandHandler> logger,
-    ICacheService _cacheService)
-    : ICommandHandler<PatchCityCommand, Result<Guid>>
+    IRegionRepository _regionRepository)
+    : ICommandHandler<PatchCityCommand, Result<bool>>
 {
-    public async Task<Result<Guid>> Handle(PatchCityCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(PatchCityCommand request, CancellationToken cancellationToken)
     {
-        var city = await cityRepository.GetByIdAsync(CityId.Of(request.CityId), cancellationToken);
+        var cityId = CityId.Of(request.CityId);
+        var city = await cityRepository.GetOneByConditionAsync(c => c.Id == cityId, cancellationToken);
 
         if (city is null)
         {
-            logger.LogWarning($"{nameof(City)} not found");
             throw new ResourceNotFoundException($"{nameof(City)} with Id : {request.CityId} is not found");
         }
-
-        if(request.RegionId != null)
+        var regionId = request.RegionId;
+        if(regionId != null)
         {
-            var updatedRegion = await _regionRepository.GetByIdAsync(request.RegionId!.Value, cancellationToken);
+            var updatedRegion = await _regionRepository.GetOneByConditionAsync(r => r.Id == regionId, cancellationToken);
             if(updatedRegion is null)
-                throw new ResourceNotFoundException($"{nameof(Region)} with Id : {request.RegionId} is not found");
+                throw new ResourceNotFoundException($"{nameof(Region)} with Id : {regionId} is not found");
         }
+        city.Patch(request.Code, request.Name, request.Abbreviation, request.TimeZone, request.IsEnabled, regionId);
 
-        request.Adapt(city);
-        city.Patch();
-        await cityRepository.UpdateCityAsync(city, cancellationToken);
+        cityRepository.Update(city);
+        await cityRepository.SaveChangesAsync(cancellationToken);
 
-        await _cacheService.RemoveByPrefixAsync(CacheKeys.City.Prefix, cancellationToken);
-
-        return Result.Success(city.Id!.Value);
+        return Result.Success(true);
     }
 }

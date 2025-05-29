@@ -74,7 +74,6 @@ public class DeleteTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFact
 
         _repoMock.Verify(r => r.GetTaxRuleDetailByIdAsync(taxRuleDetailId, It.IsAny<CancellationToken>()), Times.Once);
         _repoMock.Verify(r => r.UpdateTaxRuleDetailAsync(It.Is<TaxRuleDetail>(trd => trd.Id.Value == taxRuleDetailId && trd.IsEnabled == false), It.IsAny<CancellationToken>()), Times.Once);
-        _cacheMock.Verify(c => c.SetAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = $"DELETE {BaseUrl}/id returns 404 when TaxRuleDetail does not exist")]

@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
@@ -39,7 +40,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
                 // 🪄  Set up mock behaviour (echoes entity back, as if EF saved it)
                 _repoMock
-                    .Setup(r => r.AddTaxAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()))
+                    .Setup(r => r.AddAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Tax r, CancellationToken _) => r);
 
                 // 🔌 Plug mocks back in
@@ -75,7 +76,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
         //verify repository interaction using * FluentAssertions on Moq invocations
         _repoMock.Verify(r =>
-            r.AddTaxAsync(It.Is<Tax>(r =>
+            r.AddAsync(It.Is<Tax>(r =>
                     r.Code == payload.Code &&
                     r.CodeEn == payload.CodeEn &&
                     r.CodeAr == payload.CodeAr &&
@@ -121,7 +122,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
         // the handler must NOT be reached
         _repoMock.Verify(r =>
-            r.AddTaxAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "when validation fails, the command handler should not be executed");
     }
@@ -138,7 +139,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             duplicateCode,"codeEn", "codeAr", "description",42,20);
 
         _repoMock
-            .Setup(r => r.GetByCodeAsync(duplicateCode, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(tax);
 
         var payload = new CreateTaxRequest
@@ -156,7 +157,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var root = doc!.RootElement;
         var error = root.GetProperty("errors").GetString();
@@ -165,7 +166,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
         // Handler must NOT attempt to add the entity
         _repoMock.Verify(r =>
-            r.AddTaxAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "no insertion should happen when the code is already taken");
     }

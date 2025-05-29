@@ -6,7 +6,7 @@ using wfc.referential.Application.Regions.Dtos;
 
 namespace wfc.referential.API.Endpoints.Region;
 
-public class PutRegion(IMediator _mediator) : Endpoint<UpdateRegionRequest, Guid>
+public class PutRegion(IMediator _mediator) : Endpoint<UpdateRegionRequest, bool>
 {
     public override void Configure()
     {

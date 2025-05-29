@@ -7,7 +7,7 @@ using wfc.referential.Application.Corridors.Dtos;
 
 namespace wfc.referential.API.Endpoints.Corridor;
 
-public class PatchCorridor(IMediator _mediator) : Endpoint<PatchCorridorRequest, Guid>
+public class PatchCorridor(IMediator _mediator) : Endpoint<PatchCorridorRequest, bool>
 {
     public override void Configure()
     {

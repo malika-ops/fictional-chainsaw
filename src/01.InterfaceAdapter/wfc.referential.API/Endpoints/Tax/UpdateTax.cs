@@ -6,7 +6,7 @@ using wfc.referential.Application.Taxes.Dtos;
 
 namespace wfc.referential.API.Endpoints.Tax;
 
-public class UpdateTax(IMediator _mediator) : Endpoint<UpdateTaxRequest, Guid>
+public class UpdateTax(IMediator _mediator) : Endpoint<UpdateTaxRequest, bool>
 {
     public override void Configure()
     {

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -34,8 +35,7 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
                 services.RemoveAll<ICacheService>();
 
                 _repoMock
-                    .Setup(r => r.UpdateRegionAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+                    .Setup(r => r.Update(It.IsAny<Region>()));
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(cacheMock.Object);
@@ -54,13 +54,20 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var id = Guid.NewGuid();
         var oldRegion = DummyRegion(id, "NA", "North America");
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(oldRegion);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Expression<Func<Region, bool>> predicate, CancellationToken _) =>
+            {
+                var func = predicate.Compile();
+
+                if (func(oldRegion))
+                    return oldRegion;
+
+                return null;
+            });
 
         Region? updated = null;
-        _repoMock.Setup(r => r.UpdateRegionAsync(oldRegion, It.IsAny<CancellationToken>()))
-                 .Callback<Region, CancellationToken>((rg, _) => updated = rg)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.Update(oldRegion))
+                 .Callback<Region>((rg) => updated = rg);
 
         var payload = new
         {
@@ -71,15 +78,15 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         };
 
         var response = await _client.PutAsJsonAsync($"/api/regions/{id}", payload);
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().Be(true);
 
         updated!.Code.Should().Be("SA");
         updated.Name.Should().Be("South America");
 
-        _repoMock.Verify(r => r.UpdateRegionAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Once);
     }
 
     [Fact(DisplayName = "PUT /api/regions/{id} returns 400 when Name is missing")]
@@ -101,21 +108,27 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             .GetProperty("name")[0].GetString()
             .Should().Be("Name is required");
 
-        _repoMock.Verify(r => r.UpdateRegionAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Never);
     }
 
-    [Fact(DisplayName = "PUT /api/regions/{id} returns 400 when new code already exists")]
-    public async Task Put_ShouldReturn400_WhenCodeAlreadyExists()
+    [Fact(DisplayName = "PUT /api/regions/{id} returns 409 Conflict when new code already exists")]
+    public async Task Put_ShouldReturn409Conflict_WhenCodeAlreadyExists()
     {
         var id = Guid.NewGuid();
         var existing = DummyRegion(Guid.NewGuid(), "EU", "Europe");
         var target = DummyRegion(id, "AS", "Asia");
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(target);
 
-        _repoMock.Setup(r => r.GetByCodeAsync("EU", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Expression<Func<Region, bool>> predicate, CancellationToken _) =>
+            {
+                var func = predicate.Compile();
+
+                if (func(target))
+                    return target;
+
+                return existing;
+            });
 
         var payload = new
         {
@@ -129,11 +142,11 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var response = await _client.PutAsJsonAsync($"/api/regions/{id}", payload);
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be($"{nameof(Region)} with code : {payload.Code} already exist");
 
-        _repoMock.Verify(r => r.UpdateRegionAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Never);
     }
 }

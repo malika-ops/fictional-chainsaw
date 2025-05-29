@@ -7,7 +7,7 @@ using wfc.referential.Application.Regions.Dtos;
 
 namespace wfc.referential.API.Endpoints.Region;
 
-public class PatchRegion(IMediator _mediator) : Endpoint<PatchRegionRequest, Guid>
+public class PatchRegion(IMediator _mediator) : Endpoint<PatchRegionRequest, bool>
 {
     public override void Configure()
     {

@@ -1,5 +1,4 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TaxAggregate;
@@ -7,14 +6,11 @@ using wfc.referential.Domain.TaxAggregate.Exceptions;
 
 namespace wfc.referential.Application.Taxes.Commands.CreateTax;
 
-public class CreateTaxCommandHandler(
-    ITaxRepository taxRepository,
-    ICacheService cacheService
-) : ICommandHandler<CreateTaxCommand, Result<Guid>>
+public class CreateTaxCommandHandler(ITaxRepository taxRepository): ICommandHandler<CreateTaxCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateTaxCommand request, CancellationToken cancellationToken)
     {
-        var isExist = await taxRepository.GetByCodeAsync(request.Code, cancellationToken);
+        var isExist = await taxRepository.GetOneByConditionAsync(t => t.Code.Equals(request.Code), cancellationToken);
         if (isExist is not null)
             throw new CodeAlreadyExistException(request.Code);
 
@@ -28,14 +24,8 @@ public class CreateTaxCommandHandler(
             request.Rate
         );
 
-        await taxRepository.AddTaxAsync(tax, cancellationToken);
-
-        await cacheService.SetAsync(
-            request.CacheKey,
-            tax,
-            TimeSpan.FromMinutes(request.CacheExpiration),
-            cancellationToken
-        );
+        await taxRepository.AddAsync(tax, cancellationToken);
+        await taxRepository.SaveChangesAsync(cancellationToken);
 
         return Result.Success(tax.Id!.Value);
     }

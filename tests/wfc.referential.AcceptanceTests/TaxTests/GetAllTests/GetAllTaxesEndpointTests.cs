@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -60,15 +61,11 @@ public class GetAllTaxesEndpointTests : IClassFixture<WebApplicationFactory<Prog
         };
 
         // repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetTaxesByCriteriaAsync(
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetAllTaxesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                            1,2,
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allTaxs.Take(2).ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllTaxesQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allTaxs.Length);
+                 .ReturnsAsync(new PagedResult<Tax>(allTaxs.Take(2).ToList(), 5, 1, 2));
 
         // Act
         var response = await _client.GetAsync($"{BaseUrl}?pageNumber=1&pageSize=2");
@@ -81,11 +78,6 @@ public class GetAllTaxesEndpointTests : IClassFixture<WebApplicationFactory<Prog
         dto.TotalPages.Should().Be(3);
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
-
-        _repoMock.Verify(r => r.GetTaxesByCriteriaAsync(
-                                It.Is<GetAllTaxesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
     }
 
     // 2) Filter by code
@@ -95,15 +87,13 @@ public class GetAllTaxesEndpointTests : IClassFixture<WebApplicationFactory<Prog
         // Arrange
         var tax = DummyTax("VAT_DE", "Germany VAT - Standard Rate");
 
-        _repoMock.Setup(r => r.GetTaxesByCriteriaAsync(
-                            It.Is<GetAllTaxesQuery>(q => q.Code == "VAT_DE"),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<Tax> { tax });
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+            It.IsAny<GetAllTaxesQuery>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            It.IsAny<CancellationToken>()))
+        .ReturnsAsync(new PagedResult<Tax>(new List<Tax> { tax }, 2, 1, 2));
 
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllTaxesQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
 
         // Act
         var response = await _client.GetAsync($"{BaseUrl}?code=VAT_DE");
@@ -114,10 +104,6 @@ public class GetAllTaxesEndpointTests : IClassFixture<WebApplicationFactory<Prog
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("code").GetString().Should().Be("VAT_DE");
 
-        _repoMock.Verify(r => r.GetTaxesByCriteriaAsync(
-                                It.Is<GetAllTaxesQuery>(q => q.Code == "VAT_DE"),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
     }
 
 

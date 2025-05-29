@@ -7,34 +7,18 @@ using wfc.referential.Application.RegionManagement.Dtos;
 
 namespace wfc.referential.Application.RegionManagement.Queries.GetAllRegions;
 
-public class GetAllRegionsQueryHandler(IRegionRepository regionRepository, ICacheService cacheService)
+public class GetAllRegionsQueryHandler(IRegionRepository regionRepository)
     : IQueryHandler<GetAllRegionsQuery, PagedResult<GetAllRegionsResponse>>
 {
-    private readonly IRegionRepository _regionRepository = regionRepository;
-    private readonly ICacheService _cacheService = cacheService;
 
     public async Task<PagedResult<GetAllRegionsResponse>> Handle(GetAllRegionsQuery request, CancellationToken cancellationToken)
     {
-        var cachedRegions = await _cacheService.GetAsync<PagedResult<GetAllRegionsResponse>>(request.CacheKey, cancellationToken);
-        if (cachedRegions is not null)
-        {
-            return cachedRegions;
-        }
+        var regions = await regionRepository
+        .GetPagedByCriteriaAsync(request,request.PageNumber, request.PageSize, cancellationToken);
 
-        var regions = await _regionRepository
-        .GetRegionsByCriteriaAsync(request, cancellationToken);
-
-        int totalCount = await _regionRepository
-            .GetCountTotalAsync(request, cancellationToken);
-
-        var regionsResponse = regions.Adapt<List<GetAllRegionsResponse>>();
-
-        var result = new PagedResult<GetAllRegionsResponse>(regionsResponse, totalCount, request.PageNumber, request.PageSize);
-
-        await _cacheService.SetAsync(request.CacheKey, 
-            result, 
-            TimeSpan.FromMinutes(request.CacheExpiration), 
-            cancellationToken);
+        var result = new PagedResult<GetAllRegionsResponse>(
+            regions.Items.Adapt<List<GetAllRegionsResponse>>(),
+            regions.TotalCount, request.PageNumber, request.PageSize);
 
         return result;
     }

@@ -19,7 +19,6 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
     {
         private readonly HttpClient _client;
         private readonly Mock<ICorridorRepository> _repoMock = new();
-        private readonly Mock<ICacheService> _cacheMock = new();
         private const string BaseUrl = "api/corridors";
 
         public CreateCorridorEndpointTests(WebApplicationFactory<Program> factory)
@@ -34,11 +33,10 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
                     services.RemoveAll<ICacheService>();
 
                     _repoMock
-                        .Setup(r => r.AddCorridorAsync(It.IsAny<Corridor>(), It.IsAny<CancellationToken>()))
+                        .Setup(r => r.AddAsync(It.IsAny<Corridor>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync((Corridor corridor, CancellationToken _) => corridor);
 
                     services.AddSingleton(_repoMock.Object);
-                    services.AddSingleton(_cacheMock.Object);
                 });
             });
 
@@ -54,8 +52,8 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
                 DestinationCountryId = Guid.NewGuid(),
                 SourceCityId = Guid.NewGuid(),
                 DestinationCityId = Guid.NewGuid(),
-                SourceAgencyId = Guid.NewGuid(),
-                DestinationAgencyId = Guid.NewGuid()
+                SourceBranchId = Guid.NewGuid(),
+                DestinationBranchId = Guid.NewGuid()
             };
 
             var response = await _client.PostAsJsonAsync(BaseUrl, payload);
@@ -64,7 +62,7 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             returnedId.Should().NotBeEmpty();
 
-            _repoMock.Verify(r => r.AddCorridorAsync(It.Is<Corridor>(c =>
+            _repoMock.Verify(r => r.AddAsync(It.Is<Corridor>(c =>
                 c.SourceCountryId.Value == payload.SourceCountryId &&
                 c.DestinationCountryId.Value == payload.DestinationCountryId
             ), It.IsAny<CancellationToken>()), Times.Once);
@@ -87,7 +85,7 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             var errors = doc!.RootElement.GetProperty("errors");
             errors.GetProperty("sourceCountryId")[0].GetString().Should().Be("SourceCountryId is required");
 
-            _repoMock.Verify(r => r.AddCorridorAsync(It.IsAny<Corridor>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repoMock.Verify(r => r.AddAsync(It.IsAny<Corridor>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact(DisplayName = $"POST {BaseUrl} returns 400 when DestinationCountryId is missing")]
@@ -107,7 +105,7 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             var errors = doc!.RootElement.GetProperty("errors");
             errors.GetProperty("destinationCountryId")[0].GetString().Should().Be("DestinationCountryId is required");
 
-            _repoMock.Verify(r => r.AddCorridorAsync(It.IsAny<Corridor>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repoMock.Verify(r => r.AddAsync(It.IsAny<Corridor>(), It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }

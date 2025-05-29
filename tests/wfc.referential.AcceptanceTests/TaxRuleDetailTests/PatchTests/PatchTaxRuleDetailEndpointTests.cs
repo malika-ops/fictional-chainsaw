@@ -21,7 +21,6 @@ public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFacto
 {
     private readonly HttpClient _client;
     private readonly Mock<ITaxRuleDetailRepository> _repoMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
     private const string BaseUrl = "api/taxruledetails";
 
     public PatchTaxRuleDetailEndpointTests(WebApplicationFactory<Program> factory)
@@ -33,10 +32,8 @@ public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFacto
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<ITaxRuleDetailRepository>();
-                services.RemoveAll<ICacheService>();
 
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cacheMock.Object);
             });
         });
 
@@ -67,9 +64,6 @@ public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFacto
         _repoMock.Setup(r => r.UpdateTaxRuleDetailAsync(It.IsAny<TaxRuleDetail>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _cacheMock.Setup(c => c.SetAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
         // Act
         var response = await _client.PatchAsync($"{BaseUrl}/{taxRuleDetailId}", JsonContent.Create(patchRequest));
         var updatedId = await response.Content.ReadFromJsonAsync<Guid>();
@@ -82,7 +76,6 @@ public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFacto
         _repoMock.Verify(r => r.UpdateTaxRuleDetailAsync(It.Is<TaxRuleDetail>(trd =>
             trd.Id.Value == taxRuleDetailId &&
             trd.AppliedOn == patchRequest.AppliedOn), It.IsAny<CancellationToken>()), Times.Once);
-        _cacheMock.Verify(c => c.SetAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = $"PATCH {BaseUrl}/id returns 404 when TaxRuleDetail does not exist")]

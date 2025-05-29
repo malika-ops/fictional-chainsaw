@@ -6,7 +6,7 @@ using wfc.referential.Application.Cities.Dtos;
 
 namespace wfc.referential.API.Endpoints.City;
 
-public class UpdateCity(IMediator _mediator) : Endpoint<UpdateCityRequest, Guid>
+public class UpdateCity(IMediator _mediator) : Endpoint<UpdateCityRequest, bool>
 {
     public override void Configure()
     {

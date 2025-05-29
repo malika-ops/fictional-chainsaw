@@ -20,10 +20,10 @@ public record GetAllCorridorsRequest
     public Guid? DestinationCityId { get; init; }
 
     /// <summary>Filter by source agency ID.</summary>
-    public Guid? SourceAgencyId { get; init; }
+    public Guid? SourceBranchId { get; init; }
 
     /// <summary>Filter by destination agency ID.</summary>
-    public Guid? DestinationAgencyId { get; init; }
+    public Guid? DestinationBranchId { get; init; }
 
     /// <summary>Filter by corridor status (enabled or disabled).</summary>
     public bool? IsEnabled { get; init; }

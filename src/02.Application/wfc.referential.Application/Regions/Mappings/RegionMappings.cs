@@ -15,29 +15,29 @@ public class RegionMappings
     public static void Register()
     {
         // Regions
-        TypeAdapterConfig<GetAllRegionsRequest, GetAllRegionsQuery>
-        .NewConfig()
-        .Map(dest => dest.PageNumber, src => src.PageNumber ?? 1)
-        .Map(dest => dest.PageSize, src => src.PageSize ?? 10)
-        .Map(dest => dest.CountryId, src => src.CountryId.HasValue ? new CountryId(src.CountryId.Value) : null)
-        .Map(dest => dest.IsEnabled, src => src.IsEnabled);
+        //TypeAdapterConfig<GetAllRegionsRequest, GetAllRegionsQuery>
+        //.NewConfig()
+        //.Map(dest => dest.PageNumber, src => src.PageNumber ?? 1)
+        //.Map(dest => dest.PageSize, src => src.PageSize ?? 10)
+        //.Map(dest => dest.CountryId, src => src.CountryId.HasValue ? new CountryId(src.CountryId.Value) : null)
+        //.Map(dest => dest.IsEnabled, src => src.IsEnabled);
 
-        TypeAdapterConfig<Region, GetAllRegionsResponse>.NewConfig()
-            .Map(dest => dest.RegionId, src => src.Id!.Value);
+        //TypeAdapterConfig<Region, GetAllRegionsResponse>.NewConfig()
+        //    .Map(dest => dest.RegionId, src => src.Id!.Value);
 
-        TypeAdapterConfig<CreateRegionRequest, CreateRegionCommand>.NewConfig()
-            .Map(dest => dest.CountryId, src => CountryId.Of(src.CountryId));
+        //TypeAdapterConfig<CreateRegionRequest, CreateRegionCommand>.NewConfig()
+        //    .Map(dest => dest.CountryId, src => CountryId.Of(src.CountryId));
 
-        TypeAdapterConfig<PatchRegionRequest, PatchRegionCommand>
-            .NewConfig()
-            .IgnoreNullValues(true);
+        //TypeAdapterConfig<PatchRegionRequest, PatchRegionCommand>
+        //    .NewConfig()
+        //    .IgnoreNullValues(true);
 
-        TypeAdapterConfig<PatchRegionCommand, Region>
-            .NewConfig()
-            .IgnoreNullValues(true);
+        //TypeAdapterConfig<PatchRegionCommand, Region>
+        //    .NewConfig()
+        //    .IgnoreNullValues(true);
 
-        TypeAdapterConfig<DeleteRegionRequest, DeleteRegionCommand>.NewConfig()
-            .Map(dest => dest.RegionId, src => src.RegionID);
+        //TypeAdapterConfig<DeleteRegionRequest, DeleteRegionCommand>.NewConfig()
+        //    .Map(dest => dest.RegionId, src => src.RegionID);
 
         // Map from RegionId to nullable Guid
         TypeAdapterConfig<RegionId, Guid?>

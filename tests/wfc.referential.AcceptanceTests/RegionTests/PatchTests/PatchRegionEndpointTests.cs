@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
@@ -64,17 +65,23 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
             "Old Name",
             CountryId.Of(Guid.NewGuid()) // Assuming this is a valid country ID
         );
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Expression<Func<Region, bool>> predicate, CancellationToken _) =>
+            {
+                var func = predicate.Compile();
 
-        _repoMock.Setup(r => r.GetByIdAsync(regionId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(region);
+                if (func(region))
+                    return region;
 
+                return null;
+            });
         // Act
         var response = await _client.PatchAsync($"/api/regions/{regionId}", JsonContent.Create(patchRequest));
-        var updatedRegionId = await response.Content.ReadFromJsonAsync<Guid>();
+        var updatedRegionId = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        updatedRegionId.Should().Be(regionId);
+        updatedRegionId.Should().Be(true);
         region.Name.Should().BeEquivalentTo(patchRequest.Name);
     }
 
@@ -91,7 +98,7 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
             Name = "Non-existing Region",
         };
 
-        _repoMock.Setup(r => r.GetByIdAsync(regionId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(r => r.Id == RegionId.Of(regionId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Region)null); 
 
         // Act
@@ -113,7 +120,7 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
             Name = "Invalid Region",
         };
 
-        _repoMock.Setup(r => r.GetByIdAsync(regionId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(r => r.Id == RegionId.Of(regionId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Region.Create(RegionId.Of(regionId), "code", "name", CountryId.Of(Guid.NewGuid())));
 
         // Act

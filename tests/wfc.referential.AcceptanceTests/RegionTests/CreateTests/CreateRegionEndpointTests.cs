@@ -1,7 +1,7 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -23,7 +23,6 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
     public CreateRegionEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
 
         // clone the factory and customise the host
         var customisedFactory = factory.WithWebHostBuilder(builder =>
@@ -34,16 +33,14 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             {
                 // 🧹 Remove concrete registrations that hit the DB / Redis
                 services.RemoveAll<IRegionRepository>();
-                services.RemoveAll<ICacheService>();
 
                 // 🪄  Set up mock behaviour (echoes entity back, as if EF saved it)
-                _repoMock
-                    .Setup(r => r.AddRegionAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Region r, CancellationToken _) => r);
+                //_repoMock
+                //    .Setup(r => r.AddAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()))
+                //    .ReturnsAsync((Region r, CancellationToken _) => r);
 
                 // 🔌 Plug mocks back in
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
             });
         });
 
@@ -71,7 +68,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         // verify repository interaction using *FluentAssertions on Moq invocations
         _repoMock.Verify(r =>
-            r.AddRegionAsync(It.Is<Region>(r =>
+            r.AddAsync(It.Is<Region>(r =>
                     r.Code == payload.Code &&
                     r.Name == payload.Name &&
                     r.CountryId == CountryId.Of(payload.CountryId)),
@@ -110,7 +107,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         // the handler must NOT be reached
         _repoMock.Verify(r =>
-            r.AddRegionAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "when validation fails, the command handler should not be executed");
     }
@@ -146,12 +143,12 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         // handler must NOT run on validation failure
         _repoMock.Verify(r =>
-            r.AddRegionAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
-    [Fact(DisplayName = "POST /api/regions returns 400 when Code already exists")]
-    public async Task Post_ShouldReturn400_WhenCodeAlreadyExists()
+    [Fact(DisplayName = "POST /api/regions returns 409 Conflict when Code already exists")]
+    public async Task Post_ShouldReturn409Conflict_WhenCodeAlreadyExists()
     {
         // Arrange 
         const string duplicateCode = "99";
@@ -164,7 +161,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             CountryId.Of(Guid.NewGuid()));
 
         _repoMock
-            .Setup(r => r.GetByCodeAsync(duplicateCode, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(region);
 
         var payload = new
@@ -179,7 +176,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var root = doc!.RootElement;
         var error = root.GetProperty("errors").GetString();
@@ -188,7 +185,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         // Handler must NOT attempt to add the entity
         _repoMock.Verify(r =>
-            r.AddRegionAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "no insertion should happen when the code is already taken");
     }

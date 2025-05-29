@@ -2,30 +2,29 @@
 using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
-using BuildingBlocks.Infrastructure.CachingManagement;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.RegionAggregate;
 using wfc.referential.Domain.RegionAggregate.Exceptions;
 
 namespace wfc.referential.Application.Regions.Commands.UpdateRegion;
 
-public class PutRegionCommandHandler(IRegionRepository _regionRepository, ICacheService cacheService)
-    : ICommandHandler<UpdateRegionCommand, Result<Guid>>
+public class PutRegionCommandHandler(IRegionRepository _regionRepository)
+    : ICommandHandler<UpdateRegionCommand, Result<bool>>
 {
 
-    public async Task<Result<Guid>> Handle(UpdateRegionCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(UpdateRegionCommand request, CancellationToken cancellationToken)
     {
-        var region = await _regionRepository.GetByIdAsync(request.RegionId, cancellationToken);
+        var region = await _regionRepository.GetOneByConditionAsync(r => r.Id == RegionId.Of(request.RegionId), cancellationToken);
         if (region is null) throw new ResourceNotFoundException("Region not found.");
 
-        var hasDuplicatedCode = await _regionRepository.GetByCodeAsync(request.Code, cancellationToken);
+        var hasDuplicatedCode = await _regionRepository.GetOneByConditionAsync(r => r.Code == request.Code, cancellationToken);
         if (hasDuplicatedCode is not null) throw new CodeAlreadyExistException(request.Code);
 
         region.Update(request.Code, request.Name, request.IsEnabled, request.CountryId);
 
-        await _regionRepository.UpdateRegionAsync(region, cancellationToken);
+        _regionRepository.Update(region);
+        await _regionRepository.SaveChangesAsync(cancellationToken);
 
-        await cacheService.SetAsync(request.CacheKey, region, TimeSpan.FromMinutes(request.CacheExpiration), cancellationToken);
-
-        return Result.Success(region.Id!.Value);
+        return Result.Success(true);
     }
 }

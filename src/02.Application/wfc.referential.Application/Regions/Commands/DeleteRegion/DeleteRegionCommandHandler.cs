@@ -8,25 +8,27 @@ using wfc.referential.Domain.RegionAggregate.Exceptions;
 
 namespace wfc.referential.Application.Regions.Commands.DeleteRegion;
 
-public class DeleteRegionCommandHandler(IRegionRepository _regionRepository, ICacheService cacheService) 
+public class DeleteRegionCommandHandler(IRegionRepository _regionRepository,
+    ICityRepository _cityRepository) 
     : ICommandHandler<DeleteRegionCommand, Result<bool>>
 {
     
 
     public async Task<Result<bool>> Handle(DeleteRegionCommand request, CancellationToken cancellationToken)
     {
-        var region = await _regionRepository.GetByIdAsync(RegionId.Of(request.RegionId).Value, cancellationToken);
+        var regionId = RegionId.Of(request.RegionId);
+        var region = await _regionRepository.GetOneByConditionAsync(r => r.Id == regionId, cancellationToken);
 
         if (region is null)
             throw new ResourceNotFoundException($"{nameof(Region)} not found");
 
-        var cities = await _regionRepository.GetCitiesByRegionIdAsync(region.Id!.Value, cancellationToken);
+        var cities = await _cityRepository.GetByConditionAsync(c => c.RegionId == region.Id, cancellationToken);
+        if (cities.Any()) throw new RegionHasCitiesException(cities);
 
-        if (cities.Count > 0) throw new RegionHasCitiesException(cities);
         region.SetInactive();
-        await _regionRepository.UpdateRegionAsync(region, cancellationToken);
 
-        await cacheService.RemoveAsync(request.CacheKey, cancellationToken);
+        _regionRepository.Update(region);
+        await _regionRepository.SaveChangesAsync(cancellationToken);
 
         return Result.Success(true);
     }

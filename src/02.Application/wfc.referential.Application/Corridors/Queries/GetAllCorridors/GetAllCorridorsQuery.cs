@@ -16,8 +16,8 @@ public record GetAllCorridorsQuery : IQuery<PagedResult<GetAllCorridorsResponse>
     public CityId? SourceCityId { get; init; }
     public CityId? DestinationCityId { get; init; }
 
-    public AgencyId? SourceAgencyId { get; init; }
-    public AgencyId? DestinationAgencyId { get; init; }
+    public AgencyId? SourceBranchId { get; init; }
+    public AgencyId? DestinationBranchId { get; init; }
 
     public bool? IsEnabled { get; init; }
 
@@ -27,7 +27,7 @@ public record GetAllCorridorsQuery : IQuery<PagedResult<GetAllCorridorsResponse>
     public string CacheKey =>
         $"Corridors_{SourceCountryId?.Value}_{DestinationCountryId?.Value}_" +
         $"{SourceCityId?.Value}_{DestinationCityId?.Value}_" +
-        $"{SourceAgencyId?.Value}_{DestinationAgencyId?.Value}_" +
+        $"{SourceBranchId?.Value}_{DestinationBranchId?.Value}_" +
         $"{IsEnabled}_{PageNumber}_{PageSize}";
 
     public int CacheExpiration => 5;

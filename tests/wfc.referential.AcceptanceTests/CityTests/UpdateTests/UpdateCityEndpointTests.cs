@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
@@ -39,10 +40,10 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
                 services.RemoveAll<ICacheService>();
 
                 // default noop for Update
-                _repoCityMock
-                    .Setup(r => r.UpdateCityAsync(It.IsAny<City>(),
-                                                          It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+                //_repoCityMock
+                //    .Setup(r => r.UpdateCityAsync(It.IsAny<City>(),
+                //                                          It.IsAny<CancellationToken>()))
+                //    .Returns(Task.CompletedTask);
 
                 services.AddSingleton(_repoCityMock.Object);
                 services.AddSingleton(_repoRegionMock.Object);
@@ -65,13 +66,6 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         var id = Guid.NewGuid();
         var oldCity = DummyCity(id, "SEK", "Swedish Krona");
 
-        //_repoCityMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-        //         .ReturnsAsync(oldCity);
-        City? updated = null;
-        _repoCityMock.Setup(r => r.UpdateCityAsync(oldCity,
-                                                       It.IsAny<CancellationToken>()))
-                 .Callback<City, CancellationToken>((city, _) => updated = city)
-                 .Returns(Task.CompletedTask);
 
         var payload = new UpdateCityRequest
         {
@@ -83,26 +77,31 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             IsEnabled = true
         };
         _repoRegionMock
-            .Setup(r => r.GetByIdAsync(payload.RegionId.Value, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Region.Create(RegionId.Of(oldCity.RegionId.Value), "code", "name", CountryId.Of(Guid.NewGuid())));
 
-        _repoCityMock.Setup(r => r.GetByCodeAsync(payload.Code, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((City)null);
+        _repoCityMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Expression<Func<City, bool>> predicate, CancellationToken _) =>
+            {
+                var func = predicate.Compile();
 
+                if (func(oldCity))
+                    return oldCity;
 
+                return null;
+            });
         // Act
         var response = await _client.PutAsJsonAsync($"/api/cities/{id}", payload);
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().Be(true);
 
-        updated!.Code.Should().Be("codeAAB");
-        updated.Name.Should().Be("nameAAB");
+        oldCity!.Code.Should().Be("codeAAB");
+        oldCity.Name.Should().Be("nameAAB");
 
-        _repoCityMock.Verify(r => r.UpdateCityAsync(It.IsAny<City>(),
-                                                        It.IsAny<CancellationToken>()),
+        _repoCityMock.Verify(r => r.Update(It.IsAny<City>()),
                          Times.Once);
     }
 
@@ -131,14 +130,14 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             .GetProperty("name")[0].GetString()
             .Should().Be("Name is required");
 
-        _repoCityMock.Verify(r => r.UpdateCityAsync(It.IsAny<City>(),
-                                                        It.IsAny<CancellationToken>()),
-                         Times.Never);
+        //_repoCityMock.Verify(r => r.UpdateCityAsync(It.IsAny<City>(),
+        //                                                It.IsAny<CancellationToken>()),
+        //                 Times.Never);
     }
 
     ////// 3) Duplicate code
-    [Fact(DisplayName = "PUT /api/cities/{id} returns 400 when new code already exists")]
-    public async Task Put_ShouldReturn400_WhenCodeAlreadyExists()
+    [Fact(DisplayName = "PUT /api/cities/{id} returns 409 when new code already exists")]
+    public async Task Put_ShouldReturn409_WhenCodeAlreadyExists()
     {
         // Arrange
         // Arrange
@@ -160,13 +159,20 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             "targetNYC",
             RegionId.Of(Guid.Parse("a3b8b953-2489-49c5-aac4-c97df06d5060")),
             "America/New_York"
-        );
+        ); 
+        _repoCityMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Expression<Func<City, bool>> predicate, CancellationToken _) =>
+            {
+                var func = predicate.Compile();
 
-        //_repoCityMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-        //         .ReturnsAsync(target);
+                if (func(target)) // target is your City instance with Id == id
+                    return target;
 
-        _repoCityMock.Setup(r => r.GetByCodeAsync("target", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing); // duplicate code
+                if (func(existing)) // existing is your City instance with Code == "target"
+                    return existing;
+
+                return null;
+            });
 
         var payload = new UpdateCityRequest
         {
@@ -178,10 +184,10 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             TimeZone = "America/New_York",
             IsEnabled = true
         };
-
+        var regionId = RegionId.Of(payload.RegionId.Value);
         _repoRegionMock
-            .Setup(r => r.GetByIdAsync(payload.RegionId.Value, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Region.Create(RegionId.Of(payload.RegionId.Value), "code", "name", CountryId.Of(Guid.NewGuid())));
+            .Setup(r => r.GetOneByConditionAsync(r => r.Id == regionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Region.Create(regionId, "code", "name", CountryId.Of(Guid.NewGuid())));
 
 
         // Act
@@ -189,13 +195,12 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be($"{nameof(Region)} with code : {payload.Code} already exist");
 
-        _repoCityMock.Verify(r => r.UpdateCityAsync(It.IsAny<City>(),
-                                                        It.IsAny<CancellationToken>()),
+        _repoCityMock.Verify(r => r.Update(It.IsAny<City>()),
                          Times.Never);
     }
 }

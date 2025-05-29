@@ -7,7 +7,7 @@ using wfc.referential.Application.Taxes.Dtos;
 
 namespace wfc.referential.API.Endpoints.Tax;
 
-public class PatchTax(IMediator _mediator) : Endpoint<PatchTaxRequest, Guid>
+public class PatchTax(IMediator _mediator) : Endpoint<PatchTaxRequest, bool>
 {
     public override void Configure()
     {

@@ -19,10 +19,10 @@ public record PatchCorridorRequest
     public Guid? DestinationCityId { get; init; }
 
     /// <summary>Source agency ID</summary>
-    public Guid? SourceAgencyId { get; init; }
+    public Guid? SourceBranchId { get; init; }
 
     /// <summary>Destination agency ID</summary>
-    public Guid? DestinationAgencyId { get; init; }
+    public Guid? DestinationBranchId { get; init; }
 
     /// <summary>Corridor enabled status</summary>
     public bool? IsEnabled { get; init; }

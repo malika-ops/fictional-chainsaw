@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using BuildingBlocks.Core.Abstraction.Repositories;
 using BuildingBlocks.Core.Pagination;
 using Microsoft.EntityFrameworkCore;
 using wfc.referential.Application.Interfaces;
@@ -11,11 +12,11 @@ using wfc.referential.Infrastructure.Data;
 
 namespace wfc.referential.Infrastructure.Persistence.Repositories;
 
-public class TaxRuleDetailRepository : ITaxRuleDetailRepository
+public class TaxRuleDetailRepository : BaseRepository<TaxRuleDetail, TaxRuleDetailsId>, ITaxRuleDetailRepository
 {
     private readonly ApplicationDbContext _context;
 
-    public TaxRuleDetailRepository(ApplicationDbContext context)
+    public TaxRuleDetailRepository(ApplicationDbContext context) : base(context)
     {
         _context = context;
     }

@@ -7,7 +7,7 @@ using wfc.referential.Application.Cities.Dtos;
 
 namespace wfc.referential.API.Endpoints.City;
 
-public class PatchCity(IMediator _mediator) : Endpoint<PatchCityRequest, Guid>
+public class PatchCity(IMediator _mediator) : Endpoint<PatchCityRequest, bool>
 {
     public override void Configure()
     {

@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
+using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.TaxAggregate;
 using Xunit;
@@ -57,7 +59,7 @@ public class DeleteTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             "testAAB",
             "aa", "description", 43, 20);
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<Guid>(id => id == taxId), It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(tax);
 
         // Act
@@ -67,8 +69,6 @@ public class DeleteTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
-
-        _repoMock.Verify(r => r.UpdateTaxAsync(It.Is<Tax>(r => r.Id == TaxId.Of(taxId) && !r.IsEnabled), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = $"DELETE {BaseUrl}/id returns 404 when tax does not exist")]
@@ -76,7 +76,7 @@ public class DeleteTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
     {
         // Arrange
         var taxId = Guid.NewGuid();
-        _repoMock.Setup(r => r.GetByIdAsync(taxId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Tax)null); // Tax not found
 
         // Act

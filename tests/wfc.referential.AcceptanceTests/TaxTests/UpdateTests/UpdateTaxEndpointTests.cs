@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -38,9 +39,7 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
                 // default noop for Update
                 _repoMock
-                    .Setup(r => r.UpdateTaxAsync(It.IsAny<Tax>(),
-                                                          It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+                    .Setup(r => r.Update(It.IsAny<Tax>()));
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(cacheMock.Object);
@@ -62,13 +61,12 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var id = Guid.NewGuid();
         var oldTax = DummyTax(id, "VAT_DE", "Germany VAT - Standard Rate");
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(oldTax);
 
         Tax? updated = null;
-        _repoMock.Setup(r => r.UpdateTaxAsync(oldTax, It.IsAny<CancellationToken>()))
-                 .Callback<Tax, CancellationToken>((rg, _) => updated = rg)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.Update(oldTax))
+                 .Callback<Tax>((rg) => updated = rg);
 
         var payload = new UpdateTaxRequest
         {
@@ -83,16 +81,16 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
         // Act
         var response = await _client.PutAsJsonAsync($"{BaseUrl}/{id}", payload);
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().Be(true);
 
         updated!.Code.Should().Be("testAAB");
         updated.CodeEn.Should().Be("TestAABEN");
 
-        _repoMock.Verify(r => r.UpdateTaxAsync(It.IsAny<Tax>(),It.IsAny<CancellationToken>()),
+        _repoMock.Verify(r => r.Update(It.IsAny<Tax>()),
                          Times.Once);
     }
 
@@ -122,7 +120,7 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             .GetProperty("code")[0].GetString()
             .Should().Be("Code is required.");
 
-        _repoMock.Verify(r => r.UpdateTaxAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()),
+        _repoMock.Verify(r => r.Update(It.IsAny<Tax>()),
                          Times.Never);
     }
 
@@ -134,11 +132,20 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var existing = DummyTax(Guid.NewGuid(),"GST_CA", "Canada GST - Federal Goods and Services Tax");
         var target = DummyTax(id, "SALETX_CA", "US Sales Tax - California");
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(target);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Expression<Func<Tax, bool>> predicate, CancellationToken _) =>
+            {
+                var func = predicate.Compile();
 
-        _repoMock.Setup(r => r.GetByCodeAsync("GST_CA", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing); // duplicate code
+                if (func(target))
+                    return target;
+
+                if (func(existing))
+                    return existing;
+
+                return null;
+            });
+
 
         var payload = new CreateTaxRequest
         {
@@ -155,12 +162,12 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be($"{nameof(Tax)} with code : {payload.Code} already exist");
 
-        _repoMock.Verify(r => r.UpdateTaxAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()),
+        _repoMock.Verify(r => r.Update(It.IsAny<Tax>()),
                          Times.Never);
     }
 }
