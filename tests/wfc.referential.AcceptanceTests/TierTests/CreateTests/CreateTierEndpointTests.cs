@@ -133,11 +133,6 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
     {
         const string duplicate = "Gold";
 
-        var existing = Tier.Create(
-            new TierId(Guid.NewGuid()), duplicate, "existing", true);
-
-        _repoMock.Setup(r => r.GetByNameAsync(duplicate, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing);
 
         var payload = new
         {

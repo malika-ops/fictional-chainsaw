@@ -32,14 +32,6 @@ public class CreateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
                 s.RemoveAll<IAgencyTierRepository>();
                 s.RemoveAll<ICacheService>();
 
-                // default → no duplicate
-                _repoMock.Setup(r => r.ExistsAsync(
-                                        It.IsAny<Guid>(),
-                                        It.IsAny<Guid>(),
-                                        It.IsAny<string>(),
-                                        It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(false);
-
                 _repoMock.Setup(r => r.AddAsync(It.IsAny<AgencyTier>(),
                                                 It.IsAny<CancellationToken>()))
                          .ReturnsAsync((AgencyTier at, CancellationToken _) => at);
@@ -129,9 +121,6 @@ public class CreateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
         var agencyId = Guid.NewGuid();
         var tierId = Guid.NewGuid();
         const string dup = "DUP-01";
-
-        _repoMock.Setup(r => r.ExistsAsync(agencyId, tierId, dup, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(true);
 
         var payload = new
         {

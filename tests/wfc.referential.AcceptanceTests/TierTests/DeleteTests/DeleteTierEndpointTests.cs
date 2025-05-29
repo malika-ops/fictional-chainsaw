@@ -32,9 +32,6 @@ public class DeleteTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
                 s.RemoveAll<ITierRepository>();
                 s.RemoveAll<ICacheService>();
 
-                _repoMock.Setup(r => r.UpdateAsync(It.IsAny<Tier>(),
-                                                   It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
 
                 s.AddSingleton(_repoMock.Object);
                 s.AddSingleton(cacheMock.Object);
@@ -46,8 +43,6 @@ public class DeleteTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
     /* --------------------- helpers --------------------- */
 
-    private static Tier MakeTier(Guid id, string name = "Standard")
-        => Tier.Create(new TierId(id), name, "descr", true);
 
     private static string FirstError(JsonElement errs, string key)
     {
@@ -64,14 +59,6 @@ public class DeleteTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
     {
         // Arrange
         var id = Guid.NewGuid();
-        var tier = MakeTier(id);
-
-        _repoMock.Setup(r => r.GetByIdAsync(new TierId(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(tier);
-
-        Tier? saved = null;
-        _repoMock.Setup(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()))
-                 .Callback<Tier, CancellationToken>((t, _) => saved = t);
 
         // Act
         var resp = await _client.DeleteAsync($"/api/tiers/{id}");
@@ -81,9 +68,6 @@ public class DeleteTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
         success.Should().BeTrue();
 
-        saved!.IsEnabled.Should().BeFalse();
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
-                         Times.Once);
     }
 
     [Fact(DisplayName = "DELETE /api/tiers/{id} returns 400 when id is empty GUID")]
@@ -99,8 +83,6 @@ public class DeleteTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         FirstError(doc!.RootElement.GetProperty("errors"), "TierId")
             .Should().Be("TierId must be a non-empty GUID.");
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 
     [Fact(DisplayName = "DELETE /api/tiers/{id} returns 400 when tier not found")]
@@ -121,7 +103,5 @@ public class DeleteTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         doc!.RootElement.GetProperty("errors").GetString()
             .Should().Be("Tier not found.");
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 }

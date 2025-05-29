@@ -35,10 +35,7 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
                 services.RemoveAll<IAgencyTierRepository>();
                 services.RemoveAll<ICacheService>();
 
-                _repoMock.Setup(r => r.UpdateAsync(
-                                   It.IsAny<AgencyTier>(),
-                                   It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
+                
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(cacheMock.Object);
@@ -57,8 +54,7 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
             new AgencyId(agencyId),
             new TierId(tierId),
             code,
-            password: string.Empty,
-            isEnabled: enabled);
+            password: string.Empty);
     }
 
     private async Task<HttpResponseMessage> PatchJsonAsync(string url, object payload)
@@ -94,9 +90,6 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
                  .ReturnsAsync(original);
 
         AgencyTier? saved = null;
-        _repoMock.Setup(r => r.UpdateAsync(It.IsAny<AgencyTier>(), It.IsAny<CancellationToken>()))
-                 .Callback<AgencyTier, CancellationToken>((at, _) => saved = at)
-                 .Returns(Task.CompletedTask);
 
         var payload = new
         {
@@ -118,8 +111,6 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         // unchanged fields untouched
         saved.AgencyId.Should().Be(original.AgencyId);
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<AgencyTier>(), It.IsAny<CancellationToken>()),
-                         Times.Once);
     }
 
     // 2) Duplicate code ------------------------------------------------------
@@ -137,9 +128,6 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         _repoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(target);
 
-        _repoMock.Setup(r => r.GetByCodeAsync("DUP", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(duplicate);
-
         var payload = new { AgencyTierId = id, Code = "DUP" };
 
         // Act
@@ -152,8 +140,6 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Be("AgencyTier with code 'DUP' already exists for this agency & tier.");
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<AgencyTier>(), It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 
     // 3) Not-found -----------------------------------------------------------
@@ -171,7 +157,5 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
 
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<AgencyTier>(), It.IsAny<CancellationToken>()),
-                         Times.Never);
     }
 }

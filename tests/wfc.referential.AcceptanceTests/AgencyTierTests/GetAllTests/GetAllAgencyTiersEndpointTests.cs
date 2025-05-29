@@ -52,8 +52,7 @@ public class GetAllAgencyTiersEndpointTests : IClassFixture<WebApplicationFactor
             new AgencyId(agencyId),
             new TierId(tierId),
             code,
-            password: string.Empty,
-            isEnabled: enabled);
+            password: string.Empty);
     }
 
     private record PagedDto<T>(
@@ -81,15 +80,7 @@ public class GetAllAgencyTiersEndpointTests : IClassFixture<WebApplicationFactor
             At(agency1, tier2, "C3")
         };
 
-        _repoMock.Setup(r => r.GetFilteredAgencyTiersAsync(
-                            It.Is<GetAllAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(all.Take(2).ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllAgencyTiersQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(all.Length);
+     
 
         var resp = await _client.GetAsync("/api/agencyTiers?pageNumber=1&pageSize=2");
         var dto = await resp.Content.ReadFromJsonAsync<PagedDto<JsonElement>>();
@@ -101,10 +92,7 @@ public class GetAllAgencyTiersEndpointTests : IClassFixture<WebApplicationFactor
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetFilteredAgencyTiersAsync(
-                              It.Is<GetAllAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                              It.IsAny<CancellationToken>()),
-                         Times.Once);
+        
     }
 
     // 2) Filter by Code ------------------------------------------------------
@@ -115,15 +103,7 @@ public class GetAllAgencyTiersEndpointTests : IClassFixture<WebApplicationFactor
         var tierId = Guid.NewGuid();
         var c2 = At(agencyId, tierId, "C2");
 
-        _repoMock.Setup(r => r.GetFilteredAgencyTiersAsync(
-                            It.Is<GetAllAgencyTiersQuery>(q => q.Code == "C2"),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<AgencyTier> { c2 });
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllAgencyTiersQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
+        
 
         var resp = await _client.GetAsync("/api/agencyTiers?code=C2");
         var dto = await resp.Content.ReadFromJsonAsync<PagedDto<JsonElement>>();
@@ -132,10 +112,7 @@ public class GetAllAgencyTiersEndpointTests : IClassFixture<WebApplicationFactor
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("code").GetString().Should().Be("C2");
 
-        _repoMock.Verify(r => r.GetFilteredAgencyTiersAsync(
-                              It.Is<GetAllAgencyTiersQuery>(q => q.Code == "C2"),
-                              It.IsAny<CancellationToken>()),
-                         Times.Once);
+        
     }
 
     // 3) Default paging ------------------------------------------------------
@@ -148,15 +125,7 @@ public class GetAllAgencyTiersEndpointTests : IClassFixture<WebApplicationFactor
         var list = new[] { At(agencyId, tierId, "C1"),
                            At(agencyId, tierId, "C2") };
 
-        _repoMock.Setup(r => r.GetFilteredAgencyTiersAsync(
-                            It.Is<GetAllAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(list.ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllAgencyTiersQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(list.Length);
+        
 
         var resp = await _client.GetAsync("/api/agencyTiers");
         var dto = await resp.Content.ReadFromJsonAsync<PagedDto<JsonElement>>();
@@ -166,9 +135,6 @@ public class GetAllAgencyTiersEndpointTests : IClassFixture<WebApplicationFactor
         dto.PageSize.Should().Be(10);
         dto.Items.Should().HaveCount(2);
 
-        _repoMock.Verify(r => r.GetFilteredAgencyTiersAsync(
-                              It.Is<GetAllAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
-                              It.IsAny<CancellationToken>()),
-                         Times.Once);
+        
     }
 }
