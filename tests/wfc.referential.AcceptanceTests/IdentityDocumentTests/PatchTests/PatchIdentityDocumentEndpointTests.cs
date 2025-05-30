@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -21,8 +20,6 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
 
     public PatchIdentityDocumentEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -30,29 +27,40 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IIdentityDocumentRepository>();
-                services.RemoveAll<ICacheService>();
-
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
             });
         });
 
         _client = customisedFactory.CreateClient();
     }
 
-    [Fact(DisplayName = "PATCH /api/identitydocuments/{id} returns updated Guid")]
-    public async Task Patch_ShouldReturnUpdatedId_WhenValid()
+    [Fact(DisplayName = "PATCH /api/identitydocuments/{id} returns true when updated")]
+    public async Task Patch_ShouldReturnTrue_WhenValid()
     {
         var docId = Guid.NewGuid();
+        var identityDocumentId = IdentityDocumentId.Of(docId);
         var existing = IdentityDocument.Create(
-            IdentityDocumentId.Of(docId),
+            identityDocumentId,
             "CIN",
             "Carte Nationale",
             "Original"
-            );
+        );
 
-        _repoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(existing);
+
+        // No duplicate code exists
+        _repoMock.Setup(r => r.GetOneByConditionAsync(
+                It.IsAny<System.Linq.Expressions.Expression<System.Func<IdentityDocument, bool>>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IdentityDocument?)null);
+
+        // Setup Update method (void method)
+        _repoMock.Setup(r => r.Update(It.IsAny<IdentityDocument>()));
+
+        // Setup SaveChangesAsync method that returns Task<int>
+        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(1));
 
         var patch = new PatchIdentityDocumentRequest
         {
@@ -64,21 +72,26 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
         };
 
         var response = await _client.PatchAsync($"/api/identitydocuments/{docId}", JsonContent.Create(patch));
-        var updatedId = await response.Content.ReadFromJsonAsync<Guid>();
+        var result = await response.Content.ReadFromJsonAsync<bool>();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        updatedId.Should().Be(docId);
+        result.Should().BeTrue();
         existing.Name.Should().Be(patch.Name);
         existing.Code.Should().Be(patch.Code);
         existing.Description.Should().Be(patch.Description);
+        existing.IsEnabled.Should().Be(patch.IsEnabled!.Value);
+
+        _repoMock.Verify(r => r.Update(existing), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/identitydocuments/{id} returns 404 if not found")]
     public async Task Patch_ShouldReturn404_WhenNotFound()
     {
         var docId = Guid.NewGuid();
+        var identityDocumentId = IdentityDocumentId.Of(docId);
 
-        _repoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((IdentityDocument?)null);
 
         var patch = new PatchIdentityDocumentRequest
@@ -97,25 +110,65 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
     public async Task Patch_ShouldReturn400_WhenInvalid()
     {
         var docId = Guid.NewGuid();
+        var identityDocumentId = IdentityDocumentId.Of(docId);
         var existing = IdentityDocument.Create(
-            IdentityDocumentId.Of(docId),
+            identityDocumentId,
             "CIN",
             "Carte Nationale",
             null
-            );
+        );
 
-        _repoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var patch = new PatchIdentityDocumentRequest
         {
             IdentityDocumentId = docId,
-            Code = "",
+            Code = "",  // Empty code should trigger validation error
             Name = "OK"
         };
 
         var response = await _client.PatchAsync($"/api/identitydocuments/{docId}", JsonContent.Create(patch));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact(DisplayName = "PATCH /api/identitydocuments/{id} returns 409 when code already exists")]
+    public async Task Patch_ShouldReturn409_WhenCodeAlreadyExists()
+    {
+        var docId = Guid.NewGuid();
+        var identityDocumentId = IdentityDocumentId.Of(docId);
+        var existing = IdentityDocument.Create(
+            identityDocumentId,
+            "CIN",
+            "Carte Nationale",
+            "Original"
+        );
+
+        var duplicateDoc = IdentityDocument.Create(
+            IdentityDocumentId.Of(Guid.NewGuid()),
+            "DUPLICATE",
+            "Duplicate Doc",
+            null
+        );
+
+        _repoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existing);
+
+        _repoMock.Setup(r => r.GetOneByConditionAsync(
+                It.IsAny<System.Linq.Expressions.Expression<System.Func<IdentityDocument, bool>>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(duplicateDoc);
+
+        var patch = new PatchIdentityDocumentRequest
+        {
+            IdentityDocumentId = docId,
+            Code = "DUPLICATE",
+            Name = "Updated Name"
+        };
+
+        var response = await _client.PatchAsync($"/api/identitydocuments/{docId}", JsonContent.Create(patch));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 }

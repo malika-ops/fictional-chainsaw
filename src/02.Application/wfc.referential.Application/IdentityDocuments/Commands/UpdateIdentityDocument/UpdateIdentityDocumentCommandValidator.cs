@@ -6,8 +6,14 @@ public class UpdateIdentityDocumentCommandValidator : AbstractValidator<UpdateId
 {
     public UpdateIdentityDocumentCommandValidator()
     {
-        RuleFor(x => x.IdentityDocumentId).NotEmpty();
-        RuleFor(x => x.Code).NotEmpty().WithMessage("Code is required");
-        RuleFor(x => x.Name).NotEmpty().WithMessage("Name is required");
+        RuleFor(x => x.IdentityDocumentId)
+            .NotEqual(Guid.Empty)
+            .WithMessage("IdentityDocumentId cannot be empty.");
+
+        RuleFor(x => x.Code)
+            .NotEmpty().WithMessage("Code is required.");
+
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Name is required.");
     }
 }

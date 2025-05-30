@@ -2,11 +2,14 @@
 
 namespace wfc.referential.Application.IdentityDocuments.Commands.CreateIdentityDocument;
 
-public class CreateIdentityDocumentCommandValidator : AbstractValidator<CreateIdentityDocumentCommand>
+public class CreateIdentityDocumentValidator : AbstractValidator<CreateIdentityDocumentCommand>
 {
-    public CreateIdentityDocumentCommandValidator()
+    public CreateIdentityDocumentValidator()
     {
-        RuleFor(x => x.Code).NotEmpty().WithMessage("Code is required");
-        RuleFor(x => x.Name).NotEmpty().WithMessage("Name is required");
+        RuleFor(x => x.Code).NotEmpty()
+            .WithMessage("Identity document code is required.");
+
+        RuleFor(x => x.Name).NotEmpty()
+            .WithMessage("Identity document name is required.");
     }
 }

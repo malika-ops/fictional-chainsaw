@@ -89,7 +89,7 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         _countryRepoMock.Setup(r => r.GetByIdAsync(countryId, It.IsAny<CancellationToken>()))
                         .ReturnsAsync(country);
 
-        _identityDocRepoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
+        _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(docId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
 
         _repoMock.Setup(r => r.ExistsByCountryAndIdentityDocumentAsync(
@@ -139,7 +139,7 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             "Description"
         );
 
-        _identityDocRepoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
+        _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(docId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
 
         var payload = new
@@ -199,7 +199,7 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         _countryRepoMock.Setup(r => r.GetByIdAsync(countryId, It.IsAny<CancellationToken>()))
                         .ReturnsAsync(country);
 
-        _identityDocRepoMock.Setup(r => r.GetByIdAsync(docId, It.IsAny<CancellationToken>()))
+        _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(docId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
 
         _repoMock.Setup(r => r.ExistsByCountryAndIdentityDocumentAsync(

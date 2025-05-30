@@ -1,33 +1,33 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
-using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.IdentityDocumentAggregate;
 using wfc.referential.Domain.IdentityDocumentAggregate.Exceptions;
 
 namespace wfc.referential.Application.IdentityDocuments.Commands.CreateIdentityDocument;
 
-public class CreateIdentityDocumentCommandHandler(IIdentityDocumentRepository repository,ICacheService cacheService) 
-    : ICommandHandler<CreateIdentityDocumentCommand, Result<Guid>>
+public class CreateIdentityDocumentCommandHandler : ICommandHandler<CreateIdentityDocumentCommand, Result<Guid>>
 {
-    public async Task<Result<Guid>> Handle(CreateIdentityDocumentCommand request, CancellationToken cancellationToken)
+    private readonly IIdentityDocumentRepository _identityDocumentRepository;
+
+    public CreateIdentityDocumentCommandHandler(IIdentityDocumentRepository identityDocumentRepository)
+        => _identityDocumentRepository = identityDocumentRepository;
+
+    public async Task<Result<Guid>> Handle(CreateIdentityDocumentCommand command, CancellationToken ct)
     {
-        var existing = await repository.GetByCodeAsync(request.Code, cancellationToken);
-        if (existing is not null)
-            throw new CodeAlreadyExistException(request.Code);
+        var existingIdentityDocumentByCode = await _identityDocumentRepository.GetOneByConditionAsync(c => c.Code == command.Code, ct);
+        if (existingIdentityDocumentByCode is not null)
+            throw new IdentityDocumentCodeAlreadyExistException(command.Code);
 
-        var entity = IdentityDocument.Create(
+        var identityDocument = IdentityDocument.Create(
             IdentityDocumentId.Of(Guid.NewGuid()),
-            request.Code,
-            request.Name,
-            request.Description);
+            command.Code,
+            command.Name,
+            command.Description);
 
-        await repository.AddAsync(entity, cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
+        await _identityDocumentRepository.AddAsync(identityDocument, ct);
+        await _identityDocumentRepository.SaveChangesAsync(ct);
 
-        await cacheService.RemoveByPrefixAsync(CacheKeys.IdentityDocument.Prefix,cancellationToken);
-
-        return Result.Success(entity.Id!.Value);
+        return Result.Success(identityDocument.Id!.Value);
     }
 }

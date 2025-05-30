@@ -34,7 +34,7 @@ public class PatchCountryIdentityDocCommandHandler(ICountryIdentityDocRepository
 
         if (request.IdentityDocumentId.HasValue)
         {
-            var identityDocument = await _identityDocumentRepository.GetByIdAsync(request.IdentityDocumentId.Value, cancellationToken);
+            var identityDocument = await _identityDocumentRepository.GetByIdAsync(IdentityDocumentId.Of(request.IdentityDocumentId.Value), cancellationToken);
             if (identityDocument is null)
                 throw new BusinessException($"IdentityDocument with ID {request.IdentityDocumentId} not found");
 

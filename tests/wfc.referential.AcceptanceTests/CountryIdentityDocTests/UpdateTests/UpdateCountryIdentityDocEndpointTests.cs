@@ -106,7 +106,7 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         _countryRepoMock.Setup(r => r.GetByIdAsync(newCountryId, It.IsAny<CancellationToken>()))
                         .ReturnsAsync(country);
 
-        _identityDocRepoMock.Setup(r => r.GetByIdAsync(newDocId, It.IsAny<CancellationToken>()))
+        _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(newDocId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
 
         CountryIdentityDoc? updated = null;
@@ -164,7 +164,7 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             "Description"
         );
 
-        _identityDocRepoMock.Setup(r => r.GetByIdAsync(newDocId, It.IsAny<CancellationToken>()))
+        _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(newDocId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
 
         var payload = new

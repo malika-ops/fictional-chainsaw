@@ -1,24 +1,25 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.IdentityDocumentAggregate;
 
 namespace wfc.referential.Application.IdentityDocuments.Commands.DeleteIdentityDocument;
 
-public class DeleteIdentityDocumentCommandHandler(IIdentityDocumentRepository repository) 
-    : ICommandHandler<DeleteIdentityDocumentCommand, Result<bool>>
+public class DeleteIdentityDocumentCommandHandler : ICommandHandler<DeleteIdentityDocumentCommand, Result<bool>>
 {
-    public async Task<Result<bool>> Handle(DeleteIdentityDocumentCommand request, CancellationToken cancellationToken)
+    private readonly IIdentityDocumentRepository _repo;
+
+    public DeleteIdentityDocumentCommandHandler(IIdentityDocumentRepository repo) => _repo = repo;
+
+    public async Task<Result<bool>> Handle(DeleteIdentityDocumentCommand cmd, CancellationToken ct)
     {
-        var entity = await repository.GetByIdAsync(request.IdentityDocumentId, cancellationToken);
-        if (entity is null)
-            throw new ResourceNotFoundException("IdentityDocument not found");
+        var identityDocument = await _repo.GetByIdAsync(IdentityDocumentId.Of(cmd.IdentityDocumentId), ct);
+        if (identityDocument is null)
+            throw new ResourceNotFoundException($"Identity document [{cmd.IdentityDocumentId}] not found.");
 
-        entity.SetInactive();
-        await repository.UpdateAsync(entity, cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
-
+        identityDocument.Disable();
+        await _repo.SaveChangesAsync(ct);
         return Result.Success(true);
     }
 }

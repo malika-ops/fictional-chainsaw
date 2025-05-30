@@ -2,21 +2,37 @@
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.IdentityDocumentAggregate;
+using wfc.referential.Domain.IdentityDocumentAggregate.Exceptions;
 
 namespace wfc.referential.Application.IdentityDocuments.Commands.UpdateIdentityDocument;
-public class UpdateIdentityDocumentCommandHandler(IIdentityDocumentRepository repository) 
-    : ICommandHandler<UpdateIdentityDocumentCommand, Result<Guid>>
+
+public class UpdateIdentityDocumentCommandHandler
+    : ICommandHandler<UpdateIdentityDocumentCommand, Result<bool>>
 {
-    public async Task<Result<Guid>> Handle(UpdateIdentityDocumentCommand request, CancellationToken cancellationToken)
+    private readonly IIdentityDocumentRepository _repo;
+
+    public UpdateIdentityDocumentCommandHandler(IIdentityDocumentRepository repo) => _repo = repo;
+
+    public async Task<Result<bool>> Handle(UpdateIdentityDocumentCommand cmd, CancellationToken ct)
     {
-        var entity = await repository.GetByIdAsync(request.IdentityDocumentId, cancellationToken);
-        if (entity is null)
-            throw new ResourceNotFoundException("IdentityDocument not found");
+        var identityDocument = await _repo.GetByIdAsync(IdentityDocumentId.Of(cmd.IdentityDocumentId), ct);
+        if (identityDocument is null)
+            throw new ResourceNotFoundException($"Identity document [{cmd.IdentityDocumentId}] not found.");
 
-        entity.Update(request.Code, request.Name, request.Description, request.IsEnabled);
+        // uniqueness on Code
+        var duplicateCode = await _repo.GetOneByConditionAsync(c => c.Code == cmd.Code, ct);
+        if (duplicateCode is not null && duplicateCode.Id != identityDocument.Id)
+            throw new IdentityDocumentCodeAlreadyExistException(cmd.Code);
 
-        await repository.UpdateAsync(entity, cancellationToken);
+        identityDocument.Update(
+            cmd.Code,
+            cmd.Name,
+            cmd.Description,
+            cmd.IsEnabled);
 
-        return Result.Success(entity.Id!.Value);
+        _repo.Update(identityDocument);
+        await _repo.SaveChangesAsync(ct);
+        return Result.Success(true);
     }
 }

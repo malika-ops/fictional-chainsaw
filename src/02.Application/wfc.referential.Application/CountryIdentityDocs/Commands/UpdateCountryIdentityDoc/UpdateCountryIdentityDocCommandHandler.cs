@@ -21,7 +21,7 @@ public class UpdateCountryIdentityDocCommandHandler(ICountryIdentityDocRepositor
         if (country is null)
             throw new BusinessException($"Country with ID {request.CountryId} not found");
 
-        var identityDocument = await _identityDocumentRepository.GetByIdAsync(request.IdentityDocumentId, cancellationToken);
+        var identityDocument = await _identityDocumentRepository.GetByIdAsync(IdentityDocumentId.Of(request.IdentityDocumentId), cancellationToken);
         if (identityDocument is null)
             throw new BusinessException($"IdentityDocument with ID {request.IdentityDocumentId} not found");
 

@@ -1,28 +1,44 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
-using Mapster;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.IdentityDocumentAggregate;
+using wfc.referential.Domain.IdentityDocumentAggregate.Exceptions;
 
 namespace wfc.referential.Application.IdentityDocuments.Commands.PatchIdentityDocument;
 
-public class PatchIdentityDocumentCommandHandler(IIdentityDocumentRepository repository) 
-    : ICommandHandler<PatchIdentityDocumentCommand, Result<Guid>>
+public class PatchIdentityDocumentCommandHandler : ICommandHandler<PatchIdentityDocumentCommand, Result<bool>>
 {
-    public async Task<Result<Guid>> Handle(PatchIdentityDocumentCommand request, CancellationToken cancellationToken)
+    private readonly IIdentityDocumentRepository _repo;
+
+    public PatchIdentityDocumentCommandHandler(IIdentityDocumentRepository repo)
     {
-        var identitydocument = await repository.GetByIdAsync(request.IdentityDocumentId, cancellationToken);
+        _repo = repo;
+    }
 
-        if (identitydocument is null)
-            throw new ResourceNotFoundException($"{nameof(IdentityDocument)} not found");
+    public async Task<Result<bool>> Handle(PatchIdentityDocumentCommand cmd, CancellationToken ct)
+    {
+        var identityDocument = await _repo.GetByIdAsync(IdentityDocumentId.Of(cmd.IdentityDocumentId), ct);
+        if (identityDocument is null)
+            throw new ResourceNotFoundException($"Identity document [{cmd.IdentityDocumentId}] not found.");
 
-        request.Adapt(identitydocument);
-        identitydocument.Patch(request.Code,request.Name,request.Description,request.IsEnabled);
+        // duplicate Code check
+        if (!string.IsNullOrWhiteSpace(cmd.Code))
+        {
+            var dup = await _repo.GetOneByConditionAsync(c => c.Code == cmd.Code, ct);
+            if (dup is not null && dup.Id != identityDocument.Id)
+                throw new IdentityDocumentCodeAlreadyExistException(cmd.Code);
+        }
 
-        await repository.UpdateAsync(identitydocument, cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
+        identityDocument.Patch(
+            cmd.Code,
+            cmd.Name,
+            cmd.Description,
+            cmd.IsEnabled);
 
-        return Result.Success(identitydocument.Id!.Value);
+        _repo.Update(identityDocument);
+        await _repo.SaveChangesAsync(ct);
+
+        return Result.Success(true);
     }
 }
