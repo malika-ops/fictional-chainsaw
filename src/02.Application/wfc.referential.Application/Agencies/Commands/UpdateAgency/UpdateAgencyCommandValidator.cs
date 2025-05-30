@@ -7,27 +7,24 @@ public class UpdateAgencyCommandValidator : AbstractValidator<UpdateAgencyComman
     public UpdateAgencyCommandValidator()
     {
         RuleFor(x => x.AgencyId)
-            .NotEqual(Guid.Empty)
-            .WithMessage("AgencyId cannot be empty.");
+           .NotEqual(Guid.Empty)
+           .WithMessage("AgencyId cannot be empty.");
+
+        RuleFor(x => x.Code).NotEmpty();
+        RuleFor(x => x.Name).NotEmpty();
+        RuleFor(x => x.Abbreviation).NotEmpty();
+        RuleFor(x => x.Address1).NotEmpty();
+        RuleFor(x => x.Phone).NotEmpty();
+        RuleFor(x => x.AccountingSheetName).NotEmpty();
+        RuleFor(x => x.AccountingAccountNumber).NotEmpty();
+        RuleFor(x => x.PostalCode).NotEmpty();
 
         RuleFor(x => x.Code)
-            .NotEmpty().WithMessage("Code is required.");
+            .Must(code => code.Length == 6 )
+            .WithMessage("Code must be exactly 6 digits.");
 
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.");
-
-        RuleFor(x => x.Abbreviation)
-            .NotEmpty().WithMessage("Abbreviation is required.");
-
-        RuleFor(x => x.Address1)
-            .NotEmpty().WithMessage("Address1 is required.");
-
-        RuleFor(x => x.Phone)
-            .NotEmpty().WithMessage("Phone is required.");
-
-        // Exclusive City/Sector check
         RuleFor(x => new { x.CityId, x.SectorId })
-            .Must(v => (v.CityId.HasValue ^ v.SectorId.HasValue))
+            .Must(v => v.CityId.HasValue ^ v.SectorId.HasValue)
             .WithMessage("Exactly one of CityId or SectorId must be supplied.");
     }
 }

@@ -5,29 +5,41 @@ namespace wfc.referential.Application.Agencies.Commands.UpdateAgency;
 
 public record UpdateAgencyCommand : ICommand<Result<bool>>
 {
-    public Guid AgencyId { get; set; }
+    public Guid AgencyId { get; init; }
 
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Abbreviation { get; set; } = string.Empty;
-    public string Address1 { get; set; } = string.Empty;
-    public string? Address2 { get; set; }
-    public string Phone { get; set; } = string.Empty;
-    public string Fax { get; set; } = string.Empty;
-    public string AccountingSheetName { get; set; } = string.Empty;
-    public string AccountingAccountNumber { get; set; } = string.Empty;
-    public string MoneyGramReferenceNumber { get; set; } = string.Empty;
-    public string MoneyGramPassword { get; set; } = string.Empty;
-    public string PostalCode { get; set; } = string.Empty;
-    public string PermissionOfficeChange { get; set; } = string.Empty;
-    public decimal? Latitude { get; set; }
-    public decimal? Longitude { get; set; }
-    public bool IsEnabled { get; set; } = true;
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Abbreviation { get; init; } = string.Empty;
 
-    public Guid? CityId { get; set; }
-    public Guid? SectorId { get; set; }
-    public Guid? AgencyTypeId { get; set; }
+    public string Address1 { get; init; } = string.Empty;
+    public string? Address2 { get; init; }
+    public string Phone { get; init; } = string.Empty;
+    public string Fax { get; init; } = string.Empty;
 
-    public string? SupportAccountId { get; set; }
-    public string? PartnerId { get; set; }
+    public string AccountingSheetName { get; init; } = string.Empty;
+    public string AccountingAccountNumber { get; init; } = string.Empty;
+
+    public string? ExpenseFundAccountingSheet { get; init; }
+    public string? ExpenseFundAccountNumber { get; init; }
+    public string? MadAccount { get; init; }
+
+    public string PostalCode { get; init; } = string.Empty;
+    public string? CashTransporter { get; init; }
+    public decimal? FundingThreshold { get; init; }
+
+    public decimal? Latitude { get; init; }
+    public decimal? Longitude { get; init; }
+
+    public Guid? CityId { get; init; }
+    public Guid? SectorId { get; init; }
+
+    public Guid? AgencyTypeId { get; init; }
+    public Guid? FundingTypeId { get; init; }
+    public Guid? TokenUsageStatusId { get; init; }
+
+    public Guid? PartnerId { get; init; }
+    public Guid? SupportAccountId { get; init; }
+
+    public bool? IsEnabled { get; init; }
+
 }

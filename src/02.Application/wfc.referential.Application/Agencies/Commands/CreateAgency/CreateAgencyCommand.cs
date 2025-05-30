@@ -14,17 +14,24 @@ public record CreateAgencyCommand : ICommand<Result<Guid>>
     public string Fax { get; init; } = string.Empty;
     public string AccountingSheetName { get; init; } = string.Empty;
     public string AccountingAccountNumber { get; init; } = string.Empty;
-    public string MoneyGramReferenceNumber { get; init; } = string.Empty;
-    public string MoneyGramPassword { get; init; } = string.Empty;
     public string PostalCode { get; init; } = string.Empty;
-    public string PermissionOfficeChange { get; init; } = string.Empty;
     public decimal? Latitude { get; init; }
     public decimal? Longitude { get; init; }
+
+    public string? ExpenseFundAccountingSheet { get; init; }
+    public string? ExpenseFundAccountNumber { get; init; }
+    public string? MadAccount { get; init; }
+
+    public string? CashTransporter { get; init; }
+    public decimal? FundingThreshold { get; init; }
 
     public Guid? CityId { get; init; }
     public Guid? SectorId { get; init; }
     public Guid? AgencyTypeId { get; init; }
 
-    public string? SupportAccountId { get; init; }
-    public string? PartnerId { get; init; }
+    public Guid? FundingTypeId { get; init; }
+
+    public Guid? TokenUsageStatusId { get; init; }
+    public Guid? PartnerId { get; init; }
+    public Guid? SupportAccountId { get; init; }
 }

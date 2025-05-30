@@ -5,7 +5,6 @@ namespace wfc.referential.Application.Agencies.Commands.DeleteAgency;
 
 public record DeleteAgencyCommand : ICommand<Result<bool>>
 {
-    public Guid AgencyId { get; }
+    public Guid AgencyId { get; init; }
 
-    public DeleteAgencyCommand(Guid agencyId) => AgencyId = agencyId;
 }

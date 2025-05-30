@@ -3,7 +3,9 @@ using wfc.referential.Application.Agencies.Dtos;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
+using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SectorAggregate;
+using wfc.referential.Domain.SupportAccountAggregate;
 
 namespace wfc.referential.Application.Agencies.Mappings;
 
@@ -28,9 +30,19 @@ public class AgencyMappings
             .NewConfig()
             .MapWith(src => src != null ? src.Value : null);
 
+        TypeAdapterConfig<PartnerId, Guid?>
+            .NewConfig()
+            .MapWith(src => src != null ? src.Value : null);
+
+        TypeAdapterConfig<SupportAccountId, Guid?>
+            .NewConfig()
+            .MapWith(src => src != null ? src.Value : null);
+
+
         TypeAdapterConfig<Agency, GetAgenciesResponse>
             .NewConfig()
             .Map(d => d.AgencyTypeLibelle, s => s.AgencyType != null ? s.AgencyType.TypeDefinition.Libelle : null)
             .Map(d => d.AgencyTypeValue, s => s.AgencyType != null ? s.AgencyType.Value : null);
+
     }
 }

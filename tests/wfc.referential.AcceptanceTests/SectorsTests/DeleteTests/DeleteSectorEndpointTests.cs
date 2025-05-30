@@ -79,10 +79,31 @@ public class DeleteSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
             "SEC001", "Test Sector", CityId.Of(Guid.NewGuid()));
 
         var linkedAgency = Agency.Create(
-            AgencyId.Of(Guid.NewGuid()),
-            "AGY001", "Test Agency", "AGY", "Address", null, "Phone", "Fax",
-            "Sheet", "Account", "MGRef", "MGPass", "12345", "Permission",
-            null, null, null, SectorId.Of(sectorId), null, null, null);
+            id: AgencyId.Of(Guid.NewGuid()),
+            code: "112233",
+            name: "Existing",
+            abbreviation: "EXI",
+            address1: "addr",
+            address2: null,
+            phone: "000",
+            fax: "",
+            accountingSheetName: "sheet",
+            accountingAccountNumber: "acc",
+            postalCode: "10000",
+            latitude: null,
+            longitude: null,
+            cashTransporter: null,
+            expenseFundAccountingSheet: null,
+            expenseFundAccountNumber: null,
+            madAccount: null,
+            fundingThreshold: null,
+            cityId: CityId.Of(Guid.NewGuid()),
+            sectorId: null,
+            agencyTypeId: null,
+            tokenUsageStatusId: null,
+            fundingTypeId: null,
+            partnerId: null,
+            supportAccountId: null);
 
         _sectorRepoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(id => id.Value == sectorId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sector);
@@ -190,10 +211,31 @@ public class DeleteSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         for (int i = 0; i < agencyCount; i++)
         {
             agencies.Add(Agency.Create(
-                AgencyId.Of(Guid.NewGuid()),
-                $"AGY{i:000}", $"Agency {i}", $"AG{i}", $"Address{i}", null, $"Phone{i}", $"Fax{i}",
-                $"Sheet{i}", $"Account{i}", $"MGRef{i}", $"MGPass{i}", $"{12345 + i}", $"Permission{i}",
-                null, null, null, SectorId.Of(sectorId), null, null, null));
+            id: AgencyId.Of(Guid.NewGuid()),
+            code: "112233",
+            name: "Existing",
+            abbreviation: "EXI",
+            address1: "addr",
+            address2: null,
+            phone: "000",
+            fax: "",
+            accountingSheetName: "sheet",
+            accountingAccountNumber: "acc",
+            postalCode: "10000",
+            latitude: null,
+            longitude: null,
+            cashTransporter: null,
+            expenseFundAccountingSheet: null,
+            expenseFundAccountNumber: null,
+            madAccount: null,
+            fundingThreshold: null,
+            cityId: CityId.Of(Guid.NewGuid()),
+            sectorId: null,
+            agencyTypeId: null,
+            tokenUsageStatusId: null,
+            fundingTypeId: null,
+            partnerId: null,
+            supportAccountId: null));
         }
 
         _sectorRepoMock.Setup(r => r.GetByIdAsync(It.Is<SectorId>(id => id.Value == sectorId), It.IsAny<CancellationToken>()))

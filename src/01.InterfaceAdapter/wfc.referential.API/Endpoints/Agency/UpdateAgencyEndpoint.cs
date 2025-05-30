@@ -20,7 +20,7 @@ public class UpdateAgencyEndpoint(IMediator _mediator)
             s.Description = "Updates the agency identified by {AgencyId} with supplied body fields.";
             s.Params["AgencyId"] = "Agency GUID (from route)";
 
-            s.Response<bool>(200, "Returns the updated AgencyId");
+            s.Response<bool>(200, "true on success");
             s.Response(400, "Validation or business rule failure");
             s.Response(500, "Unexpected server error");
             s.Response(409, "Conflict with an existing Agency");

@@ -19,6 +19,8 @@ public class CreateAgencyEndpoint(IMediator _mediator) : Endpoint<CreateAgencyRe
             s.Response<Guid>(200, "Identifier of the newly created agency");
             s.Response(400, "Validation failed");
             s.Response(500, "Unexpected server error");
+            s.Response(409, "Agency code already exists");
+
         });
         Options(o => o.WithTags(EndpointGroups.Agencies));
     }

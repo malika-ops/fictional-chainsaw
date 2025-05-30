@@ -265,32 +265,7 @@ public static class DbInitializer
                 context.SaveChanges();
             }
 
-            //var agencies = new List<Agency>();
-
-            //foreach (var ville in villes)
-            //{
-            //    switch (ville.Name)
-            //    {
-            //        case "Casablanca":
-            //            agencies.AddRange(new[]
-            //            {
-            //                new Agency(new AgencyId(Guid.NewGuid()),1601001000, "Wafacash Bahmad","casavoyageur, 234 Bd Ba Hmad, Casablanca 20300", ville.Id),
-            //                new Agency(new AgencyId(Guid.NewGuid()),1601001001, "Wafacash Place Des Commerces","5 Bd Mohamed El Hansali, Casablanca 20030", ville.Id),
-            //                new Agency(new AgencyId(Guid.NewGuid()),1601001002, "Av de Dakhla","N 294, Av. de Dakhla, Casablanca 20000" ,ville.Id),
-            //            });
-            //            break;
-            //    }
-            //}
-
-            ////Insérer toutes les agencies
-            //context.Agencies.AddRange(agencies);
-            //context.SaveChanges();
-
-
-            ////ADD to Redis Cache 
-            //var key = $"agency:{agencies.First().CityId.Value.ToString()}";
-            //await cacheService.SetAsync<List<AgencyDto>>(key, agencies.Select(a => a.Adapt<AgencyDto>()).ToList(), TimeSpan.FromHours(24));
-
+           
 
             //Mettre en cache les données référentielles
             var referentiel = context.Countries
@@ -302,89 +277,7 @@ public static class DbInitializer
             var rabat = villes.First(v => v.Name == "Rabat");
 
 
-            var agency1 = Agency.Create(
-                AgencyId.Of(Guid.NewGuid()),
-                code: "AGY-CAS-001",
-                name: "Wafacash Bahmad",
-                abbreviation: "BAHMAD",
-                address1: "234 Bd Ba Hmad, Casablanca",
-                address2: null,
-                phone: "+212522123456",
-                fax: "+212522654321",
-                accountingSheetName: "SHEET-001",
-                accountingAccountNumber: "401122",
-                moneyGramReferenceNumber: "MG-REF-1",
-                moneyGramPassword: "MG-PWD-1",
-                postalCode: "20300",
-                permissionOfficeChange: "AUTH-001",
-                latitude: 33.589886m,
-                longitude: -7.603869m,
-                cityId: casa.Id,
-                sectorId: null,
-                agencyTypeId: null,
-                supportAccountId: null,
-                partnerId: null);
-
-            var agency2 = Agency.Create(
-                AgencyId.Of(Guid.NewGuid()),
-                code: "AGY-RAB-001",
-                name: "Wafacash Siège",
-                abbreviation: "SIEGE",
-                address1: "5 Av Mohamed Diouri, Rabat",
-                address2: null,
-                phone: "+212537987654",
-                fax: "+212537123987",
-                accountingSheetName: "SHEET-002",
-                accountingAccountNumber: "401123",
-                moneyGramReferenceNumber: "MG-REF-2",
-                moneyGramPassword: "MG-PWD-2",
-                postalCode: "10000",
-                permissionOfficeChange: "AUTH-002",
-                latitude: 34.020882m,
-                longitude: -6.841650m,
-                cityId: rabat.Id,
-                sectorId: null,
-                agencyTypeId: null,
-                supportAccountId: null,
-                partnerId: null);
-
-            context.Agencies.AddRange(agency1, agency2);
-            context.SaveChanges();
-
-            //TIERS
-            var tierAMU = Tier.Create(
-                TierId.Of(Guid.NewGuid()),
-                name: "CodeAMU",
-                description: "Access multi-usage code");
-
-            var tierHB = Tier.Create(
-                TierId.Of(Guid.NewGuid()),
-                name: "CodeHissabBikhir",
-                description: "Hissab Bikhir access code");
-
-            context.Tiers.AddRange(tierAMU, tierHB);
-            context.SaveChanges();
-
-
-            // AGENCY-TIERS 
-            var at1 = AgencyTier.Create(
-                AgencyTierId.Of(Guid.NewGuid()),
-                agency1!.Id!, tierAMU!.Id!, "CAS-AMU-01", "CAS-AMU-01");
-
-            var at2 = AgencyTier.Create(
-                AgencyTierId.Of(Guid.NewGuid()),
-                agency1!.Id!, tierHB!.Id!, "CAS-HB-01", "CAS-AMU-01");
-
-            var at3 = AgencyTier.Create(
-                AgencyTierId.Of(Guid.NewGuid()),
-                agency2!.Id!, tierAMU!.Id!, "RAB-AMU-01", "CAS-AMU-01");
-
-            var at4 = AgencyTier.Create(
-                AgencyTierId.Of(Guid.NewGuid()),
-                agency2!.Id!, tierHB!.Id!, "RAB-HB-01", "CAS-AMU-01");
-
-            context.AgencyTiers.AddRange(at1, at2, at3, at4);
-            context.SaveChanges();
+            
 
             // TYPE-DEFINITION + PARAM-TYPES
             var agencyTypeDef = TypeDefinition.Create(
@@ -416,8 +309,6 @@ public static class DbInitializer
             var type3G = agencyTypeDef.ParamTypes.FirstOrDefault(p => p.Value == "3G");
             var typeStandard = agencyTypeDef.ParamTypes.FirstOrDefault(p => p.Value == "Standard");
 
-            //agency1.SetAgencyType(type3G!.Id!);
-            //agency2.SetAgencyType(typeStandard!.Id!);
             context.SaveChanges();
 
         }

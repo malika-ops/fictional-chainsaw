@@ -81,9 +81,31 @@ public class DeleteCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         _repoAgencyMock
             .Setup(c => c.GetByConditionAsync(It.IsAny<Expression<Func<Agency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Agency> {Agency.Create(
-                AgencyId.Of(Guid.NewGuid()), "AgenctName", "Old Agency", "OLD",
-                "addr", null, "phone", "", "sheet", "acc", "", "", "10000", "",
-                null, null,  null, null, null, null, null)});
+            id: AgencyId.Of(Guid.NewGuid()),
+            code: "112233",
+            name: "Existing",
+            abbreviation: "EXI",
+            address1: "addr",
+            address2: null,
+            phone: "000",
+            fax: "",
+            accountingSheetName: "sheet",
+            accountingAccountNumber: "acc",
+            postalCode: "10000",
+            latitude: null,
+            longitude: null,
+            cashTransporter: null,
+            expenseFundAccountingSheet: null,
+            expenseFundAccountNumber: null,
+            madAccount: null,
+            fundingThreshold: null,
+            cityId: CityId.Of(Guid.NewGuid()),
+            sectorId: null,
+            agencyTypeId: null,
+            tokenUsageStatusId: null,
+            fundingTypeId: null,
+            partnerId: null,
+            supportAccountId: null)});
 
         var response = await _client.DeleteAsync($"/api/cities/{cityId}");
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();

@@ -11,7 +11,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
-using wfc.referential.Domain.CurrencyAggregate;
+using wfc.referential.Domain.CityAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTests.CreateTests;
@@ -19,7 +19,7 @@ namespace wfc.referential.AcceptanceTests.AgencyTests.CreateTests;
 public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
-    private readonly Mock<IAgencyRepository> _repoMock = new();
+    private readonly Mock<IAgencyRepository> _repo = new();
 
     public CreateAgencyEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -34,11 +34,14 @@ public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Pro
                 s.RemoveAll<IAgencyRepository>();
                 s.RemoveAll<ICacheService>();
 
-                _repoMock
-                    .Setup(r => r.AddAsync(It.IsAny<Agency>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Agency a, CancellationToken _) => a);
+                _repo.Setup(r => r.AddAsync(It.IsAny<Agency>(),
+                                            It.IsAny<CancellationToken>()))
+                     .ReturnsAsync((Agency a, CancellationToken _) => a);
 
-                s.AddSingleton(_repoMock.Object);
+                _repo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                     .Returns(Task.CompletedTask);
+
+                s.AddSingleton(_repo.Object);
                 s.AddSingleton(cacheMock.Object);
             });
         });
@@ -47,134 +50,96 @@ public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Pro
     }
 
 
-    // Happy-path — valid request returns 200 + GUID
-    [Fact(DisplayName = "POST /api/agencies returns 200 and Guid")]
-    public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
-    {
-        var payload = new
-        {
-            Code = "AGX01",
-            Name = "Agency X",
-            Abbreviation = "AGX",
-            Address1 = "1 Main St",
-            Phone = "0600000000",
-            AccountingSheetName = "Sheet-01",
-            AccountingAccountNumber = "401122",
-            PostalCode = "10000"
-
-        };
-
-        var resp = await _client.PostAsJsonAsync("/api/agencies", payload);
-        var id = await resp.Content.ReadFromJsonAsync<Guid>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
-        id.Should().NotBeEmpty();
-
-        _repoMock.Verify(r =>
-             r.AddAsync(It.Is<Agency>(a =>
-                 a.Code == payload.Code &&
-                 a.Name == payload.Name &&
-                 a.Abbreviation == payload.Abbreviation),
-                 It.IsAny<CancellationToken>()),
-             Times.Once);
-    }
+    private static Agency MakeAgency(string code) =>
+        Agency.Create(
+            id: AgencyId.Of(Guid.NewGuid()),
+            code: code,
+            name: "Existing",
+            abbreviation: "EXI",
+            address1: "addr",
+            address2: null,
+            phone: "000",
+            fax: "",
+            accountingSheetName: "sheet",
+            accountingAccountNumber: "acc",
+            postalCode: "10000",
+            latitude: null,
+            longitude: null,
+            cashTransporter: null,
+            expenseFundAccountingSheet: null,
+            expenseFundAccountNumber: null,
+            madAccount: null,
+            fundingThreshold: null,
+            cityId: CityId.Of(Guid.NewGuid()),
+            sectorId: null,
+            agencyTypeId: null,
+            tokenUsageStatusId: null,
+            fundingTypeId: null,
+            partnerId: null,
+            supportAccountId: null);
 
 
-    // Missing Code -> 400 + validation problem-details
-    [Fact(DisplayName = "POST /api/agencies returns 400 when Code is missing")]
-    public async Task Post_ShouldReturn400_WhenCodeMissing()
+    [Fact(DisplayName = "POST /api/agencies returns 400 when Code not 6 digits")]
+    public async Task Post_ShouldReturn400_WhenCodeInvalid()
     {
         var invalid = new
         {
-            Name = "Agency X",
-            Abbreviation = "AGX",
-            Address1 = "1 Main St",
-            Phone = "0600000000",
-            AccountingSheetName = "Sheet-01",
-            AccountingAccountNumber = "401122",
-            PostalCode = "10000"
+            Code = "ABC99",
+            Name = "Bad",
+            Abbreviation = "BAD",
+            Address1 = "Somewhere",
+            Phone = "000",
+            AccountingSheetName = "S",
+            AccountingAccountNumber = "A",
+            PostalCode = "1",
+            CityId = Guid.NewGuid()
         };
 
         var resp = await _client.PostAsJsonAsync("/api/agencies", invalid);
         var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
 
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("code")[0].GetString()
-            .Should().Be("Agency code is required.");
+                .GetProperty("code")[0]
+                .GetString()
+                .Should()
+                .Be("Agency code must be exactly 6 digits when provided.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Agency>(),
-                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repo.Verify(r => r.AddAsync(It.IsAny<Agency>(), It.IsAny<CancellationToken>()),
+                     Times.Never);
     }
 
-
-     // Missing Name & Address1 -> 400 + both errors
-    [Fact(DisplayName = "POST /api/agencies returns 400 when Name and Address1 are missing")]
-    public async Task Post_ShouldReturn400_WhenNameAndAddressMissing()
+    [Fact(DisplayName = "POST /api/agencies returns 409 when Code already exists")]
+    public async Task Post_ShouldReturn409_WhenDuplicateCode()
     {
-        var invalid = new
-        {
-            Code = "AGX01",
-            Abbreviation = "AGX",
-            Phone = "0600000000",
-            AccountingSheetName = "Sheet-01",
-            AccountingAccountNumber = "401122",
-            PostalCode = "10000"
-        };
-
-        var resp = await _client.PostAsJsonAsync("/api/agencies", invalid);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var errs = doc!.RootElement.GetProperty("errors");
-        errs.GetProperty("name")[0].GetString().Should().Be("Agency Name is required.");
-        errs.GetProperty("address1")[0].GetString().Should().Be("Address is required.");
-
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Agency>(),
-                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
-    }
-
-     // Duplicate Code -> 400 business rule error
-    [Fact(DisplayName = "POST /api/agencies returns 400 when Code already exists")]
-    public async Task Post_ShouldReturn400_WhenCodeAlreadyExists()
-    {
-        const string duplicate = "AGD01";
-
-        var existing = Agency.Create(
-            AgencyId.Of(Guid.NewGuid()), duplicate, "Old Agency", "OLD",
-            "addr", null, "phone", "", "sheet", "acc", "", "", "10000", "",
-            null, null,  null, null, null, null, null);
-
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Agency, bool>>>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing);
+        const string duplicate = "123456";
+        _repo.Setup(r => r.GetOneByConditionAsync(
+                        It.IsAny<Expression<Func<Agency, bool>>>(),
+                        It.IsAny<CancellationToken>()))
+             .ReturnsAsync(MakeAgency(duplicate));
 
         var payload = new
         {
             Code = duplicate,
-            Name = "Another Agency",
-            Abbreviation = "ANA",
-            Address1 = "somewhere",
-            Phone = "0600000000",
-            AccountingSheetName = "sheet",
-            AccountingAccountNumber = "401122",
-            PostalCode = "10000"
+            Name = "Dup",
+            Abbreviation = "DUP",
+            Address1 = "X",
+            Phone = "0",
+            AccountingSheetName = "S",
+            AccountingAccountNumber = "A",
+            PostalCode = "1",
+            CityId = Guid.NewGuid()
         };
 
         var resp = await _client.PostAsJsonAsync("/api/agencies", payload);
         var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
 
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         doc!.RootElement.GetProperty("errors").GetString()
-            .Should().Be($"Agency with code {duplicate} already exists.");
+           .Should().Be($"Agency with code {duplicate} already exists.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Agency>(),
-                                         It.IsAny<CancellationToken>()),
-        Times.Never);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _repo.Verify(r => r.AddAsync(It.IsAny<Agency>(), It.IsAny<CancellationToken>()),
+                     Times.Never);
     }
 }

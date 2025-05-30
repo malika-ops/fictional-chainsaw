@@ -16,7 +16,14 @@ public class GetAllAgenciesHandler
     public async Task<PagedResult<GetAgenciesResponse>> Handle(
         GetAllAgenciesQuery agencyQuery, CancellationToken ct)
     {
-        var agencies = await _repo.GetPagedByCriteriaAsync(agencyQuery, agencyQuery.PageNumber, agencyQuery.PageSize, ct);
-        return new PagedResult<GetAgenciesResponse>(agencies.Items.Adapt< List<GetAgenciesResponse>>(), agencies.TotalCount, agencies.PageNumber, agencies.PageSize);
+
+        var page = await _repo.GetPagedByCriteriaAsync(agencyQuery, agencyQuery.PageNumber, agencyQuery.PageSize, ct);
+
+        return new PagedResult<GetAgenciesResponse>(
+            page.Items.Adapt<List<GetAgenciesResponse>>(),
+            page.TotalCount,
+            page.PageNumber,
+            page.PageSize);
+
     }
 }

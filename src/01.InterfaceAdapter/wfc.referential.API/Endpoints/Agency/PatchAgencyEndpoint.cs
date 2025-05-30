@@ -21,7 +21,7 @@ public class PatchAgencyEndpoint(IMediator _mediator)
                 "Updates only the supplied fields for the agency identified by {AgencyId}.";
             s.Params["AgencyId"] = "Agency GUID from route";
 
-            s.Response<bool>(200, "Returns updated AgencyId");
+            s.Response<bool>(200, "true on success");
             s.Response(400, "Validation / business rule failure");
             s.Response(404, "Agency not found");
             s.Response(409, "Conflict with an existing Agency");

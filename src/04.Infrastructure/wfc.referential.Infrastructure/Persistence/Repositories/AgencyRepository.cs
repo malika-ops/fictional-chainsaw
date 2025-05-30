@@ -7,7 +7,7 @@ namespace wfc.referential.Infrastructure.Persistence.Repositories;
 
 public class AgencyRepository : BaseRepository<Agency, AgencyId>, IAgencyRepository
 {
-    
+
     public AgencyRepository(ApplicationDbContext dbContext) : base(dbContext)
     {
     }

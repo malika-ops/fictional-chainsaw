@@ -17,14 +17,19 @@ public record GetAllAgenciesQuery : IQuery<PagedResult<GetAgenciesResponse>>
     public string? Fax { get; init; }
     public string? AccountingSheetName { get; init; }
     public string? AccountingAccountNumber { get; init; }
-    public string? MoneyGramReferenceNumber { get; init; }
     public string? PostalCode { get; init; }
+    public string? CashTransporter { get; init; }
+    public decimal? FundingThreshold { get; init; }
 
     public Guid? CityId { get; init; }
     public Guid? SectorId { get; init; }
+
     public Guid? AgencyTypeId { get; init; }
     public string? AgencyTypeValue { get; init; }
     public string? AgencyTypeLibelle { get; init; }
+
+    public Guid? FundingTypeId { get; init; }
+    public Guid? TokenUsageStatusId { get; init; }
 
     public bool? IsEnabled { get; init; } = true;
 }

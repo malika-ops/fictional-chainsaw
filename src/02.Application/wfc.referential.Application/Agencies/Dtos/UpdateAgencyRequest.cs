@@ -4,10 +4,11 @@ namespace wfc.referential.Application.Agencies.Dtos;
 
 public record UpdateAgencyRequest
 {
-    /// <summary>Agency GUID (taken from the route).</summary>
+
+    /// <summary>Agency GUID (from route).</summary>
     [Required] public Guid AgencyId { get; init; }
 
-    /// <summary>Unique agency code.</summary>
+    /// <summary>Agency code – exactly 6 digits.</summary>
     [Required] public string Code { get; init; } = string.Empty;
 
     /// <summary>Display name.</summary>
@@ -16,10 +17,10 @@ public record UpdateAgencyRequest
     /// <summary>Short abbreviation.</summary>
     [Required] public string Abbreviation { get; init; } = string.Empty;
 
-    /// <summary>Primary street address.</summary>
+    /// <summary>Primary address line.</summary>
     [Required] public string Address1 { get; init; } = string.Empty;
 
-    /// <summary>Optional secondary address.</summary>
+    /// <summary>Secondary address line (optional).</summary>
     public string? Address2 { get; init; }
 
     /// <summary>Phone number.</summary>
@@ -29,27 +30,33 @@ public record UpdateAgencyRequest
     public string Fax { get; init; } = string.Empty;
 
     /// <summary>Accounting sheet name.</summary>
-    public string AccountingSheetName { get; init; } = string.Empty;
+    [Required] public string AccountingSheetName { get; init; } = string.Empty;
 
     /// <summary>Accounting account number.</summary>
-    public string AccountingAccountNumber { get; init; } = string.Empty;
+    [Required] public string AccountingAccountNumber { get; init; } = string.Empty;
 
-    /// <summary>MoneyGram reference number.</summary>
-    public string MoneyGramReferenceNumber { get; init; } = string.Empty;
+    /// <summary>Sheet name for expense fund (optional).</summary>
+    public string? ExpenseFundAccountingSheet { get; init; }
 
-    /// <summary>MoneyGram password (encrypted at rest).</summary>
-    public string MoneyGramPassword { get; init; } = string.Empty;
+    /// <summary>Account number for expense fund (optional).</summary>
+    public string? ExpenseFundAccountNumber { get; init; }
+
+    /// <summary>MAD (dirham) account identifier (optional).</summary>
+    public string? MadAccount { get; init; }
 
     /// <summary>Postal / ZIP code.</summary>
-    public string PostalCode { get; init; } = string.Empty;
+    [Required] public string PostalCode { get; init; } = string.Empty;
 
-    /// <summary>Permission office change reference.</summary>
-    public string PermissionOfficeChange { get; init; } = string.Empty;
+    /// <summary>Name of the cash-transport provider (optional).</summary>
+    public string? CashTransporter { get; init; }
 
-    /// <summary>Latitude in decimal degrees.</summary>
+    /// <summary>Threshold amount (optional).</summary>
+    public decimal? FundingThreshold { get; init; }
+
+    /// <summary>Latitude in decimal degrees (optional).</summary>
     public decimal? Latitude { get; init; }
 
-    /// <summary>Longitude in decimal degrees.</summary>
+    /// <summary>Longitude in decimal degrees (optional).</summary>
     public decimal? Longitude { get; init; }
 
     /// <summary>City identifier (mutually exclusive with SectorId).</summary>
@@ -58,15 +65,22 @@ public record UpdateAgencyRequest
     /// <summary>Sector identifier (mutually exclusive with CityId).</summary>
     public Guid? SectorId { get; init; }
 
-    /// <summary>Agency-type ParamType identifier.</summary>
+    /// <summary>Agency-type ParamType identifier (optional).</summary>
     public Guid? AgencyTypeId { get; init; }
 
-    /// <summary>External support-account Id.</summary>
-    public string? SupportAccountId { get; init; }
+    /// <summary>Funding-type ParamType identifier (optional).</summary>
+    public Guid? FundingTypeId { get; init; }
 
-    /// <summary>External partner Id.</summary>
-    public string? PartnerId { get; init; }
+    /// <summary>Token-usage-status ParamType identifier (optional).</summary>
+    public Guid? TokenUsageStatusId { get; init; }
 
-    /// <summary>Agency status (enabled/disabled).</summary>
+    /// <summary>Partner identifier (optional).</summary>
+    public Guid? PartnerId { get; init; }
+
+    /// <summary>Support account identifier (optional).</summary>
+    public Guid? SupportAccountId { get; init; }
+
+    /// <summary>Enable / disable the agency.</summary>
     public bool? IsEnabled { get; init; } = true;
+
 }

@@ -13,5 +13,13 @@ public class PatchAgencyCommandValidator : AbstractValidator<PatchAgencyCommand>
         RuleFor(x => new { x.CityId, x.SectorId })
           .Must(v => !(v.CityId.HasValue && v.SectorId.HasValue))
           .WithMessage("CityId and SectorId are mutually exclusive.");
+
+        When(x => !string.IsNullOrWhiteSpace(x.Code), () =>
+        {
+            RuleFor(x => x.Code!)
+                .Length(6)
+                .WithMessage("Agency code must be exactly 6 digits when provided.");
+        });
+
     }
 }

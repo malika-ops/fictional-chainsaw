@@ -6,9 +6,6 @@ public class CreateAgencyValidator : AbstractValidator<CreateAgencyCommand>
 {
     public CreateAgencyValidator()
     {
-
-        RuleFor(x => x.Code).NotEmpty()
-            .WithMessage("Agency code is required.");
         RuleFor(x => x.Name).NotEmpty()
             .WithMessage("Agency Name is required.");
         RuleFor(x => x.Abbreviation).NotEmpty()
@@ -23,6 +20,18 @@ public class CreateAgencyValidator : AbstractValidator<CreateAgencyCommand>
             .WithMessage("Accounting account number is required.");
         RuleFor(x => x.PostalCode).NotEmpty()
             .WithMessage("Postal code is required.");
+
+        When(x => !string.IsNullOrWhiteSpace(x.Code), () =>
+        {
+            RuleFor(x => x.Code!)
+                .Length(6)
+                .WithMessage("Agency code must be exactly 6 digits when provided.");
+        });
+
+        /* Exactly one of CityId / SectorId must be filled */
+        RuleFor(x => new { x.CityId, x.SectorId })
+            .Must(link => link.CityId.HasValue ^ link.SectorId.HasValue)
+            .WithMessage("Either CityId or SectorId must be provided (but not both).");
 
     }
 }
