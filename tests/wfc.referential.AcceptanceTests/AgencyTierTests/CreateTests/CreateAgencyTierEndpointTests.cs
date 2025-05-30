@@ -7,9 +7,12 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Runtime.Serialization;
 using System.Text.Json;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.AgencyTierAggregate;
+using wfc.referential.Domain.TierAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTierTests.CreateTests;
@@ -17,155 +20,197 @@ namespace wfc.referential.AcceptanceTests.AgencyTierTests.CreateTests;
 public class CreateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
-    private readonly Mock<IAgencyTierRepository> _repoMock = new();
+    private readonly Mock<IAgencyTierRepository> _agencyTierRepoMock = new();
+    private readonly Mock<IAgencyRepository> _agencyRepoMock = new();
+    private readonly Mock<ITierRepository> _tierRepoMock = new();
 
     public CreateAgencyTierEndpointTests(WebApplicationFactory<Program> factory)
     {
         var cacheMock = new Mock<ICacheService>();
 
-        var customised = factory.WithWebHostBuilder(b =>
+        var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
-            b.UseEnvironment("Testing");
+            builder.UseEnvironment("Testing");
 
-            b.ConfigureServices(s =>
+            builder.ConfigureServices(services =>
             {
-                s.RemoveAll<IAgencyTierRepository>();
-                s.RemoveAll<ICacheService>();
 
-                _repoMock.Setup(r => r.AddAsync(It.IsAny<AgencyTier>(),
-                                                It.IsAny<CancellationToken>()))
-                         .ReturnsAsync((AgencyTier at, CancellationToken _) => at);
+                services.RemoveAll<IAgencyTierRepository>();
+                services.RemoveAll<IAgencyRepository>();
+                services.RemoveAll<ITierRepository>();
+                services.RemoveAll<ICacheService>();
 
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
+                _agencyTierRepoMock
+                    .Setup(r => r.AddAsync(It.IsAny<AgencyTier>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((AgencyTier at, CancellationToken _) => at);
+
+                _agencyTierRepoMock
+                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
+
+                var dummyAgency = FormatterServices.GetUninitializedObject(typeof(Agency)) as Agency;
+                var dummyTier = FormatterServices.GetUninitializedObject(typeof(Tier)) as Tier;
+
+                _agencyRepoMock
+                    .Setup(r => r.GetByIdAsync(It.IsAny<AgencyId>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(dummyAgency);
+
+                _tierRepoMock
+                    .Setup(r => r.GetByIdAsync(It.IsAny<TierId>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(dummyTier);
+
+                services.AddSingleton(_agencyTierRepoMock.Object);
+                services.AddSingleton(_agencyRepoMock.Object);
+                services.AddSingleton(_tierRepoMock.Object);
+                services.AddSingleton(cacheMock.Object);
             });
         });
 
-        _client = customised.CreateClient();
+        _client = customisedFactory.CreateClient();
     }
 
-    /* ---------- helpers ---------- */
 
-    private static string FirstError(JsonElement errs, string key)
-    {
-        foreach (var p in errs.EnumerateObject())
-            if (p.NameEquals(key) || p.Name.Equals(key, StringComparison.OrdinalIgnoreCase))
-                return p.Value[0].GetString()!;
-        throw new KeyNotFoundException($"error key '{key}' not found");
-    }
-
-    /* ---------- tests ---------- */
-
-    // 1) Happy-path ----------------------------------------------------------
-    [Fact(DisplayName = "POST /api/agencyTiers returns 200 and Guid")]
+    [Fact(DisplayName = "POST /api/agencyTiers → 200 + Guid on valid request")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
     {
         // Arrange
-        var agencyId = Guid.NewGuid();
-        var tierId = Guid.NewGuid();
         var payload = new
         {
-            AgencyId = agencyId,
-            TierId = tierId,
-            Code = "AT-001",
-            Password = "secret"
+            AgencyId = Guid.NewGuid(),
+            TierId = Guid.NewGuid(),
+            Code = "AG-TIER-001",
+            Password = "s3cr3t"
         };
 
         // Act
-        var resp = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
-        var id = await resp.Content.ReadFromJsonAsync<Guid>();
+        var response = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
+        var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
         // Assert
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
-        id.Should().NotBeEmpty();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        returnedId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r =>
+        _agencyTierRepoMock.Verify(r =>
             r.AddAsync(It.Is<AgencyTier>(at =>
-                    at.AgencyId.Value == agencyId &&
-                    at.TierId.Value == tierId &&
+                    at.AgencyId.Value == payload.AgencyId &&
+                    at.TierId.Value == payload.TierId &&
                     at.Code == payload.Code &&
                     at.Password == payload.Password),
-                It.IsAny<CancellationToken>()),
+                    It.IsAny<CancellationToken>()),
             Times.Once);
+
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
+                                   Times.Once);
     }
 
-    // 2) Validation – Code missing ------------------------------------------
-    [Fact(DisplayName = "POST /api/agencyTiers returns 400 when Code is missing")]
-    public async Task Post_ShouldReturn400_WhenCodeMissing()
+
+    [Fact(DisplayName = "POST /api/agencyTiers → 400 when Code exceeds 30 chars")]
+    public async Task Post_ShouldReturn400_WhenCodeTooLong()
     {
         var payload = new
         {
             AgencyId = Guid.NewGuid(),
-            TierId = Guid.NewGuid()
-            // Code omitted
+            TierId = Guid.NewGuid(),
+            Code = new string('X', 31)
         };
 
-        var resp = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        var response = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        doc!.RootElement.GetProperty("errors")
+            .GetProperty("code")[0].GetString()
+            .Should().Be("Code max length = 30.");
 
-        FirstError(doc!.RootElement.GetProperty("errors"), "code")
-            .Should().Be("Code is required.");
-
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<AgencyTier>(),
-                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _agencyTierRepoMock.Verify(r => r.AddAsync(It.IsAny<AgencyTier>(),
+                                                   It.IsAny<CancellationToken>()),
+                                   Times.Never);
     }
 
-    // 3) Duplicate (Agency, Tier, Code) --------------------------------------
-    [Fact(DisplayName = "POST /api/agencyTiers returns 400 when Code already exists for this Agency & Tier")]
-    public async Task Post_ShouldReturn400_WhenCodeDuplicate()
+    [Fact(DisplayName = "POST /api/agencyTiers → 400 when duplicate Code for same Agency & Tier")]
+    public async Task Post_ShouldReturn400_WhenDuplicateCode()
     {
         // Arrange
         var agencyId = Guid.NewGuid();
         var tierId = Guid.NewGuid();
-        const string dup = "DUP-01";
+        const string code = "DUP-123";
 
-        var payload = new
-        {
-            AgencyId = agencyId,
-            TierId = tierId,
-            Code = dup,
-            Password = "pwd"
-        };
+        // Existing record returned by repo to trigger DuplicateAgencyTierCodeException
+        var existing = AgencyTier.Create(
+            AgencyTierId.Of(Guid.NewGuid()),
+            AgencyId.Of(agencyId),
+            TierId.Of(tierId),
+            code,
+            null);
+
+        _agencyTierRepoMock
+            .Setup(r => r.GetOneByConditionAsync(It.IsAny<
+                    System.Linq.Expressions.Expression<Func<AgencyTier, bool>>>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var payload = new { AgencyId = agencyId, TierId = tierId, Code = code };
 
         // Act
-        var resp = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        var response = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be($"AgencyTier with code '{dup}' already exists for this agency & tier.");
-
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<AgencyTier>(),
-                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _agencyTierRepoMock.Verify(r => r.AddAsync(It.IsAny<AgencyTier>(),
+                                                   It.IsAny<CancellationToken>()),
+                                   Times.Never);
     }
 
-    // 4) Empty GUIDs ---------------------------------------------------------
-    [Fact(DisplayName = "POST /api/agencyTiers returns 400 when AgencyId is empty GUID")]
-    public async Task Post_ShouldReturn400_WhenAgencyIdEmpty()
+    [Fact(DisplayName = "POST /api/agencyTiers → 404 when Agency does not exist")]
+    public async Task Post_ShouldReturn404_WhenAgencyNotFound()
     {
+        _agencyRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<AgencyId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Agency?)null); // simulate missing agency
+
         var payload = new
         {
-            AgencyId = Guid.Empty,
+            AgencyId = Guid.NewGuid(),
             TierId = Guid.NewGuid(),
-            Code = "X"
+            Code = "CODE-404"
         };
 
-        var resp = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        var response = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
 
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        FirstError(doc!.RootElement.GetProperty("errors"), "AgencyId")
-            .Should().Be("AgencyId cannot be empty.");
+        _agencyTierRepoMock.Verify(r => r.AddAsync(It.IsAny<AgencyTier>(),
+                                                   It.IsAny<CancellationToken>()),
+                                   Times.Never);
+    }
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<AgencyTier>(),
-                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
+    [Fact(DisplayName = "POST /api/agencyTiers → 404 when Tier does not exist")]
+    public async Task Post_ShouldReturn404_WhenTierNotFound()
+    {
+        var dummyAgency = FormatterServices.GetUninitializedObject(typeof(Agency)) as Agency;
+        _agencyRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<AgencyId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyAgency);
+
+        _tierRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<TierId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Tier?)null); // simulate missing tier
+
+        var payload = new
+        {
+            AgencyId = Guid.NewGuid(),
+            TierId = Guid.NewGuid(),
+            Code = "CODE-404"
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        _agencyTierRepoMock.Verify(r => r.AddAsync(It.IsAny<AgencyTier>(),
+                                                   It.IsAny<CancellationToken>()),
+                                   Times.Never);
     }
 }

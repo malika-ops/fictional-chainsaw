@@ -9,9 +9,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.AgencyTierAggregate;
-using wfc.referential.Domain.TierAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTierTests.DeleteTests;
@@ -19,90 +17,132 @@ namespace wfc.referential.AcceptanceTests.AgencyTierTests.DeleteTests;
 public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
-    private readonly Mock<IAgencyTierRepository> _repoMock = new();
+    private readonly Mock<IAgencyTierRepository> _agencyTierRepoMock = new();
 
     public DeleteAgencyTierEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
+        var cacheMock = new Mock<ICacheService>();  
 
-        var customised = factory.WithWebHostBuilder(b =>
+        var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
-            b.UseEnvironment("Testing");
+            builder.UseEnvironment("Testing");
 
-            b.ConfigureServices(s =>
+            builder.ConfigureServices(services =>
             {
-                s.RemoveAll<IAgencyTierRepository>();
-                s.RemoveAll<ICacheService>();
+                services.RemoveAll<IAgencyTierRepository>();
+                services.RemoveAll<ICacheService>();
 
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
+                _agencyTierRepoMock
+                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
+
+                services.AddSingleton(_agencyTierRepoMock.Object);
+                services.AddSingleton(cacheMock.Object);
             });
         });
 
-        _client = customised.CreateClient();
+        _client = customisedFactory.CreateClient();
     }
 
-    /* ---------- helpers ---------- */
-
-    private static string FirstError(JsonElement errs, string key)
-    {
-        foreach (var p in errs.EnumerateObject())
-            if (p.NameEquals(key) || p.Name.Equals(key, StringComparison.OrdinalIgnoreCase))
-                return p.Value[0].GetString()!;
-        throw new KeyNotFoundException($"error key '{key}' not found");
-    }
-
-    /* ---------- tests ---------- */
-
-    [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 200 when deletion succeeds")]
-    public async Task Delete_ShouldReturn200_WhenSuccessful()
+    [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 200 when AgencyTier exists")]
+    public async Task Delete_ShouldReturn200_WhenAgencyTierExists()
     {
         // Arrange
-        var id = Guid.NewGuid();
-        var agencyId = Guid.NewGuid();
-        var tierId = Guid.NewGuid();
-       
+        var agencyTierId = new AgencyTierId(Guid.NewGuid());
+        var agencyId = new Domain.AgencyAggregate.AgencyId(Guid.NewGuid());
+        var tierId = new Domain.TierAggregate.TierId(Guid.NewGuid());
+
+        var agencyTier = AgencyTier.Create(
+                            agencyTierId,
+                            agencyId,
+                            tierId,
+                            code: "A12345",
+                            password: null);
+
+        _agencyTierRepoMock
+            .Setup(r => r.GetByIdAsync(agencyTierId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(agencyTier);
+
+        AgencyTier? capturedTier = null;
+        _agencyTierRepoMock
+            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => capturedTier = agencyTier)
+            .Returns(Task.CompletedTask);
 
         // Act
-        var resp = await _client.DeleteAsync($"/api/agencyTiers/{id}");
-        var success = await resp.Content.ReadFromJsonAsync<bool>();
+        var response = await _client.DeleteAsync($"/api/agencyTiers/{agencyTierId.Value}");
+        var body = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
-        success.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.Should().BeTrue();
+
+        capturedTier!.IsEnabled.Should().BeFalse();     
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 400 when id is empty GUID")]
-    public async Task Delete_ShouldReturn400_WhenIdEmpty()
+    [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 404 when AgencyTier does not exist")]
+    public async Task Delete_ShouldReturn404_WhenAgencyTierNotFound()
     {
+        // Arrange
+        var nonExistingId = new AgencyTierId(Guid.NewGuid());
+
+        _agencyTierRepoMock
+            .Setup(r => r.GetByIdAsync(nonExistingId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AgencyTier?)null);
+
         // Act
-        var resp = await _client.DeleteAsync("/api/agencyTiers/00000000-0000-0000-0000-000000000000");
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        var response = await _client.DeleteAsync($"/api/agencyTiers/{nonExistingId.Value}");
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        FirstError(doc!.RootElement.GetProperty("errors"), "AgencyTierId")
+        var root = doc!.RootElement;
+        root.GetProperty("title").GetString().Should().Be("Resource Not Found");
+        root.GetProperty("status").GetInt32().Should().Be(404);
+
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 400 when AgencyTierId is empty GUID")]
+    public async Task Delete_ShouldReturn400_WhenAgencyTierIdIsEmptyGuid()
+    {
+        // Arrange
+        var emptyGuid = Guid.Empty;
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/agencyTiers/{emptyGuid}");
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var root = doc!.RootElement;
+        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("status").GetInt32().Should().Be(400);
+
+        root.GetProperty("errors")
+            .GetProperty("agencyTierId")[0].GetString()
             .Should().Be("AgencyTierId must be a non-empty GUID.");
+
+        _agencyTierRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<AgencyTierId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 400 when AgencyTier not found")]
-    public async Task Delete_ShouldReturn400_WhenEntityMissing()
+    [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 400 when AgencyTierId is malformed")]
+    public async Task Delete_ShouldReturn400_WhenAgencyTierIdIsMalformed()
     {
         // Arrange
-        var id = Guid.NewGuid();
-        _repoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((AgencyTier?)null);
+        const string malformedId = "not-a-valid-guid";
 
         // Act
-        var resp = await _client.DeleteAsync($"/api/agencyTiers/{id}");
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        var response = await _client.DeleteAsync($"/api/agencyTiers/{malformedId}");
 
         // Assert
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors").GetString()
-            .Should().Be("AgencyTier not found.");
-
+        _agencyTierRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<AgencyTierId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

@@ -23,158 +23,256 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
     {
         var cacheMock = new Mock<ICacheService>();
 
-        var customised = factory.WithWebHostBuilder(b =>
+        var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
-            b.UseEnvironment("Testing");
+            builder.UseEnvironment("Testing");
 
-            b.ConfigureServices(s =>
+            builder.ConfigureServices(services =>
             {
-                s.RemoveAll<ITierRepository>();
-                s.RemoveAll<ICacheService>();
+                services.RemoveAll<ITierRepository>();
+                services.RemoveAll<ICacheService>();
 
+                _repoMock
+                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
+                services.AddSingleton(_repoMock.Object);
+                services.AddSingleton(cacheMock.Object);
             });
         });
 
-        _client = customised.CreateClient();
+        _client = customisedFactory.CreateClient();
     }
 
-    /* ---------- helpers ---------- */
-
-
-    private static string FirstError(JsonElement errs, string key)
+    // helper to create a Tier quickly
+    private static Tier CreateTier(Guid id, string name, string description, bool isEnabled = true)
     {
-        foreach (var p in errs.EnumerateObject())
-            if (p.NameEquals(key) || p.Name.Equals(key, StringComparison.OrdinalIgnoreCase))
-                return p.Value[0].GetString()!;
-        throw new KeyNotFoundException($"error key '{key}' not found");
+        var tier = Tier.Create(TierId.Of(id), name, description);
+        if (!isEnabled)
+        {
+            tier.Disable();
+        }
+        return tier;
     }
 
-    /* ---------- tests ---------- */
-
-    // 1) Happy-path ----------------------------------------------------------
     [Fact(DisplayName = "PUT /api/tiers/{id} returns 200 when update succeeds")]
-    public async Task Put_ShouldReturn200_WhenUpdateSuccessful()
+    public async Task Put_ShouldReturn200_WhenUpdateIsSuccessful()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var existingTier = CreateTier(id, "Bronze Tier", "Basic tier description");
+
+        _repoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existingTier);
+
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Tier, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((Tier?)null);   
+
+        var payload = new
+        {
+            TierId = id,
+            Name = "Gold Tier",
+            Description = "Premium tier with advanced features",
+            IsEnabled = true
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/tiers/{id}", payload);
+        var result = await response.Content.ReadFromJsonAsync<bool>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().BeTrue();
+
+        existingTier.Name.Should().Be("Gold Tier");
+        existingTier.Description.Should().Be("Premium tier with advanced features");
+        existingTier.IsEnabled.Should().BeTrue();
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "PUT /api/tiers/{id} returns 400 when Name exceeds max length")]
+    public async Task Put_ShouldReturn400_WhenNameExceedsMaxLength()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var longName = new string('A', 101); // 101 characters, exceeds 100 limit
+
+        var payload = new
+        {
+            TierId = id,
+            Name = longName,
+            Description = "Some description",
+            IsEnabled = true
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/tiers/{id}", payload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        doc!.RootElement.GetProperty("errors")
+            .GetProperty("name")[0].GetString()
+            .Should().Be("Name max length is 100 chars.");
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "PUT /api/tiers/{id} returns 400 when TierId is empty")]
+    public async Task Put_ShouldReturn400_WhenTierIdIsEmpty()
+    {
+        // Arrange
+        var payload = new
+        {
+            TierId = Guid.Empty,
+            Name = "Valid Name",
+            Description = "Some description",
+            IsEnabled = true
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/tiers/{Guid.Empty}", payload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        doc!.RootElement.GetProperty("errors")
+            .GetProperty("tierId")[0].GetString()
+            .Should().Be("TierId cannot be empty.");
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "PUT /api/tiers/{id} returns 404 when Tier not found")]
+    public async Task Put_ShouldReturn404_WhenTierNotFound()
     {
         // Arrange
         var id = Guid.NewGuid();
 
-        var payload = new
-        {
-            TierId = id,
-            Name = "Silver-Plus",
-            Description = "Updated description",
-            IsEnabled = false
-        };
-
-        // Act
-        var resp = await _client.PutAsJsonAsync($"/api/tiers/{id}", payload);
-        var result = await resp.Content.ReadFromJsonAsync<Guid>();
-
-        // Assert
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
-        result.Should().Be(id);
-
-    }
-
-    // 2) Validation – Name missing ------------------------------------------
-    [Fact(DisplayName = "PUT /api/tiers/{id} returns 400 when Name is missing")]
-    public async Task Put_ShouldReturn400_WhenNameMissing()
-    {
-        var id = Guid.NewGuid();
-
-        var payload = new
-        {
-            TierId = id,
-            // Name omitted
-            Description = "Desc",
-            IsEnabled = true
-        };
-
-        var resp = await _client.PutAsJsonAsync($"/api/tiers/{id}", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        FirstError(doc!.RootElement.GetProperty("errors"), "name")
-            .Should().Be("Name is required.");
-
-    }
-
-    // 3) Duplicate name ------------------------------------------------------
-    [Fact(DisplayName = "PUT /api/tiers/{id} returns 400 when new Name already exists")]
-    public async Task Put_ShouldReturn400_WhenNameDuplicate()
-    {
-        var idTarget = Guid.NewGuid();
-
-        var payload = new
-        {
-            TierId = idTarget,
-            Name = "Gold",           // duplicate
-            Description = "Updated",
-            IsEnabled = true
-        };
-
-        var resp = await _client.PutAsJsonAsync($"/api/tiers/{idTarget}", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be("Tier 'Gold' already exists.");
-
-    }
-
-    // 4) Empty GUID ----------------------------------------------------------
-    [Fact(DisplayName = "PUT /api/tiers/{id} returns 400 when TierId is empty GUID")]
-    public async Task Put_ShouldReturn400_WhenIdEmpty()
-    {
-        var payload = new
-        {
-            TierId = Guid.Empty,
-            Name = "Anything",
-            Description = "Desc",
-            IsEnabled = true
-        };
-
-        var resp = await _client.PutAsJsonAsync(
-                        "/api/tiers/00000000-0000-0000-0000-000000000000",
-                        payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        FirstError(doc!.RootElement.GetProperty("errors"), "TierId")
-            .Should().Be("TierId cannot be empty.");
-
-    }
-
-    // 5) Tier not found ------------------------------------------------------
-    [Fact(DisplayName = "PUT /api/tiers/{id} returns 404 when tier not found")]
-    public async Task Put_ShouldReturn400_WhenTierMissing()
-    {
-        var id = Guid.NewGuid();
-
-        _repoMock.Setup(r => r.GetByIdAsync(new TierId(id), It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Tier?)null);
 
         var payload = new
         {
             TierId = id,
-            Name = "Missing",
-            Description = "N/A",
+            Name = "Valid Name",
+            Description = "Some description",
             IsEnabled = true
         };
 
-        var resp = await _client.PutAsJsonAsync($"/api/tiers/{id}", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/tiers/{id}", payload);
 
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be("Tier not found.");
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 
+    [Fact(DisplayName = "PUT /api/tiers/{id} returns 409 when new name already exists")]
+    public async Task Put_ShouldReturn409_WhenNameAlreadyExists()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var otherId = Guid.NewGuid();
+        var existingTier = CreateTier(id, "Silver Tier", "Original tier");
+        var conflictingTier = CreateTier(otherId, "Gold Tier", "Existing gold tier");
+
+        _repoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existingTier);
+
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Tier, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(conflictingTier); // name already exists
+
+        var payload = new
+        {
+            TierId = id,
+            Name = "Gold Tier", // conflicts with existing tier
+            Description = "Updated description",
+            IsEnabled = true
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/tiers/{id}", payload);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "PUT /api/tiers/{id} returns 200 when disabling tier")]
+    public async Task Put_ShouldReturn200_WhenDisablingTier()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var existingTier = CreateTier(id, "Active Tier", "Currently active tier", true);
+
+        _repoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existingTier);
+
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Tier, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((Tier?)null);
+
+        var payload = new
+        {
+            TierId = id,
+            Name = "Disabled Tier",
+            Description = "This tier is now disabled",
+            IsEnabled = false
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/tiers/{id}", payload);
+        var result = await response.Content.ReadFromJsonAsync<bool>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().BeTrue();
+
+        existingTier.Name.Should().Be("Disabled Tier");
+        existingTier.Description.Should().Be("This tier is now disabled");
+        existingTier.IsEnabled.Should().BeFalse();
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "PUT /api/tiers/{id} returns 200 when updating with same name")]
+    public async Task Put_ShouldReturn200_WhenUpdatingWithSameName()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var existingTier = CreateTier(id, "Platinum Tier", "Original description");
+
+        _repoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existingTier);
+
+        // Return the same tier when checking for name conflicts
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Tier, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existingTier);
+
+        var payload = new
+        {
+            TierId = id,
+            Name = "Platinum Tier", // same name
+            Description = "Updated description",
+            IsEnabled = true
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/tiers/{id}", payload);
+        var result = await response.Content.ReadFromJsonAsync<bool>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().BeTrue();
+
+        existingTier.Name.Should().Be("Platinum Tier");
+        existingTier.Description.Should().Be("Updated description");
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

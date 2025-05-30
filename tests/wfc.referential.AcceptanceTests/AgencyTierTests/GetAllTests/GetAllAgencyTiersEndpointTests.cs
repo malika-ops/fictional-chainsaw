@@ -1,4 +1,5 @@
 ﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -26,115 +27,252 @@ public class GetAllAgencyTiersEndpointTests : IClassFixture<WebApplicationFactor
     {
         var cacheMock = new Mock<ICacheService>();
 
-        var configured = factory.WithWebHostBuilder(b =>
+        var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
-            b.UseEnvironment("Testing");
+            builder.UseEnvironment("Testing");
 
-            b.ConfigureServices(s =>
+            builder.ConfigureServices(services =>
             {
-                s.RemoveAll<IAgencyTierRepository>();
-                s.RemoveAll<ICacheService>();
+                services.RemoveAll<IAgencyTierRepository>();
+                services.RemoveAll<ICacheService>();
 
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
+                services.AddSingleton(_repoMock.Object);
+                services.AddSingleton(cacheMock.Object);
             });
         });
 
-        _client = configured.CreateClient();
+        _client = customisedFactory.CreateClient();
     }
 
-    /* ---------- helpers ---------- */
-
-    private static AgencyTier At(Guid agencyId, Guid tierId, string code, bool enabled = true)
+    private static AgencyTier CreateAgencyTier(Guid agencyId, Guid tierId, string code, bool enabled = true)
     {
-        return AgencyTier.Create(
+        var entity = AgencyTier.Create(
             AgencyTierId.Of(Guid.NewGuid()),
-            new AgencyId(agencyId),
-            new TierId(tierId),
+            AgencyId.Of(agencyId),
+            TierId.Of(tierId),
             code,
-            password: string.Empty);
+            null);
+
+        if (!enabled) entity.Disable();
+        return entity;
     }
 
-    private record PagedDto<T>(
-        T[] Items,
-        int PageNumber,
-        int PageSize,
-        int TotalCount,
-        int TotalPages);
+    private record PagedResultDto<T>(T[] Items, int PageNumber, int PageSize,
+                                     int TotalCount, int TotalPages);
 
-    /* ---------- tests ---------- */
-
-    // 1) Happy-path paging ---------------------------------------------------
     [Fact(DisplayName = "GET /api/agencyTiers returns paged list")]
-    public async Task Get_ShouldReturnPagedList_WhenPagingValid()
+    public async Task Get_ShouldReturnPagedList_WhenParamsAreValid()
     {
-        var agency1 = Guid.NewGuid();
-        var agency2 = Guid.NewGuid();
-        var tier1 = Guid.NewGuid();
-        var tier2 = Guid.NewGuid();
-
-        var all = new[]
+        // Arrange
+        var items = new[]
         {
-            At(agency1, tier1, "C1"),
-            At(agency2, tier2, "C2"),
-            At(agency1, tier2, "C3")
-        };
+                CreateAgencyTier(Guid.NewGuid(), Guid.NewGuid(), "C-001"),
+                CreateAgencyTier(Guid.NewGuid(), Guid.NewGuid(), "C-002")
+            };
 
-     
+        var paged = new PagedResult<AgencyTier>(
+            items.ToList(),
+            totalCount: 5,
+            pageNumber: 1,
+            pageSize: 2);
 
-        var resp = await _client.GetAsync("/api/agencyTiers?pageNumber=1&pageSize=2");
-        var dto = await resp.Content.ReadFromJsonAsync<PagedDto<JsonElement>>();
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                            1,
+                            2,
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(paged);
 
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        // Act
+        var res = await _client.GetAsync("/api/agencyTiers?pageNumber=1&pageSize=2");
+        var dto = await res.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+
+        // Assert
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
         dto!.Items.Should().HaveCount(2);
-        dto.TotalCount.Should().Be(3);
-        dto.TotalPages.Should().Be(2);
+        dto.TotalCount.Should().Be(5);
+        dto.TotalPages.Should().Be(3);
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+                                It.Is<GetAllAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                                1,
+                                2,
+                                It.IsAny<CancellationToken>()),
+                         Times.Once);
     }
 
-    // 2) Filter by Code ------------------------------------------------------
-    [Fact(DisplayName = "GET /api/agencyTiers?code=C2 returns only mapping with code C2")]
+    [Fact(DisplayName = "GET /api/agencyTiers?agencyId={id} filters by Agency")]
+    public async Task Get_ShouldFilterByAgencyId()
+    {
+        var agencyId = Guid.NewGuid();
+
+        var entity = CreateAgencyTier(agencyId, Guid.NewGuid(), "AG-1");
+        var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { entity }, 1, 1, 10);
+
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllAgencyTiersQuery>(q => q.AgencyId == agencyId),
+                            1,
+                            10,
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(paged);
+
+        var res = await _client.GetAsync($"/api/agencyTiers?agencyId={agencyId}");
+        var dto = await res.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        dto!.Items.Should().HaveCount(1);
+        dto.Items[0].GetProperty("agencyId").GetGuid().Should().Be(agencyId);
+
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+                                It.Is<GetAllAgencyTiersQuery>(q => q.AgencyId == agencyId),
+                                1,
+                                10,
+                                It.IsAny<CancellationToken>()),
+                         Times.Once);
+    }
+
+    [Fact(DisplayName = "GET /api/agencyTiers?tierId={id} filters by Tier")]
+    public async Task Get_ShouldFilterByTierId()
+    {
+        var tierId = Guid.NewGuid();
+        var entity = CreateAgencyTier(Guid.NewGuid(), tierId, "T-1");
+        var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { entity }, 1, 1, 10);
+
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllAgencyTiersQuery>(q => q.TierId == tierId),
+                            1,
+                            10,
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(paged);
+
+        var res = await _client.GetAsync($"/api/agencyTiers?tierId={tierId}");
+        var dto = await res.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        dto!.Items.Should().HaveCount(1);
+        dto.Items[0].GetProperty("tierId").GetGuid().Should().Be(tierId);
+    }
+
+    [Fact(DisplayName = "GET /api/agencyTiers?code=X123 filters by Code")]
     public async Task Get_ShouldFilterByCode()
     {
-        var agencyId = Guid.NewGuid();
-        var tierId = Guid.NewGuid();
-        var c2 = At(agencyId, tierId, "C2");
+        const string code = "X123";
+        var entity = CreateAgencyTier(Guid.NewGuid(), Guid.NewGuid(), code);
+        var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { entity }, 1, 1, 10);
 
-        
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllAgencyTiersQuery>(q => q.Code == code),
+                            1,
+                            10,
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(paged);
 
-        var resp = await _client.GetAsync("/api/agencyTiers?code=C2");
-        var dto = await resp.Content.ReadFromJsonAsync<PagedDto<JsonElement>>();
+        var res = await _client.GetAsync($"/api/agencyTiers?code={code}");
+        var dto = await res.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
 
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
         dto!.Items.Should().HaveCount(1);
-        dto.Items[0].GetProperty("code").GetString().Should().Be("C2");
-
-        
+        dto.Items[0].GetProperty("code").GetString().Should().Be(code);
     }
 
-    // 3) Default paging ------------------------------------------------------
-    [Fact(DisplayName = "GET /api/agencyTiers uses default paging (page=1, size=10)")]
-    public async Task Get_ShouldUseDefaults_WhenNoPagingProvided()
+    [Fact(DisplayName = "GET /api/agencyTiers?isEnabled=false filters disabled links")]
+    public async Task Get_ShouldFilterByEnabledStatus()
+    {
+        var disabled = CreateAgencyTier(Guid.NewGuid(), Guid.NewGuid(), "DIS", enabled: false);
+        var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { disabled }, 1, 1, 10);
+
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllAgencyTiersQuery>(q => q.IsEnabled == false),
+                            1,
+                            10,
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(paged);
+
+        var res = await _client.GetAsync("/api/agencyTiers?isEnabled=false");
+        var dto = await res.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        dto!.Items.Should().HaveCount(1);
+        dto.Items[0].GetProperty("isEnabled").GetBoolean().Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "GET /api/agencyTiers uses defaults when no params supplied")]
+    public async Task Get_ShouldUseDefaultPaging_WhenNoParamsProvided()
+    {
+        var entities = new[]
+        {
+                CreateAgencyTier(Guid.NewGuid(), Guid.NewGuid(), "C-1"),
+                CreateAgencyTier(Guid.NewGuid(), Guid.NewGuid(), "C-2"),
+                CreateAgencyTier(Guid.NewGuid(), Guid.NewGuid(), "C-3")
+            };
+
+        var paged = new PagedResult<AgencyTier>(entities.ToList(), 3, 1, 10);
+
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 10 && q.IsEnabled == true),
+                            1,
+                            10,
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(paged);
+
+        var res = await _client.GetAsync("/api/agencyTiers");
+        var dto = await res.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        dto!.PageNumber.Should().Be(1);
+        dto.PageSize.Should().Be(10);
+        dto.Items.Should().HaveCount(3);
+    }
+
+    [Fact(DisplayName = "GET /api/agencyTiers with multiple filters")]
+    public async Task Get_ShouldApplyMultipleFilters()
     {
         var agencyId = Guid.NewGuid();
         var tierId = Guid.NewGuid();
+        const string code = "MULTI";
 
-        var list = new[] { At(agencyId, tierId, "C1"),
-                           At(agencyId, tierId, "C2") };
+        var entity = CreateAgencyTier(agencyId, tierId, code);
+        var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { entity }, 1, 1, 10);
 
-        
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllAgencyTiersQuery>(q =>
+                                q.AgencyId == agencyId &&
+                                q.TierId == tierId &&
+                                q.Code == code &&
+                                q.IsEnabled == true),
+                            1,
+                            10,
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(paged);
 
-        var resp = await _client.GetAsync("/api/agencyTiers");
-        var dto = await resp.Content.ReadFromJsonAsync<PagedDto<JsonElement>>();
+        var res = await _client.GetAsync($"/api/agencyTiers?agencyId={agencyId}&tierId={tierId}&code={code}&isEnabled=true");
+        var dto = await res.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
 
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
-        dto!.PageNumber.Should().Be(1);
-        dto.PageSize.Should().Be(10);
-        dto.Items.Should().HaveCount(2);
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        dto!.Items.Should().HaveCount(1);
+        dto.Items[0].GetProperty("code").GetString().Should().Be(code);
+    }
 
-        
+    [Fact(DisplayName = "GET /api/agencyTiers returns empty list when no match")]
+    public async Task Get_ShouldReturnEmptyList_WhenNoMatch()
+    {
+        var paged = new PagedResult<AgencyTier>(new List<AgencyTier>(), 0, 1, 10);
+
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllAgencyTiersQuery>(q => q.Code == "NONE"),
+                            1,
+                            10,
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(paged);
+
+        var res = await _client.GetAsync("/api/agencyTiers?code=NONE");
+        var dto = await res.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        dto!.Items.Should().BeEmpty();
+        dto.TotalCount.Should().Be(0);
+        dto.TotalPages.Should().Be(0);
     }
 }

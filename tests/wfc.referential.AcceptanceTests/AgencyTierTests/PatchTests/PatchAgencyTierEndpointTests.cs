@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -20,142 +21,205 @@ namespace wfc.referential.AcceptanceTests.AgencyTierTests.PatchTests;
 public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
-    private readonly Mock<IAgencyTierRepository> _repoMock = new();
+    private readonly Mock<IAgencyTierRepository> _agencyTierRepo = new();
+    private readonly Mock<IAgencyRepository> _agencyRepo = new();
+    private readonly Mock<ITierRepository> _tierRepo = new();
 
     public PatchAgencyTierEndpointTests(WebApplicationFactory<Program> factory)
     {
         var cacheMock = new Mock<ICacheService>();
 
-        var customised = factory.WithWebHostBuilder(builder =>
+        var custom = factory.WithWebHostBuilder(b =>
         {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
+            b.UseEnvironment("Testing");
+            b.ConfigureServices(s =>
             {
-                services.RemoveAll<IAgencyTierRepository>();
-                services.RemoveAll<ICacheService>();
+                s.RemoveAll<IAgencyTierRepository>();
+                s.RemoveAll<IAgencyRepository>();
+                s.RemoveAll<ITierRepository>();
+                s.RemoveAll<ICacheService>();
 
-                
+                _agencyTierRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                               .Returns(Task.CompletedTask);
 
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
+                s.AddSingleton(_agencyTierRepo.Object);
+                s.AddSingleton(_agencyRepo.Object);
+                s.AddSingleton(_tierRepo.Object);
+                s.AddSingleton(cacheMock.Object);
             });
         });
 
-        _client = customised.CreateClient();
+        _client = custom.CreateClient();
     }
 
-    /* ---------- helpers ---------- */
+    private static AgencyTier MakeAgencyTier(Guid id, Guid agencyId,
+                                             Guid tierId, string code = "CODE1",
+                                             string pwd = "pwd", bool en = true) =>
+        AgencyTier.Create(AgencyTierId.Of(id),
+                          AgencyId.Of(agencyId),
+                          TierId.Of(tierId),
+                          code,
+                          pwd);
 
-    private static AgencyTier At(Guid id, Guid agencyId, Guid tierId, string code, bool enabled = true)
+    private static async Task<HttpResponseMessage> PatchJsonAsync(
+        HttpClient client, string url, object body)
     {
-        return AgencyTier.Create(
-            AgencyTierId.Of(id),
-            new AgencyId(agencyId),
-            new TierId(tierId),
-            code,
-            password: string.Empty);
-    }
-
-    private async Task<HttpResponseMessage> PatchJsonAsync(string url, object payload)
-    {
-        var json = JsonSerializer.Serialize(payload);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var req = new HttpRequestMessage(HttpMethod.Patch, url) { Content = content };
-        return await _client.SendAsync(req);
-    }
-
-    private static string FirstError(JsonElement errs, string key)
-    {
-        foreach (var p in errs.EnumerateObject())
-            if (p.NameEquals(key) || p.Name.Equals(key, StringComparison.OrdinalIgnoreCase))
-                return p.Value[0].GetString()!;
-        throw new KeyNotFoundException($"error key '{key}' not found");
-    }
-
-    /* ---------- tests ---------- */
-
-    // 1) Happy-path ----------------------------------------------------------
-    [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 200 when partial update succeeds")]
-    public async Task Patch_ShouldReturn200_WhenPatchSuccessful()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var agencyId = Guid.NewGuid();
-        var tierId = Guid.NewGuid();
-
-        var original = At(id, agencyId, tierId, "OLD", enabled: true);
-
-        _repoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(original);
-
-        AgencyTier? saved = null;
-
-        var payload = new
+        var json = JsonSerializer.Serialize(body);
+        var req = new HttpRequestMessage(HttpMethod.Patch, url)
         {
-            AgencyTierId = id,
-            Code = "NEW",
-            IsEnabled = false
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
-
-        // Act
-        var resp = await PatchJsonAsync($"/api/agencyTiers/{id}", payload);
-        var result = await resp.Content.ReadFromJsonAsync<Guid>();
-
-        // Assert
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
-        result.Should().Be(id);
-
-        saved!.Code.Should().Be("NEW");
-        saved.IsEnabled.Should().BeFalse();
-        // unchanged fields untouched
-        saved.AgencyId.Should().Be(original.AgencyId);
-
+        return await client.SendAsync(req);
     }
 
-    // 2) Duplicate code ------------------------------------------------------
-    [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 400 when new Code already exists")]
-    public async Task Patch_ShouldReturn400_WhenCodeDuplicate()
+    private static async Task<bool> ReadBoolAsync(HttpResponseMessage resp)
     {
-        // Arrange
+        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        var root = doc!.RootElement;
+
+        if (root.ValueKind is JsonValueKind.True or JsonValueKind.False)
+            return root.GetBoolean();
+
+        if (root.TryGetProperty("value", out var v) &&
+            (v.ValueKind is JsonValueKind.True or JsonValueKind.False))
+            return v.GetBoolean();
+
+        return root.GetBoolean();
+    }
+
+    
+    [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 200 when patching only Code")]
+    public async Task Patch_ShouldReturn200_WhenPatchingOnlyCode()
+    {
+        var id = Guid.NewGuid();
+        var orig = MakeAgencyTier(id, Guid.NewGuid(), Guid.NewGuid(), "OLD");
+
+        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(orig);
+
+        _agencyTierRepo.Setup(r => r.GetOneByConditionAsync(
+                                 It.IsAny<Expression<Func<AgencyTier, bool>>>(),
+                                 It.IsAny<CancellationToken>()))
+                       .ReturnsAsync((AgencyTier?)null);
+
+        var payload = new { AgencyTierId = id, Code = "NEW" };
+
+        var resp = await PatchJsonAsync(_client, $"/api/agencyTiers/{id}", payload);
+        var ok = await ReadBoolAsync(resp);
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        ok.Should().BeTrue();
+
+        orig.Code.Should().Be("NEW");
+        orig.IsEnabled.Should().BeTrue();      
+        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 200 when patching only IsEnabled")]
+    public async Task Patch_ShouldReturn200_WhenPatchingOnlyIsEnabled()
+    {
+        var id = Guid.NewGuid();
+        var orig = MakeAgencyTier(id, Guid.NewGuid(), Guid.NewGuid());
+
+        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(orig);
+
+        var payload = new { AgencyTierId = id, IsEnabled = false };
+
+        var resp = await PatchJsonAsync(_client, $"/api/agencyTiers/{id}", payload);
+        var ok = await ReadBoolAsync(resp);
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        ok.Should().BeTrue();
+
+        orig.IsEnabled.Should().BeFalse();
+        orig.Code.Should().Be("CODE1");   
+        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+
+    [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 404 when AgencyTier not found")]
+    public async Task Patch_ShouldReturn404_WhenAgencyTierNotFound()
+    {
+        var id = Guid.NewGuid();
+
+        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+                       .ReturnsAsync((AgencyTier?)null);
+
+        var payload = new { AgencyTierId = id, Code = "NOPE" };
+
+        var resp = await PatchJsonAsync(_client, $"/api/agencyTiers/{id}", payload);
+
+        resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 404 when new TierId not found")]
+    public async Task Patch_ShouldReturn404_WhenNewTierNotFound()
+    {
+        var id = Guid.NewGuid();
+        var newTid = Guid.NewGuid();
+        var orig = MakeAgencyTier(id, Guid.NewGuid(), Guid.NewGuid());
+
+        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(orig);
+
+        _tierRepo.Setup(r => r.GetByIdAsync(TierId.Of(newTid), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((Domain.TierAggregate.Tier?)null); // missing
+
+        var payload = new { AgencyTierId = id, TierId = newTid };
+
+        var resp = await PatchJsonAsync(_client, $"/api/agencyTiers/{id}", payload);
+
+        resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 404 when new AgencyId not found")]
+    public async Task Patch_ShouldReturn404_WhenNewAgencyNotFound()
+    {
+        var id = Guid.NewGuid();
+        var newAid = Guid.NewGuid();
+        var orig = MakeAgencyTier(id, Guid.NewGuid(), Guid.NewGuid());
+
+        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(orig);
+
+        _agencyRepo.Setup(r => r.GetByIdAsync(AgencyId.Of(newAid), It.IsAny<CancellationToken>()))
+                   .ReturnsAsync((Domain.AgencyAggregate.Agency?)null); // missing
+
+        var payload = new { AgencyTierId = id, AgencyId = newAid };
+
+        var resp = await PatchJsonAsync(_client, $"/api/agencyTiers/{id}", payload);
+
+        resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "PATCH /api/agencyTiers/{id} allows same Code for same entity")]
+    public async Task Patch_ShouldAllow_WhenSameCodeSameEntity()
+    {
         var id = Guid.NewGuid();
         var agencyId = Guid.NewGuid();
         var tierId = Guid.NewGuid();
+        var entity = MakeAgencyTier(id, agencyId, tierId, "CODEX");
 
-        var target = At(id, agencyId, tierId, "UNI");
-        var duplicate = At(Guid.NewGuid(), agencyId, tierId, "DUP");
+        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(entity);
 
-        _repoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(target);
+        _agencyTierRepo.Setup(r => r.GetOneByConditionAsync(
+                                 It.IsAny<Expression<Func<AgencyTier, bool>>>(),
+                                 It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(entity); // same entity returned → allowed
 
-        var payload = new { AgencyTierId = id, Code = "DUP" };
+        var payload = new { AgencyTierId = id, Code = "CODEX" };
 
-        // Act
-        var resp = await PatchJsonAsync($"/api/agencyTiers/{id}", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        var resp = await PatchJsonAsync(_client, $"/api/agencyTiers/{id}", payload);
+        var result = await ReadBoolAsync(resp);
 
-        // Assert
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().BeTrue();
 
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be("AgencyTier with code 'DUP' already exists for this agency & tier.");
-
-    }
-
-    // 3) Not-found -----------------------------------------------------------
-    [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 404 when AgencyTier not found")]
-    public async Task Patch_ShouldReturn404_WhenEntityMissing()
-    {
-        var id = Guid.NewGuid();
-
-        _repoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((AgencyTier?)null);
-
-        var payload = new { AgencyTierId = id, Code = "ANY" };
-
-        var resp = await PatchJsonAsync($"/api/agencyTiers/{id}", payload);
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
+        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

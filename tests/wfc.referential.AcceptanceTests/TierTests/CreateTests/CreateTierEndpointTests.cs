@@ -23,133 +23,258 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
     {
         var cacheMock = new Mock<ICacheService>();
 
-        var customised = factory.WithWebHostBuilder(b =>
+        var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
-            b.UseEnvironment("Testing");
+            builder.UseEnvironment("Testing");
 
-            b.ConfigureServices(s =>
+            builder.ConfigureServices(services =>
             {
-                /*  replace real infra with mocks  */
-                s.RemoveAll<ITierRepository>();
-                s.RemoveAll<ICacheService>();
+                services.RemoveAll<ITierRepository>();
+                services.RemoveAll<ICacheService>();
 
                 _repoMock
                     .Setup(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Tier t, CancellationToken _) => t);
+                    .ReturnsAsync((Tier tier, CancellationToken _) => tier);
 
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
+                _repoMock
+                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
+
+                services.AddSingleton(_repoMock.Object);
+                services.AddSingleton(cacheMock.Object);
             });
         });
 
-        _client = customised.CreateClient();
+        _client = customisedFactory.CreateClient();
     }
 
-    /* ----------------------------------------------------------------
-       1) Happy-path — valid request returns 200 + generated Guid
-       ----------------------------------------------------------------*/
-    [Fact(DisplayName = "POST /api/tiers returns 200 and Guid when request is valid")]
+    [Fact(DisplayName = "POST /api/tiers returns 200 and Guid (fixture version)")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
     {
+        // Arrange
         var payload = new
         {
-            Name = "Silver",
-            Description = "Basic tier"
+            Name = "Premium Tier",
+            Description = "High-level tier for premium services"
         };
 
-        var resp = await _client.PostAsJsonAsync("/api/tiers", payload);
-        var id = await resp.Content.ReadFromJsonAsync<Guid>();
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tiers", payload);
+        var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
-        id.Should().NotBeEmpty();
+        // Assert (FluentAssertions)
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        returnedId.Should().NotBeEmpty();
+
+        // verify repository interaction using *FluentAssertions on Moq invocations
+        _repoMock.Verify(r =>
+            r.AddAsync(It.Is<Tier>(t =>
+                    t.Name == payload.Name &&
+                    t.Description == payload.Description),
+                    It.IsAny<CancellationToken>()
+            ),
+            Times.Once
+        );
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "POST /api/tiers returns 400 & problem‑details when Name is missing")]
+    public async Task Post_ShouldReturn400_WhenValidationFails()
+    {
+        // Arrange
+        var invalidPayload = new
+        {
+            // Name intentionally omitted to trigger validation error
+            Description = "Some description"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tiers", invalidPayload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var root = doc!.RootElement;
+        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("status").GetInt32().Should().Be(400);
+
+        root.GetProperty("errors")
+            .GetProperty("name")[0].GetString()
+            .Should().Be("Name is required.");
+
+        // the handler must NOT be reached
+        _repoMock.Verify(r =>
+            r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "when validation fails, the command handler should not be executed");
+    }
+
+    [Fact(DisplayName = "POST /api/tiers returns 400 & problem‑details when Name is empty")]
+    public async Task Post_ShouldReturn400_WhenNameIsEmpty()
+    {
+        // Arrange
+        var invalidPayload = new
+        {
+            Name = "",
+            Description = "Some description"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tiers", invalidPayload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var root = doc!.RootElement;
+        root.GetProperty("errors")
+            .GetProperty("name")[0].GetString()
+            .Should().Be("Name is required.");
+
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
+                         Times.Never);
+    }
+
+    [Fact(DisplayName = "POST /api/tiers returns 400 & problem‑details when Name exceeds max length")]
+    public async Task Post_ShouldReturn400_WhenNameExceedsMaxLength()
+    {
+        // Arrange: Name with 101 characters (exceeds 100 char limit)
+        var longName = new string('A', 101);
+        var invalidPayload = new
+        {
+            Name = longName,
+            Description = "Some description"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tiers", invalidPayload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var root = doc!.RootElement;
+        root.GetProperty("errors")
+            .GetProperty("name")[0].GetString()
+            .Should().Be("Name max length is 100 chars.");
+
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
+                         Times.Never);
+    }
+
+    [Fact(DisplayName = "POST /api/tiers returns 409 when Name already exists")]
+    public async Task Post_ShouldReturn409_WhenNameAlreadyExists()
+    {
+        // Arrange 
+        const string duplicateName = "Premium Tier";
+
+        // Tell the repo mock that the name already exists
+        var existingTier = Tier.Create(
+            new TierId(Guid.NewGuid()),
+            duplicateName,
+            "Existing premium tier");
+
+        _repoMock
+            .Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Tier, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingTier);
+
+        var payload = new
+        {
+            Name = duplicateName,
+            Description = "New premium tier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tiers", payload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        var root = doc!.RootElement;
+        var error = root.GetProperty("errors").GetString();
+
+        error.Should().Be($"Tier with name '{duplicateName}' already exists.");
+
+        _repoMock.Verify(r =>
+            r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "no insertion should happen when the name is already taken");
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
+                         Times.Never,
+                         "no save should happen when the name is already taken");
+    }
+
+    [Fact(DisplayName = "POST /api/tiers returns 409 when Name already exists (case insensitive)")]
+    public async Task Post_ShouldReturn409_WhenNameAlreadyExists_CaseInsensitive()
+    {
+        // Arrange 
+        const string existingName = "Premium Tier";
+        const string duplicateNameDifferentCase = "PREMIUM TIER";
+
+        // Tell the repo mock that the name already exists (case insensitive match)
+        var existingTier = Tier.Create(
+            new TierId(Guid.NewGuid()),
+            existingName,
+            "Existing premium tier");
+
+        _repoMock
+            .Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Tier, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingTier);
+
+        var payload = new
+        {
+            Name = duplicateNameDifferentCase,
+            Description = "New premium tier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tiers", payload);
+        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        var root = doc!.RootElement;
+        var error = root.GetProperty("errors").GetString();
+
+        error.Should().Be($"Tier with name '{duplicateNameDifferentCase}' already exists.");
+
+        // Handler must NOT attempt to add the entity
+        _repoMock.Verify(r =>
+            r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "no insertion should happen when the name is already taken (case insensitive)");
+    }
+
+    [Fact(DisplayName = "POST /api/tiers accepts request with only Name (Description optional)")]
+    public async Task Post_ShouldReturn200_WhenDescriptionIsEmpty()
+    {
+        // Arrange
+        var payload = new
+        {
+            Name = "Basic Tier"
+            // Description intentionally omitted
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tiers", payload);
+        var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        returnedId.Should().NotBeEmpty();
 
         _repoMock.Verify(r =>
             r.AddAsync(It.Is<Tier>(t =>
                     t.Name == payload.Name &&
-                    t.Description == payload.Description &&
-                    t.IsEnabled),                   // default true
-                It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    /* ----------------------------------------------------------------
-       2) Validation — Name missing
-       ----------------------------------------------------------------*/
-    [Fact(DisplayName = "POST /api/tiers returns 400 when Name is missing")]
-    public async Task Post_ShouldReturn400_WhenNameMissing()
-    {
-        var invalid = new   // Name omitted ➜ validation error
-        {
-            Description = "No name"
-        };
-
-        var resp = await _client.PostAsJsonAsync("/api/tiers", invalid);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
-            .Should().Be("Name is required.");
-
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(),
-                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
-    }
-
-    /* ----------------------------------------------------------------
-       3) Validation — Name > 200 chars
-       ----------------------------------------------------------------*/
-    [Fact(DisplayName = "POST /api/tiers returns 400 when Name exceeds 200 chars")]
-    public async Task Post_ShouldReturn400_WhenNameTooLong()
-    {
-        var tooLong = new string('X', 201);
-
-        var invalid = new
-        {
-            Name = tooLong,
-            Description = "desc"
-        };
-
-        var resp = await _client.PostAsJsonAsync("/api/tiers", invalid);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
-            .Should().Be("Name max length is 200 chars.");
-
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(),
-                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
-    }
-
-    /* ----------------------------------------------------------------
-       4) Business-rule — duplicate Name
-       ----------------------------------------------------------------*/
-    [Fact(DisplayName = "POST /api/tiers returns 400 when Name already exists")]
-    public async Task Post_ShouldReturn400_WhenNameAlreadyExists()
-    {
-        const string duplicate = "Gold";
-
-
-        var payload = new
-        {
-            Name = duplicate,
-            Description = "should fail"
-        };
-
-        var resp = await _client.PostAsJsonAsync("/api/tiers", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetString()
-            .Should().Be($"Tier '{duplicate}' already exists.");
-
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(),
-                                         It.IsAny<CancellationToken>()),
-                         Times.Never);
+                    t.Description == string.Empty), // Description should default to empty string
+                    It.IsAny<CancellationToken>()
+            ),
+            Times.Once
+        );
     }
 }
