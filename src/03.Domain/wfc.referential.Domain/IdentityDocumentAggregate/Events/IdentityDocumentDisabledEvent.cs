@@ -1,8 +1,7 @@
 ﻿using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Domain.IdentityDocumentAggregate.Events;
-public record IdentityDocumentStatusChangedEvent(
+
+public record IdentityDocumentDisabledEvent(
     Guid IdentityDocumentId,
-    bool IsEnabled,
-    DateTime OccurredOn
-) : IDomainEvent;
+    DateTime OccurredOn) : IDomainEvent;

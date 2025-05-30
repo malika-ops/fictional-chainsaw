@@ -6,33 +6,32 @@ using wfc.referential.Application.IdentityDocuments.Dtos;
 
 namespace wfc.referential.API.Endpoints.IdentityDocument;
 
-public class PutIdentityDocument(IMediator _mediator) : Endpoint<UpdateIdentityDocumentRequest, Guid>
+public class UpdateIdentityDocumentEndpoint(IMediator _mediator)
+    : Endpoint<UpdateIdentityDocumentRequest, bool>
 {
     public override void Configure()
     {
-        Put("api/identitydocuments/{IdentityDocumentId}");
+        Put("/api/identitydocuments/{IdentityDocumentId}");
         AllowAnonymous();
-
         Summary(s =>
         {
-            s.Summary = "Fully update a IdentityDocument's properties";
-            s.Description = "Updates all fields (code, name, status, countryId) of the specified IdentityDocument ID.";
-            s.Params["IdentityDocumentId"] = "IdentityDocument ID (GUID) from route";
+            s.Summary = "Update an existing Identity Document";
+            s.Description = "Updates the identity document identified by {IdentityDocumentId} with supplied body fields.";
+            s.Params["IdentityDocumentId"] = "Identity Document GUID (from route)";
 
-            s.Response<Guid>(200, "The ID of the updated IdentityDocument");
-            s.Response(400, "If validation fails or the ID is invalid");
-            s.Response(404, "IdentityDocument not found");
+            s.Response<bool>(200, "Returns true if update succeeded");
+            s.Response(400, "Validation or business rule failure");
+            s.Response(404, "Identity Document not found");
+            s.Response(409, "Conflict with an existing Identity Document");
+            s.Response(500, "Unexpected server error");
         });
-
         Options(o => o.WithTags(EndpointGroups.IdentityDocuments));
     }
 
     public override async Task HandleAsync(UpdateIdentityDocumentRequest req, CancellationToken ct)
     {
-        var command = req.Adapt<UpdateIdentityDocumentCommand>();
-
-        var updatedId = await _mediator.Send(command, ct);
-
-        await SendAsync(updatedId.Value, cancellation: ct);
+        var cmd = req.Adapt<UpdateIdentityDocumentCommand>();
+        var result = await _mediator.Send(cmd, ct);
+        await SendAsync(result.Value, cancellation: ct);
     }
 }

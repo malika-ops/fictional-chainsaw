@@ -6,17 +6,17 @@ using wfc.referential.Application.Interfaces;
 
 namespace wfc.referential.Application.IdentityDocuments.Queries.GetAllIdentityDocuments;
 
-public class GetAllIdentityDocumentsQueryHandler(IIdentityDocumentRepository identitydocumentRepository)
-    : IQueryHandler<GetAllIdentityDocumentsQuery, PagedResult<GetAllIdentityDocumentsResponse>>
+public class GetAllIdentityDocumentsHandler
+    : IQueryHandler<GetAllIdentityDocumentsQuery, PagedResult<GetIdentityDocumentsResponse>>
 {
-    public async Task<PagedResult<GetAllIdentityDocumentsResponse>> Handle(GetAllIdentityDocumentsQuery request, CancellationToken cancellationToken)
+    private readonly IIdentityDocumentRepository _repo;
+
+    public GetAllIdentityDocumentsHandler(IIdentityDocumentRepository repo) => _repo = repo;
+
+    public async Task<PagedResult<GetIdentityDocumentsResponse>> Handle(
+        GetAllIdentityDocumentsQuery identityDocumentQuery, CancellationToken ct)
     {
-        var entities = await identitydocumentRepository.GetByCriteriaAsync(request, cancellationToken);
-        int totalCount = await identitydocumentRepository.GetCountAsync(request, cancellationToken);
-
-        var mapped = entities.Adapt<List<GetAllIdentityDocumentsResponse>> ();
-        var result = new PagedResult<GetAllIdentityDocumentsResponse>(mapped, totalCount, request.PageNumber, request.PageSize);
-
-        return result;
+        var identityDocuments = await _repo.GetPagedByCriteriaAsync(identityDocumentQuery, identityDocumentQuery.PageNumber, identityDocumentQuery.PageSize, ct);
+        return new PagedResult<GetIdentityDocumentsResponse>(identityDocuments.Items.Adapt<List<GetIdentityDocumentsResponse>>(), identityDocuments.TotalCount, identityDocuments.PageNumber, identityDocuments.PageSize);
     }
 }

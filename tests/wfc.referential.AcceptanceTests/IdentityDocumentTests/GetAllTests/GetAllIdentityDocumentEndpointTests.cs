@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -11,6 +10,7 @@ using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.IdentityDocuments.Queries.GetAllIdentityDocuments;
 using wfc.referential.Domain.IdentityDocumentAggregate;
+using BuildingBlocks.Core.Pagination;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.IdentityDocumentTests.GetAllTests;
@@ -22,8 +22,6 @@ public class GetAllIdentityDocumentsEndpointTests : IClassFixture<WebApplication
 
     public GetAllIdentityDocumentsEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -31,10 +29,8 @@ public class GetAllIdentityDocumentsEndpointTests : IClassFixture<WebApplication
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IIdentityDocumentRepository>();
-                services.RemoveAll<ICacheService>();
 
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
             });
         });
 
@@ -56,13 +52,18 @@ public class GetAllIdentityDocumentsEndpointTests : IClassFixture<WebApplication
             Dummy("NID", "ID Étrangère")
         };
 
-        _repoMock.Setup(r => r.GetByCriteriaAsync(
-                    It.Is<GetAllIdentityDocumentsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(data.Take(2).ToList());
+        var pagedResult = new PagedResult<IdentityDocument>(
+            data.Take(2).ToList(),
+            totalCount: 3,
+            pageNumber: 1,
+            pageSize: 2
+        );
 
-        _repoMock.Setup(r => r.GetCountAsync(It.IsAny<GetAllIdentityDocumentsQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(data.Length);
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                    It.Is<GetAllIdentityDocumentsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                    1, 2,
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(pagedResult));
 
         var response = await _client.GetAsync("/api/identitydocuments?pageNumber=1&pageSize=2");
         var result = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
@@ -78,13 +79,18 @@ public class GetAllIdentityDocumentsEndpointTests : IClassFixture<WebApplication
     {
         var cin = Dummy("CIN", "Carte Nationale");
 
-        _repoMock.Setup(r => r.GetByCriteriaAsync(
-                    It.Is<GetAllIdentityDocumentsQuery>(q => q.Code == "CIN"),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<IdentityDocument> { cin });
+        var pagedResult = new PagedResult<IdentityDocument>(
+            new List<IdentityDocument> { cin },
+            totalCount: 1,
+            pageNumber: 1,
+            pageSize: 10
+        );
 
-        _repoMock.Setup(r => r.GetCountAsync(It.IsAny<GetAllIdentityDocumentsQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1);
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                    It.Is<GetAllIdentityDocumentsQuery>(q => q.Code == "CIN"),
+                    1, 10,
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(pagedResult));
 
         var response = await _client.GetAsync("/api/identitydocuments?code=CIN");
         var result = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
@@ -99,13 +105,18 @@ public class GetAllIdentityDocumentsEndpointTests : IClassFixture<WebApplication
     {
         var data = new[] { Dummy("A", "Alpha"), Dummy("B", "Beta"), Dummy("C", "Gamma") };
 
-        _repoMock.Setup(r => r.GetByCriteriaAsync(
-                    It.Is<GetAllIdentityDocumentsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(data.ToList());
+        var pagedResult = new PagedResult<IdentityDocument>(
+            data.ToList(),
+            totalCount: 3,
+            pageNumber: 1,
+            pageSize: 10
+        );
 
-        _repoMock.Setup(r => r.GetCountAsync(It.IsAny<GetAllIdentityDocumentsQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(data.Length);
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                    It.Is<GetAllIdentityDocumentsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
+                    1, 10,
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(pagedResult));
 
         var response = await _client.GetAsync("/api/identitydocuments");
         var result = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
@@ -114,5 +125,58 @@ public class GetAllIdentityDocumentsEndpointTests : IClassFixture<WebApplication
         result!.PageNumber.Should().Be(1);
         result.PageSize.Should().Be(10);
         result.Items.Should().HaveCount(3);
+    }
+
+    [Fact(DisplayName = "GET /api/identitydocuments?name=Carte filters by name")]
+    public async Task Get_ShouldFilterByName()
+    {
+        var carte = Dummy("CIN", "Carte Nationale");
+
+        var pagedResult = new PagedResult<IdentityDocument>(
+            new List<IdentityDocument> { carte },
+            totalCount: 1,
+            pageNumber: 1,
+            pageSize: 10
+        );
+
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                    It.Is<GetAllIdentityDocumentsQuery>(q => q.Name == "Carte"),
+                    1, 10,
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(pagedResult));
+
+        var response = await _client.GetAsync("/api/identitydocuments?name=Carte");
+        var result = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result!.Items.Should().HaveCount(1);
+        result.Items[0].GetProperty("name").GetString().Should().Be("Carte Nationale");
+    }
+
+    [Fact(DisplayName = "GET /api/identitydocuments?isEnabled=false filters by status")]
+    public async Task Get_ShouldFilterByStatus()
+    {
+        var disabledDoc = Dummy("DISABLED", "Disabled Document");
+        disabledDoc.Disable();
+
+        var pagedResult = new PagedResult<IdentityDocument>(
+            new List<IdentityDocument> { disabledDoc },
+            totalCount: 1,
+            pageNumber: 1,
+            pageSize: 10
+        );
+
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                    It.Is<GetAllIdentityDocumentsQuery>(q => q.IsEnabled == false),
+                    1, 10,
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(pagedResult));
+
+        var response = await _client.GetAsync("/api/identitydocuments?isEnabled=false");
+        var result = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result!.Items.Should().HaveCount(1);
+        result.Items[0].GetProperty("isEnabled").GetBoolean().Should().BeFalse();
     }
 }

@@ -4,36 +4,34 @@ using MediatR;
 using wfc.referential.Application.IdentityDocuments.Commands.PatchIdentityDocument;
 using wfc.referential.Application.IdentityDocuments.Dtos;
 
-
 namespace wfc.referential.API.Endpoints.IdentityDocument;
 
-public class PatchIdentityDocument(IMediator _mediator) : Endpoint<PatchIdentityDocumentRequest, Guid>
+public class PatchIdentityDocumentEndpoint(IMediator _mediator)
+    : Endpoint<PatchIdentityDocumentRequest, bool>
 {
     public override void Configure()
     {
-        Patch("api/identitydocuments/{IdentityDocumentId}"); 
+        Patch("/api/identitydocuments/{IdentityDocumentId}");
         AllowAnonymous();
-
         Summary(s =>
         {
-            s.Summary = "Partially update a IdentityDocument's properties";
-            s.Description = "Updates only the provided fields (code, name, statu or countryId) of the specified IdentityDocument ID.";
-            s.Params["IdentityDocumentId"] = "IdentityDocument ID (GUID) from route";
+            s.Summary = "Partially update an Identity Document";
+            s.Description =
+                "Updates only the supplied fields for the identity document identified by {IdentityDocumentId}.";
+            s.Params["IdentityDocumentId"] = "Identity Document GUID from route";
 
-            s.Response<Guid>(200, "The ID of the updated IdentityDocument");
-            s.Response(400, "If validation fails or the ID is invalid");
-            s.Response(404, "IdentityDocument not found");
+            s.Response<bool>(200, "Returns true if update succeeded");
+            s.Response(400, "Validation / business rule failure");
+            s.Response(404, "Identity Document not found");
+            s.Response(409, "Conflict with an existing Identity Document");
         });
-
         Options(o => o.WithTags(EndpointGroups.IdentityDocuments));
     }
 
     public override async Task HandleAsync(PatchIdentityDocumentRequest req, CancellationToken ct)
     {
-        var command = req.Adapt<PatchIdentityDocumentCommand>();
-
-        var updatedId = await _mediator.Send(command, ct);
-
-        await SendAsync(updatedId.Value, cancellation: ct);
+        var cmd = req.Adapt<PatchIdentityDocumentCommand>();
+        var result = await _mediator.Send(cmd, ct);
+        await SendAsync(result.Value, cancellation: ct);
     }
 }

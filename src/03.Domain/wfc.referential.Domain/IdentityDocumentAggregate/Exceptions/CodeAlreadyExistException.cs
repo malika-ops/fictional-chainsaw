@@ -2,10 +2,5 @@
 
 namespace wfc.referential.Domain.IdentityDocumentAggregate.Exceptions;
 
-public class CodeAlreadyExistException : BusinessException
-{
-    public CodeAlreadyExistException(string code)
-        : base($"{nameof(IdentityDocument)} with code : {code} already exists")
-    {
-    }
-}
+public class IdentityDocumentCodeAlreadyExistException(string code)
+    : ConflictException($"Identity document with code {code} already exists.");

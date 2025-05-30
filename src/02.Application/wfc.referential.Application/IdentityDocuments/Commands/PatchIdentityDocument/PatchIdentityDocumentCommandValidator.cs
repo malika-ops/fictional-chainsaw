@@ -6,16 +6,19 @@ public class PatchIdentityDocumentCommandValidator : AbstractValidator<PatchIden
 {
     public PatchIdentityDocumentCommandValidator()
     {
-        RuleFor(x => x.IdentityDocumentId).NotEmpty();
+        RuleFor(x => x.IdentityDocumentId)
+            .NotEqual(Guid.Empty).WithMessage("IdentityDocumentId cannot be empty.");
 
-        // Add validation for Code if it's provided (not null)
-        When(x => x.Code != null, () => {
-            RuleFor(x => x.Code).NotEmpty().WithMessage("Code cannot be empty");
+        // If code is provided (not null), check it's not empty
+        When(x => x.Code is not null, () => {
+            RuleFor(x => x.Code!)
+                .NotEmpty().WithMessage("Code cannot be empty if provided.");
         });
 
-        // Add validation for Name if it's provided (not null)
-        When(x => x.Name != null, () => {
-            RuleFor(x => x.Name).NotEmpty().WithMessage("Name cannot be empty");
+        // If name is provided, check not empty
+        When(x => x.Name is not null, () => {
+            RuleFor(x => x.Name!)
+                .NotEmpty().WithMessage("Name cannot be empty if provided.");
         });
     }
 }

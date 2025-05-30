@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -26,8 +24,6 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
 
     public UpdateCountryIdentityDocEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -37,17 +33,10 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
                 services.RemoveAll<ICountryIdentityDocRepository>();
                 services.RemoveAll<ICountryRepository>();
                 services.RemoveAll<IIdentityDocumentRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // Comportement par défaut pour Update
-                _repoMock
-                    .Setup(r => r.UpdateAsync(It.IsAny<CountryIdentityDoc>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(_countryRepoMock.Object);
                 services.AddSingleton(_identityDocRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
             });
         });
 
@@ -59,9 +48,7 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         return CountryIdentityDoc.Create(
             CountryIdentityDocId.Of(id),
             new CountryId(countryId),
-            IdentityDocumentId.Of(docId),
-            true
-        );
+            IdentityDocumentId.Of(docId));
     }
 
     [Fact(DisplayName = "PUT /api/countryidentitydocs/{id} returns 200 when update succeeds")]
@@ -76,7 +63,7 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
 
         var old = CreateTestCountryIdentityDoc(id, oldCountryId, oldDocId);
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(old);
 
         var country = Country.Create(
@@ -106,13 +93,19 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         _countryRepoMock.Setup(r => r.GetByIdAsync(newCountryId, It.IsAny<CancellationToken>()))
                         .ReturnsAsync(country);
 
-        _identityDocRepoMock.Setup(r => r.GetByIdAsync(newDocId, It.IsAny<CancellationToken>()))
+        _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(newDocId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
 
-        CountryIdentityDoc? updated = null;
-        _repoMock.Setup(r => r.UpdateAsync(It.IsAny<CountryIdentityDoc>(), It.IsAny<CancellationToken>()))
-                 .Callback<CountryIdentityDoc, CancellationToken>((c, _) => updated = c)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.ExistsByCountryAndIdentityDocumentAsync(
+                        It.IsAny<CountryId>(),
+                        It.IsAny<IdentityDocumentId>(),
+                        It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+        _repoMock.Setup(r => r.Update(It.IsAny<CountryIdentityDoc>()));
+
+        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
         var payload = new
         {
@@ -124,23 +117,22 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
 
         // Act
         var response = await _client.PutAsJsonAsync($"/api/countryidentitydocs/{id}", payload);
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().BeTrue();
 
-        updated!.CountryId.Value.Should().Be(newCountryId);
-        updated.IdentityDocumentId.Value.Should().Be(newDocId);
-        updated.IsEnabled.Should().BeTrue();
+        old.CountryId.Value.Should().Be(newCountryId);
+        old.IdentityDocumentId.Value.Should().Be(newDocId);
+        old.IsEnabled.Should().BeTrue();
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<CountryIdentityDoc>(),
-                                           It.IsAny<CancellationToken>()),
-                        Times.Once);
+        _repoMock.Verify(r => r.Update(old), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "PUT /api/countryidentitydocs/{id} returns 400 when country not found")]
-    public async Task Put_ShouldReturn400_WhenCountryNotFound()
+    [Fact(DisplayName = "PUT /api/countryidentitydocs/{id} returns 404 when country not found")]
+    public async Task Put_ShouldReturn404_WhenCountryNotFound()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -151,7 +143,7 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
 
         var old = CreateTestCountryIdentityDoc(id, oldCountryId, oldDocId);
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(old);
 
         _countryRepoMock.Setup(r => r.GetByIdAsync(newCountryId, It.IsAny<CancellationToken>()))
@@ -164,7 +156,7 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             "Description"
         );
 
-        _identityDocRepoMock.Setup(r => r.GetByIdAsync(newDocId, It.IsAny<CancellationToken>()))
+        _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(newDocId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
 
         var payload = new
@@ -177,16 +169,10 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
 
         // Act
         var response = await _client.PutAsJsonAsync($"/api/countryidentitydocs/{id}", payload);
-        var jsonResult = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        jsonResult!.RootElement.GetProperty("errors").GetString()
-           .Should().Be($"Country with ID {newCountryId} not found");
-
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<CountryIdentityDoc>(),
-                                           It.IsAny<CancellationToken>()),
-                        Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<CountryIdentityDoc>()), Times.Never);
     }
 }

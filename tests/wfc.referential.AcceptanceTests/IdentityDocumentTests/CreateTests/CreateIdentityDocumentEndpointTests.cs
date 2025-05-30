@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -21,8 +20,6 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
 
     public CreateIdentityDocumentEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -30,24 +27,23 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IIdentityDocumentRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _repoMock
-                    .Setup(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((IdentityDocument e, CancellationToken _) => e);
 
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
             });
         });
 
         _client = customisedFactory.CreateClient();
     }
 
-
-    [Fact(DisplayName = "POST /api/identitydocuments returns 201 and Guid")]
-    public async Task Post_ShouldReturn201_AndId_WhenRequestIsValid()
+    [Fact(DisplayName = "POST /api/identitydocuments returns 200 and Guid")]
+    public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
     {
+        _repoMock.Setup(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IdentityDocument e, CancellationToken _) => e);
+
+        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(1));
+
         var payload = new
         {
             Code = "CIN",
@@ -58,13 +54,15 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         var response = await _client.PostAsJsonAsync("/api/identitydocuments", payload);
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         returnedId.Should().NotBeEmpty();
 
         _repoMock.Verify(r =>
             r.AddAsync(It.Is<IdentityDocument>(d =>
                 d.Code == payload.Code && d.Name == payload.Name && d.Description == payload.Description),
                 It.IsAny<CancellationToken>()), Times.Once);
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "POST /api/identitydocuments returns 400 when Code is missing")]
@@ -82,7 +80,7 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
             .GetProperty("code")[0].GetString()
-            .Should().Be("Code is required");
+            .Should().Be("Identity document code is required.");
 
         _repoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -98,26 +96,29 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var errors = doc!.RootElement.GetProperty("errors");
-        errors.GetProperty("name")[0].GetString().Should().Be("Name is required");
-        errors.GetProperty("code")[0].GetString().Should().Be("Code is required");
+        errors.GetProperty("name")[0].GetString().Should().Be("Identity document name is required.");
+        errors.GetProperty("code")[0].GetString().Should().Be("Identity document code is required.");
 
         _repoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact(DisplayName = "POST /api/identitydocuments returns 400 when Code already exists")]
-    public async Task Post_ShouldReturn400_WhenCodeAlreadyExists()
+    [Fact(DisplayName = "POST /api/identitydocuments returns 409 when Code already exists")]
+    public async Task Post_ShouldReturn409_WhenCodeAlreadyExists()
     {
         const string duplicateCode = "CIN";
 
-        var doc = IdentityDocument.Create(
+        var existingDoc = IdentityDocument.Create(
             IdentityDocumentId.Of(Guid.NewGuid()),
             duplicateCode,
             "Existing Doc",
             null
-            );
+        );
 
-        _repoMock.Setup(r => r.GetByCodeAsync(duplicateCode, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(doc);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(
+                It.Is<System.Linq.Expressions.Expression<System.Func<IdentityDocument, bool>>>(
+                    expr => expr.ToString().Contains("Code")),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingDoc);
 
         var payload = new
         {
@@ -129,9 +130,9 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         var response = await _client.PostAsJsonAsync("/api/identitydocuments", payload);
         var result = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         result!.RootElement.GetProperty("errors").GetString()
-            .Should().Contain($"IdentityDocument with code : {duplicateCode} already exists");
+            .Should().Contain($"Identity document with code {duplicateCode} already exists");
 
         _repoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }

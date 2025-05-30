@@ -1,16 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace wfc.referential.Application.CountryIdentityDocs.Dtos;
+﻿namespace wfc.referential.Application.CountryIdentityDocs.Dtos;
 
 public record CreateCountryIdentityDocRequest
 {
-    /// <summary>
-    /// The ID of the Country.
-    /// </summary>
+    /// <summary>Country ID for the association.</summary>
+    /// <example>123e4567-e89b-12d3-a456-426614174000</example>
     public Guid CountryId { get; init; }
 
-    /// <summary>
-    /// The ID of the Identity Document.
-    /// </summary>
+    /// <summary>Identity Document ID for the association.</summary>
+    /// <example>456e7890-e89b-12d3-a456-426614174001</example>
     public Guid IdentityDocumentId { get; init; }
 }

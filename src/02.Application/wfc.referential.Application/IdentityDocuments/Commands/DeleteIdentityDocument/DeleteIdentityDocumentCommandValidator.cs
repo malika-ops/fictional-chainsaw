@@ -6,6 +6,8 @@ public class DeleteIdentityDocumentCommandValidator : AbstractValidator<DeleteId
 {
     public DeleteIdentityDocumentCommandValidator()
     {
-        RuleFor(x => x.IdentityDocumentId).NotEmpty();
+        RuleFor(x => x.IdentityDocumentId)
+            .NotEqual(Guid.Empty)
+            .WithMessage("IdentityDocumentId must be a non-empty GUID.");
     }
 }

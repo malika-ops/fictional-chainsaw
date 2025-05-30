@@ -3,5 +3,9 @@ using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.IdentityDocuments.Commands.CreateIdentityDocument;
 
-public record CreateIdentityDocumentCommand(string Code,string Name, string Description) 
-    : ICommand<Result<Guid>>;
+public record CreateIdentityDocumentCommand : ICommand<Result<Guid>>
+{
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? Description { get; init; }
+}

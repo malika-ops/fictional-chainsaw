@@ -13,58 +13,42 @@ public class CountryIdentityDoc : Aggregate<CountryIdentityDocId>
 
     private CountryIdentityDoc() { }
 
-    private CountryIdentityDoc(
-        CountryIdentityDocId id,
-        CountryId countryId,
-        IdentityDocumentId identityDocumentId,
-        bool isEnabled)
-    {
-        Id = id;
-        CountryId = countryId;
-        IdentityDocumentId = identityDocumentId;
-        IsEnabled = isEnabled;
-    }
-
     public static CountryIdentityDoc Create(
         CountryIdentityDocId id,
         CountryId countryId,
-        IdentityDocumentId identityDocumentId,
-        bool isEnabled)
+        IdentityDocumentId identityDocumentId)
     {
-        var entity = new CountryIdentityDoc(id, countryId, identityDocumentId, isEnabled);
+        var countryIdentityDoc = new CountryIdentityDoc
+        {
+            Id = id,
+            CountryId = countryId,
+            IdentityDocumentId = identityDocumentId,
+            IsEnabled = true
+        };
 
-        entity.AddDomainEvent(new CountryIdentityDocCreatedEvent(
-            id.Value,
-            countryId.Value,
-            identityDocumentId.Value,
-            isEnabled,
+        countryIdentityDoc.AddDomainEvent(new CountryIdentityDocCreatedEvent(
+            countryIdentityDoc.Id.Value,
+            countryIdentityDoc.CountryId.Value,
+            countryIdentityDoc.IdentityDocumentId.Value,
+            countryIdentityDoc.IsEnabled,
             DateTime.UtcNow));
 
-        return entity;
+        return countryIdentityDoc;
     }
 
     public void Update(
         CountryId countryId,
         IdentityDocumentId identityDocumentId,
-        bool isEnabled)
+        bool? isEnabled)
     {
         CountryId = countryId;
         IdentityDocumentId = identityDocumentId;
-        IsEnabled = isEnabled;
+        IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new CountryIdentityDocUpdatedEvent(
             Id.Value,
             CountryId.Value,
             IdentityDocumentId.Value,
-            IsEnabled,
-            DateTime.UtcNow));
-    }
-
-    public void Disable()
-    {
-        IsEnabled = false;
-        AddDomainEvent(new CountryIdentityDocStatusChangedEvent(
-            Id.Value,
             IsEnabled,
             DateTime.UtcNow));
     }
@@ -82,6 +66,26 @@ public class CountryIdentityDoc : Aggregate<CountryIdentityDocId>
             Id.Value,
             CountryId.Value,
             IdentityDocumentId.Value,
+            IsEnabled,
+            DateTime.UtcNow));
+    }
+
+    public void Disable()
+    {
+        IsEnabled = false;
+
+        AddDomainEvent(new CountryIdentityDocStatusChangedEvent(
+            Id.Value,
+            IsEnabled,
+            DateTime.UtcNow));
+    }
+
+    public void Activate()
+    {
+        IsEnabled = true;
+
+        AddDomainEvent(new CountryIdentityDocStatusChangedEvent(
+            Id.Value,
             IsEnabled,
             DateTime.UtcNow));
     }

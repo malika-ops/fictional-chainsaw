@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -21,8 +19,6 @@ public class DeleteCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
 
     public DeleteCountryIdentityDocEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -30,14 +26,8 @@ public class DeleteCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<ICountryIdentityDocRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _repoMock
-                    .Setup(r => r.UpdateAsync(It.IsAny<CountryIdentityDoc>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
 
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
             });
         });
 
@@ -49,9 +39,7 @@ public class DeleteCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         return CountryIdentityDoc.Create(
             CountryIdentityDocId.Of(id),
             new Domain.Countries.CountryId(countryId),
-            Domain.IdentityDocumentAggregate.IdentityDocumentId.Of(docId),
-            true
-        );
+            Domain.IdentityDocumentAggregate.IdentityDocumentId.Of(docId));
     }
 
     [Fact(DisplayName = "DELETE /api/countryidentitydocs/{id} returns 200 when association exists")]
@@ -63,13 +51,11 @@ public class DeleteCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         var docId = Guid.NewGuid();
         var association = CreateTestAssociation(id, countryId, docId);
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(association);
 
-        CountryIdentityDoc? updated = null;
-        _repoMock.Setup(r => r.UpdateAsync(It.IsAny<CountryIdentityDoc>(), It.IsAny<CancellationToken>()))
-                 .Callback<CountryIdentityDoc, CancellationToken>((c, _) => updated = c)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
         // Act
         var response = await _client.DeleteAsync($"/api/countryidentitydocs/{id}");
@@ -79,34 +65,26 @@ public class DeleteCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().BeTrue();
 
-        updated!.IsEnabled.Should().BeFalse();
+        association.IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<CountryIdentityDoc>(),
-                                           It.IsAny<CancellationToken>()),
-                        Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "DELETE /api/countryidentitydocs/{id} returns 400 when association not found")]
-    public async Task Delete_ShouldReturn400_WhenAssociationNotFound()
+    [Fact(DisplayName = "DELETE /api/countryidentitydocs/{id} returns 404 when association not found")]
+    public async Task Delete_ShouldReturn404_WhenAssociationNotFound()
     {
         // Arrange
         var id = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((CountryIdentityDoc?)null);
 
         // Act
         var response = await _client.DeleteAsync($"/api/countryidentitydocs/{id}");
-        var jsonResult = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        jsonResult!.RootElement.GetProperty("errors").GetString()
-           .Should().Be("CountryIdentityDoc not found");
-
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<CountryIdentityDoc>(),
-                                           It.IsAny<CancellationToken>()),
-                        Times.Never);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

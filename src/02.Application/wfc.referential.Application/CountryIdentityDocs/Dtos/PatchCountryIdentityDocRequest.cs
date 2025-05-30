@@ -1,26 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace wfc.referential.Application.CountryIdentityDocs.Dtos;
+﻿namespace wfc.referential.Application.CountryIdentityDocs.Dtos;
 
 public record PatchCountryIdentityDocRequest
 {
-    /// <summary>
-    /// The ID of the Country Identity Document association to update.
-    /// </summary>
+    /// <summary>Country Identity Document association ID (from route).</summary>
     public Guid CountryIdentityDocId { get; init; }
 
-    /// <summary>
-    /// The ID of the Country.
-    /// </summary>
+    /// <summary>Country ID for the association.</summary>
     public Guid? CountryId { get; init; }
 
-    /// <summary>
-    /// The ID of the Identity Document.
-    /// </summary>
+    /// <summary>Identity Document ID for the association.</summary>
     public Guid? IdentityDocumentId { get; init; }
 
-    /// <summary>
-    /// Indicates if the association is enabled.
-    /// </summary>
+    /// <summary>Association status (enabled/disabled).</summary>
     public bool? IsEnabled { get; init; }
 }

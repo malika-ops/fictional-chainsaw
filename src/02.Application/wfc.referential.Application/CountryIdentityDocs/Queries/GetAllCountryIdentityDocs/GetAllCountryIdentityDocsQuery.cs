@@ -4,25 +4,11 @@ using wfc.referential.Application.CountryIdentityDocs.Dtos;
 
 namespace wfc.referential.Application.CountryIdentityDocs.Queries.GetAllCountryIdentityDocs;
 
-public class GetAllCountryIdentityDocsQuery : IQuery<PagedResult<GetCountryIdentityDocResponse>>
+public record GetAllCountryIdentityDocsQuery : IQuery<PagedResult<GetCountryIdentityDocsResponse>>
 {
-    public int PageNumber { get; }
-    public int PageSize { get; }
+    public int PageNumber { get; init; } = 1;
+    public int PageSize { get; init; } = 10;
     public Guid? CountryId { get; init; }
     public Guid? IdentityDocumentId { get; init; }
-    public bool? IsEnabled { get; init; }
-
-    public GetAllCountryIdentityDocsQuery(
-        int pageNumber,
-        int pageSize,
-        Guid? countryId = null,
-        Guid? identityDocumentId = null,
-        bool? isEnabled = true)
-    {
-        CountryId = countryId;
-        IdentityDocumentId = identityDocumentId;
-        IsEnabled = isEnabled;
-        PageNumber = pageNumber;
-        PageSize = pageSize;
-    }
+    public bool? IsEnabled { get; init; } = true;
 }
