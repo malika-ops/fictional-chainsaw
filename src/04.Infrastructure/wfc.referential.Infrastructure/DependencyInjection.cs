@@ -1,6 +1,10 @@
 ﻿using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Abstraction.Repositories;
+using BuildingBlocks.Core.Audit;
+using BuildingBlocks.Core.Audit.Interface;
 using BuildingBlocks.Core.Behaviors.Interceptors;
+using BuildingBlocks.Core.Kafka.Producer;
+using BuildingBlocks.Core.Kafka.Producer.Configuration;
 using BuildingBlocks.Infrastructure.CachingManagement;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -72,6 +76,12 @@ public static class DependencyInjection
             }
         }
         builder.Services.AddScoped(typeof(IRepositoryBase<,>), typeof(BaseRepository<,>));
+
+        builder.Services.AddScoped<ICurrentUserContext,CurrentUserContext>();
+        builder.Services.AddHttpContextAccessor();
+        //kafka
+        builder.Services.Configure<KafkaProducerConfiguration>(configuration.GetSection("KafkaProducerConfiguration"));
+        builder.Services.AddSingleton<IProducerService,KafkaProducerService>();
 
         builder.Services.AddScoped<IMonetaryZoneRepository, MonetaryZoneRepository>();
         builder.Services.AddScoped<ICountryRepository, CountryRepository>();

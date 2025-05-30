@@ -1,15 +1,22 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using BuildingBlocks.Core.Audit.Interface;
+using BuildingBlocks.Core.Kafka.Producer;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.MonetaryZone.Events;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate.Exceptions;
 
 namespace wfc.referential.Application.MonetaryZones.Commands.CreateMonetaryZone;
 
-public class CreateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZoneRepository) : ICommandHandler<CreateMonetaryZoneCommand, Result<Guid>>
+public class CreateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZoneRepository,IProducerService _kafkaProducer,ICurrentUserContext _userContext) 
+    : ICommandHandler<CreateMonetaryZoneCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateMonetaryZoneCommand request, CancellationToken cancellationToken)
     {
+        var userId = _userContext.UserId ?? "anonymous";
+        var traceId = _userContext.TraceId ?? Guid.NewGuid().ToString();
+
         var isExist = await _monetaryZoneRepository.GetByCodeAsync(request.Code, cancellationToken);
         if (isExist is not null) throw new CodeAlreadyExistException(request.Code);
 
@@ -19,6 +26,20 @@ public class CreateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZ
         await _monetaryZoneRepository.AddMonetaryZoneAsync(monetaryZone, cancellationToken);
         await _monetaryZoneRepository.SaveChangesAsync(cancellationToken);
 
+        var auditEvent = new MonetaryZoneCreatedAuditEvent(
+            userId,
+            monetaryZone.Id!.Value,
+            new
+            {
+                monetaryZone.Code,
+                monetaryZone.Name,
+                monetaryZone.Description,
+                monetaryZone.IsEnabled
+            },
+            new {Source="API", TraceId = traceId}
+            );
+
+        await _kafkaProducer.ProduceAsync( auditEvent , "auditLogsTopic");
 
         return Result.Success(monetaryZone.Id!.Value);
 
