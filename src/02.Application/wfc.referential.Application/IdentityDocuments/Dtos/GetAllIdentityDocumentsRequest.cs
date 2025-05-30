@@ -14,4 +14,4 @@
 
     /// <summary>Status filter (Enabled/Disabled).</summary>
     public bool? IsEnabled { get; init; } = true;
-}
+}   

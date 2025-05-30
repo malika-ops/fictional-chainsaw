@@ -1,15 +1,9 @@
-﻿using wfc.referential.Application.Countries.Dtos;
-using wfc.referential.Application.IdentityDocuments.Dtos;
+﻿namespace wfc.referential.Application.CountryIdentityDocs.Dtos;
 
-namespace wfc.referential.Application.CountryIdentityDocs.Dtos;
-
-public record GetCountryIdentityDocResponse(
-    Guid CountryIdentityDocId,
-    Guid CountryId,
-    Guid IdentityDocumentId,
-    bool IsEnabled,
-    string CountryName,
-    string CountryCode,
-    string IdentityDocumentName,
-    string IdentityDocumentCode
-);
+public record GetCountryIdentityDocsResponse
+{
+    public Guid CountryIdentityDocId { get; init; }
+    public Guid CountryId { get; init; }
+    public Guid IdentityDocumentId { get; init; }
+    public bool IsEnabled { get; init; }
+}

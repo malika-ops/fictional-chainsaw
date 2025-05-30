@@ -1,27 +1,27 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Abstraction.CQRS;
-using wfc.referential.Application.Constants;
+﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
+using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.CountryIdentityDocAggregate.Exceptions;
+using wfc.referential.Domain.CountryIdentityDocAggregate;
 
 namespace wfc.referential.Application.CountryIdentityDocs.Commands.DeleteCountryIdentityDoc;
 
-public class DeleteCountryIdentityDocCommandHandler(ICountryIdentityDocRepository _repository,ICacheService _cacheService) : ICommandHandler<DeleteCountryIdentityDocCommand, bool>
+public class DeleteCountryIdentityDocCommandHandler : ICommandHandler<DeleteCountryIdentityDocCommand, Result<bool>>
 {
-    public async Task<bool> Handle(DeleteCountryIdentityDocCommand request, CancellationToken cancellationToken)
+    private readonly ICountryIdentityDocRepository _countryIdentityDocRepository;
+
+    public DeleteCountryIdentityDocCommandHandler(ICountryIdentityDocRepository countryIdentityDocRepository)
+        => _countryIdentityDocRepository = countryIdentityDocRepository;
+
+    public async Task<Result<bool>> Handle(DeleteCountryIdentityDocCommand cmd, CancellationToken ct)
     {
-        var entity = await _repository.GetByIdAsync(request.CountryIdentityDocId, cancellationToken);
-        if (entity == null)
-            throw new CountryIdentityDocException("CountryIdentityDoc not found");
+        var countryIdentityDoc = await _countryIdentityDocRepository.GetByIdAsync(CountryIdentityDocId.Of(cmd.CountryIdentityDocId), ct);
+        if (countryIdentityDoc is null)
+            throw new ResourceNotFoundException($"Country identity document [{cmd.CountryIdentityDocId}] not found.");
 
-        entity.Disable();
+        countryIdentityDoc.Disable();
+        await _countryIdentityDocRepository.SaveChangesAsync(ct);
 
-        await _repository.UpdateAsync(entity, cancellationToken);
-        await _repository.SaveChangesAsync(cancellationToken);
-
-        // Clear cache
-        await _cacheService.RemoveByPrefixAsync(CacheKeys.CountryIdentityDocument.Prefix, cancellationToken);
-
-        return true;
+        return Result.Success(true);
     }
 }

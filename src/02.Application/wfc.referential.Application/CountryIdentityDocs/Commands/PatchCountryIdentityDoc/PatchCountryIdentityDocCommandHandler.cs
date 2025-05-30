@@ -1,58 +1,76 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Abstraction.CQRS;
+﻿using BuildingBlocks.Core.Abstraction.CQRS;
+using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
-using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
+using wfc.referential.Domain.CountryIdentityDocAggregate.Exceptions;
 using wfc.referential.Domain.IdentityDocumentAggregate;
 
 namespace wfc.referential.Application.CountryIdentityDocs.Commands.PatchCountryIdentityDoc;
 
-public class PatchCountryIdentityDocCommandHandler(ICountryIdentityDocRepository _repository, ICountryRepository _countryRepository,
-    IIdentityDocumentRepository _identityDocumentRepository , ICacheService _cacheService) : ICommandHandler<PatchCountryIdentityDocCommand, Guid>
+public class PatchCountryIdentityDocCommandHandler : ICommandHandler<PatchCountryIdentityDocCommand, Result<bool>>
 {
-    public async Task<Guid> Handle(PatchCountryIdentityDocCommand request, CancellationToken cancellationToken)
+    private readonly ICountryIdentityDocRepository _countryIdentityDocRepository;
+    private readonly ICountryRepository _countryRepository;
+    private readonly IIdentityDocumentRepository _identityDocumentRepository;
+
+    public PatchCountryIdentityDocCommandHandler(
+        ICountryIdentityDocRepository countryIdentityDocRepository,
+        ICountryRepository countryRepository,
+        IIdentityDocumentRepository identityDocumentRepository)
     {
-        var entity = await _repository.GetByIdAsync(request.CountryIdentityDocId, cancellationToken);
-        if (entity == null)
-            throw new BusinessException("CountryIdentityDoc not found");
+        _countryIdentityDocRepository = countryIdentityDocRepository;
+        _countryRepository = countryRepository;
+        _identityDocumentRepository = identityDocumentRepository;
+    }
 
-        // Validation conditionnelle des clés étrangères
-        CountryId countryId = entity.CountryId;
-        IdentityDocumentId identityDocumentId = entity.IdentityDocumentId;
-        bool isEnabled = entity.IsEnabled;
+    public async Task<Result<bool>> Handle(PatchCountryIdentityDocCommand cmd, CancellationToken ct)
+    {
+        var countryIdentityDoc = await _countryIdentityDocRepository.GetByIdAsync(CountryIdentityDocId.Of(cmd.CountryIdentityDocId), ct);
+        if (countryIdentityDoc is null)
+            throw new ResourceNotFoundException($"Country identity document [{cmd.CountryIdentityDocId}] not found.");
 
-        if (request.CountryId.HasValue)
+        CountryId? countryId = null;
+        IdentityDocumentId? identityDocumentId = null;
+
+        // Validate country if provided
+        if (cmd.CountryId.HasValue)
         {
-            var country = await _countryRepository.GetByIdAsync(request.CountryId.Value, cancellationToken);
+            var country = await _countryRepository.GetByIdAsync(cmd.CountryId.Value, ct);
             if (country is null)
-                throw new BusinessException($"Country with ID {request.CountryId} not found");
-
-            countryId = new CountryId(request.CountryId.Value);
+                throw new ResourceNotFoundException($"Country [{cmd.CountryId}] not found.");
+            countryId = CountryId.Of(cmd.CountryId.Value);
         }
 
-        if (request.IdentityDocumentId.HasValue)
+        // Validate identity document if provided
+        if (cmd.IdentityDocumentId.HasValue)
         {
-            var identityDocument = await _identityDocumentRepository.GetByIdAsync(IdentityDocumentId.Of(request.IdentityDocumentId.Value), cancellationToken);
+            var identityDocument = await _identityDocumentRepository.GetByIdAsync(IdentityDocumentId.Of(cmd.IdentityDocumentId.Value), ct);
             if (identityDocument is null)
-                throw new BusinessException($"IdentityDocument with ID {request.IdentityDocumentId} not found");
-
-            identityDocumentId = IdentityDocumentId.Of(request.IdentityDocumentId.Value);
+                throw new ResourceNotFoundException($"Identity document [{cmd.IdentityDocumentId}] not found.");
+            identityDocumentId = IdentityDocumentId.Of(cmd.IdentityDocumentId.Value);
         }
 
-        if (request.IsEnabled.HasValue)
+        // Check for duplicate association if both IDs are being changed
+        if (countryId != null || identityDocumentId != null)
         {
-            isEnabled = request.IsEnabled.Value;
+            var finalCountryId = countryId ?? countryIdentityDoc.CountryId;
+            var finalIdentityDocumentId = identityDocumentId ?? countryIdentityDoc.IdentityDocumentId;
+
+            if (finalCountryId != countryIdentityDoc.CountryId || finalIdentityDocumentId != countryIdentityDoc.IdentityDocumentId)
+            {
+                var duplicateExists = await _countryIdentityDocRepository.ExistsByCountryAndIdentityDocumentAsync(finalCountryId, finalIdentityDocumentId, ct);
+                if (duplicateExists)
+                    throw new CountryIdentityDocAlreadyExistsException(finalCountryId.Value, finalIdentityDocumentId.Value);
+            }
         }
 
-        entity.Patch(countryId, identityDocumentId, isEnabled);
+        countryIdentityDoc.Patch(countryId, identityDocumentId, cmd.IsEnabled);
 
-        await _repository.UpdateAsync(entity, cancellationToken);
-        await _repository.SaveChangesAsync(cancellationToken);
+        _countryIdentityDocRepository.Update(countryIdentityDoc);
+        await _countryIdentityDocRepository.SaveChangesAsync(ct);
 
-        await _cacheService.RemoveByPrefixAsync(CacheKeys.CountryIdentityDocument.Prefix, cancellationToken);
-
-        return entity.Id!.Value;
+        return Result.Success(true);
     }
 }
