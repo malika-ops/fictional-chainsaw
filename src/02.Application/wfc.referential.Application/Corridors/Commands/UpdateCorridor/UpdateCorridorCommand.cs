@@ -1,21 +1,16 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
-using BuildingBlocks.Core.Caching.Interface;
-using wfc.referential.Domain.AgencyAggregate;
-using wfc.referential.Domain.CityAggregate;
-using wfc.referential.Domain.CorridorAggregate;
-using wfc.referential.Domain.Countries;
 
 namespace wfc.referential.Application.Corridors.Commands.UpdateCorridor;
 
 public record UpdateCorridorCommand : ICommand<Result<bool>>
 {
     public Guid CorridorId { get; set; } = default!;
-    public CountryId SourceCountryId { get; init; } = default!;
-    public CountryId DestinationCountryId { get; init; } = default!;
-    public CityId SourceCityId { get; init; } = default!;
-    public CityId DestinationCityId { get; init; } = default!;
-    public AgencyId SourceBranchId { get; init; } = default!;
-    public AgencyId DestinationBranchId { get; init; } = default!;
+    public Guid? SourceCountryId { get; init; } = default!;
+    public Guid? DestinationCountryId { get; init; } = default!;
+    public Guid? SourceCityId { get; init; } = default!;
+    public Guid? DestinationCityId { get; init; } = default!;
+    public Guid? SourceBranchId { get; init; } = default!;
+    public Guid? DestinationBranchId { get; init; } = default!;
     public bool IsEnabled { get; init; } = default!;
 }

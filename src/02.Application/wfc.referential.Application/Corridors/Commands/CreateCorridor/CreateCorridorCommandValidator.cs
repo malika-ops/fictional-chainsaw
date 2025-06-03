@@ -9,10 +9,15 @@ public class CreateCorridorCommandValidator : AbstractValidator<CreateCorridorCo
     public CreateCorridorCommandValidator()
     {
 
-        RuleFor(x => x.SourceCountryId)
-            .NotEmpty().WithMessage("SourceCountryId is required");
-        RuleFor(x => x.DestinationCountryId)
-            .NotEmpty().WithMessage("DestinationCountryId is required");
+        RuleFor(command => command)
+            .Must(command => 
+                command.SourceCountryId.HasValue ||
+                command.DestinationCountryId.HasValue ||
+                command.SourceCityId.HasValue ||
+                command.DestinationCityId.HasValue ||
+                command.SourceBranchId.HasValue ||
+                command.DestinationBranchId.HasValue)
+            .WithMessage("At least one of the source or destination fields must be provided.");
     }
 
 }

@@ -19,30 +19,7 @@ public class CorridorMappings
             .NewConfig()
             .MapWith(src => src == null ? (Guid?)null : src.Value);
 
-        TypeAdapterConfig<CountryId, Guid?>
-            .NewConfig()
-            .MapWith(src => src == null ? (Guid?)null : src.Value);
 
-        TypeAdapterConfig<AgencyId, Guid?>
-            .NewConfig()
-            .MapWith(src => src == null ? (Guid?)null : src.Value);
-
-        TypeAdapterConfig<CityId, Guid?>
-            .NewConfig()
-            .MapWith(src => src == null ? (Guid?)null : src.Value);
-
-        TypeAdapterConfig<Guid?, CorridorId>
-            .NewConfig()
-            .MapWith(src => src.HasValue ? CorridorId.Of(src.Value) : null);
-        TypeAdapterConfig<Guid?, AgencyId>
-            .NewConfig()
-            .MapWith(src => src.HasValue ? AgencyId.Of(src.Value) : null);
-        TypeAdapterConfig<Guid?, CountryId>
-            .NewConfig()
-            .MapWith(src => src.HasValue ? CountryId.Of(src.Value) : null);
-        TypeAdapterConfig<Guid?, CityId>
-            .NewConfig()
-            .MapWith(src => src.HasValue ? CityId.Of(src.Value) : null);
 
     }
 }

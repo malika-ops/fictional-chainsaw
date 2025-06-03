@@ -44,5 +44,9 @@ public class AgencyMappings
             .Map(d => d.AgencyTypeLibelle, s => s.AgencyType != null ? s.AgencyType.TypeDefinition.Libelle : null)
             .Map(d => d.AgencyTypeValue, s => s.AgencyType != null ? s.AgencyType.Value : null);
 
+        TypeAdapterConfig<AgencyId, Guid?>
+            .NewConfig()
+            .MapWith(src => src == null ? (Guid?)null : src.Value);
+
     }
 }

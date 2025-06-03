@@ -44,5 +44,9 @@ public class CountryMappings
             .NewConfig()
             .IgnoreNullValues(true);
 
+        TypeAdapterConfig<CountryId, Guid?>
+            .NewConfig()
+            .MapWith(src => src == null ? (Guid?)null : src.Value);
+
     }
 }

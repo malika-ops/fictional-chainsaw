@@ -13,5 +13,10 @@ public class CityMappings
         TypeAdapterConfig<City, GetAllCitiesResponse>.NewConfig()
             .Map(dest => dest.CityId, src => src.Id!.Value)
             .Map(dest => dest.RegionId, src => src.RegionId.Value);
+
+
+        TypeAdapterConfig<CityId, Guid?>
+            .NewConfig()
+            .MapWith(src => src == null ? (Guid?)null : src.Value);
     }
 }

@@ -8,8 +8,8 @@ namespace wfc.referential.Domain.CorridorAggregate;
 
 public class Corridor : Aggregate<CorridorId>
 {
-    public CountryId SourceCountryId { get; private set; } = default!;
-    public CountryId DestinationCountryId { get; private set; } = default!;
+    public CountryId? SourceCountryId { get; private set; } = default!;
+    public CountryId? DestinationCountryId { get; private set; } = default!;
     public CityId? SourceCityId { get; private set; } = default!;
     public CityId? DestinationCityId { get; private set; } = default!;
     public AgencyId? SourceBranchId { get; private set; } = default!;
@@ -26,8 +26,8 @@ public class Corridor : Aggregate<CorridorId>
 
     private Corridor() { }
 
-    public static Corridor Create(CorridorId id, CountryId sourceCountry, CountryId destCountry,
-       CityId sourceCity, CityId destCity, AgencyId sourceBranch, AgencyId destBranch)
+    public static Corridor Create(CorridorId id, CountryId? sourceCountry, CountryId? destCountry,
+       CityId? sourceCity, CityId? destCity, AgencyId? sourceBranch, AgencyId? destBranch)
     {
         var corridor = new Corridor
         {
@@ -37,11 +37,11 @@ public class Corridor : Aggregate<CorridorId>
             SourceCityId = sourceCity,
             DestinationCityId = destCity,
             SourceBranchId = sourceBranch,
-            DestinationBranchId = destBranch,
-            IsEnabled = true
+            DestinationBranchId = destBranch
         };
 
-        corridor.AddDomainEvent(new CorridorCreatedEvent(id.Value, sourceCountry, destCountry, sourceCity, destCity, sourceBranch, destBranch, true));
+        corridor.AddDomainEvent(new CorridorCreatedEvent(id, sourceCountry, destCountry,
+            sourceCity, destCity, sourceBranch, destBranch, true));
         return corridor;
     }
 
@@ -51,15 +51,16 @@ public class Corridor : Aggregate<CorridorId>
         AddDomainEvent(new CorridorStatusChangedEvent(Id!.Value, false, DateTime.UtcNow));
     }
 
-    public void Update(CountryId sourceCountry, CountryId destCountry,
-        CityId sourceCity, CityId destCity, AgencyId SourceBranch, AgencyId destBranch, bool isEnabled)
+    public void Update(Guid? sourceCountry, Guid? destCountry,
+        Guid? sourceCity, Guid? destCity, Guid? sourceBranch, Guid? destBranch, bool isEnabled)
     {
-        SourceCountryId = sourceCountry;
-        DestinationCountryId = destCountry;
-        SourceCityId = sourceCity;
-        DestinationCityId = destCity;
-        SourceBranchId = SourceBranch;
-        DestinationBranchId = destBranch;
+
+        SourceCountryId = sourceCountry.HasValue ? CountryId.Of(sourceCountry.Value) : null;
+        DestinationCountryId = destCountry.HasValue ? CountryId.Of(destCountry.Value) : null;
+        SourceCityId = sourceCity.HasValue ? CityId.Of(sourceCity.Value) : null;
+        DestinationCityId = destCity.HasValue ? CityId.Of(destCity.Value) : null;
+        SourceBranchId = sourceBranch.HasValue ? AgencyId.Of(sourceBranch.Value) : null;
+        DestinationBranchId = destBranch.HasValue ? AgencyId.Of(destBranch.Value) : null;
         IsEnabled = isEnabled;
 
         AddDomainEvent(new CorridorUpdatedEvent(

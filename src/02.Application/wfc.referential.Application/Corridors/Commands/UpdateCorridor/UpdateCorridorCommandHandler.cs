@@ -2,7 +2,6 @@
 using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
-using BuildingBlocks.Infrastructure.CachingManagement;
 using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CorridorAggregate;

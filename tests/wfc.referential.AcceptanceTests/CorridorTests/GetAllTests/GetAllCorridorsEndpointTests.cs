@@ -1,7 +1,4 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
+﻿using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
@@ -9,6 +6,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using wfc.referential.Application.Corridors.Queries.GetAllCorridors;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
@@ -48,7 +48,7 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
         private static Corridor CreateDummyCorridor(Guid id, Guid sourceCountryId, Guid destinationCountryId)
         {
             return Corridor.Create(
-                CorridorId.Of(id),
+                CorridorId.Of(id), 
                 CountryId.Of(sourceCountryId),
                 CountryId.Of(destinationCountryId),
                 CityId.Of(Guid.NewGuid()),

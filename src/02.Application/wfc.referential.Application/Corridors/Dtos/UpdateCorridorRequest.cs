@@ -7,10 +7,10 @@ public record UpdateCorridorRequest
     public Guid CorridorId { get; init; }
 
     /// <summary>Source country ID</summary>
-    public Guid SourceCountryId { get; init; }
+    public Guid? SourceCountryId { get; init; }
 
     /// <summary>Destination country ID</summary>
-    public Guid DestinationCountryId { get; init; }
+    public Guid? DestinationCountryId { get; init; }
 
     /// <summary>Source city ID</summary>
     public Guid? SourceCityId { get; init; }
