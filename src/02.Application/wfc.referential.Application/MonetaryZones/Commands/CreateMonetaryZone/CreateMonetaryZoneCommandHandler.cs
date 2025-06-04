@@ -38,6 +38,7 @@ public class CreateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZ
              },
              new
              {
+                 ip = _userContext.IpAddress,
                  TraceId = traceId
              });
 

@@ -5,7 +5,7 @@ namespace wfc.referential.Domain.MonetaryZone.Events;
 public record MonetaryZoneCreatedAuditEvent 
 {
     public string UserId { get; init; }
-    public string Service { get; init; } = "wfc.referential.api";
+    public string Service { get; init; } = "wfc.referential";
     public string Action { get; init; } = "Create";
     public string Entity { get; init; } = "MonetaryZone";
     public string EntityId { get; init; }
