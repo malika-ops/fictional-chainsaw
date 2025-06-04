@@ -1,6 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.Domain;
 using wfc.referential.Domain.ProductAggregate.Events;
-using wfc.referential.Domain.RegionAggregate;
 using wfc.referential.Domain.ServiceAggregate;
 
 namespace wfc.referential.Domain.ProductAggregate;
@@ -61,8 +60,12 @@ public class Product : Aggregate<ProductId>
             DateTime.UtcNow
         ));
     }
-    public void Patch()
+    public void Patch(string? code, string? name, bool? isEnabled)
     {
+        Code = code ?? Code;
+        Name = name ?? Name;
+        IsEnabled = isEnabled  ?? IsEnabled;
+
         AddDomainEvent(new ProductPatchedEvent(
             Id.Value,
             Code,

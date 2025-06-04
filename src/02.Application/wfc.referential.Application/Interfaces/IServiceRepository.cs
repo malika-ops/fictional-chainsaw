@@ -1,9 +1,10 @@
-﻿using wfc.referential.Application.Services.Queries.GetAllServices;
+﻿using BuildingBlocks.Core.Abstraction.Repositories;
+using wfc.referential.Application.Services.Queries.GetAllServices;
 using wfc.referential.Domain.ServiceAggregate;
 
 namespace wfc.referential.Application.Interfaces;
 
-public interface IServiceRepository
+public interface IServiceRepository : IRepositoryBase<Service, ServiceId>
 {
     Task<List<Service>> GetAllServicesAsync(CancellationToken cancellationToken);
     Task<Service?> GetByIdAsync(Guid id, CancellationToken cancellationToken);

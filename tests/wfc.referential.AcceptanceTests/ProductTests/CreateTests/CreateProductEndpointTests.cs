@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
@@ -37,7 +38,7 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
                 // 🪄  Set up mock behaviour (echoes entity back, as if EF saved it)
                 _repoMock
-                    .Setup(r => r.AddProductAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+                    .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Product r, CancellationToken _) => r);
 
                 // 🔌 Plug mocks back in
@@ -70,7 +71,7 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         // verify repository interaction using *FluentAssertions on Moq invocations
         _repoMock.Verify(r =>
-            r.AddProductAsync(It.Is<Product>(r =>
+            r.AddAsync(It.Is<Product>(r =>
                     r.Code == payload.Code &&
                     r.Name == payload.Name),
                     It.IsAny<CancellationToken>()
@@ -108,7 +109,7 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         // the handler must NOT be reached
         _repoMock.Verify(r =>
-            r.AddProductAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "when validation fails, the command handler should not be executed");
     }
@@ -143,7 +144,7 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         // handler must NOT run on validation failure
         _repoMock.Verify(r =>
-            r.AddProductAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -161,7 +162,7 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
             true);
 
         _repoMock
-            .Setup(r => r.GetByCodeAsync(duplicateCode, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 
         var payload = new
@@ -185,7 +186,7 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         // Handler must NOT attempt to add the entity
         _repoMock.Verify(r =>
-            r.AddProductAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "no insertion should happen when the code is already taken");
     }

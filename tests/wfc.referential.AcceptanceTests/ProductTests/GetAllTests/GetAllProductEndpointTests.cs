@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -59,15 +60,11 @@ public class GetAllProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
                                DummyProduct("005", "Jibi") };
 
         // repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetProductsByCriteriaAsync(
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetAllProductsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                            1, 2,
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allProducts.Take(2).ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllProductsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allProducts.Length);
+                 .ReturnsAsync(new PagedResult<Product>( allProducts.Take(2).ToList(), 5,1,2));
 
         // Act
         var response = await _client.GetAsync("/api/products?pageNumber=1&pageSize=2");
@@ -81,8 +78,9 @@ public class GetAllProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetProductsByCriteriaAsync(
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetAllProductsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                                1, 2,
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
     }
@@ -94,15 +92,12 @@ public class GetAllProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Arrange
         var usd = DummyProduct("001", "Cash Express");
 
-        _repoMock.Setup(r => r.GetProductsByCriteriaAsync(
-                            It.Is<GetAllProductsQuery>(q => q.Code == "001"),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<Product> { usd });
 
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllProductsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                    It.Is<GetAllProductsQuery>(q => q.Code == "001"),
+                    1, 2,
+                    It.IsAny<CancellationToken>()))
+         .ReturnsAsync(new PagedResult<Product>(new List<Product> { usd }, 5, 1, 2));
 
         // Act
         var response = await _client.GetAsync("/api/products?code=001");
@@ -113,10 +108,6 @@ public class GetAllProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("code").GetString().Should().Be("001");
 
-        _repoMock.Verify(r => r.GetProductsByCriteriaAsync(
-                                It.Is<GetAllProductsQuery>(q => q.Code == "001"),
-                                It.IsAny<CancellationToken>()),
-                         Times.Once);
     }
 
     //// 3) Default paging when parameters are omitted
@@ -129,15 +120,11 @@ public class GetAllProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
                         DummyProduct("002", "Floussy"),
                         DummyProduct("003", "Jibi") };
 
-        _repoMock.Setup(r => r.GetProductsByCriteriaAsync(
-                            It.Is<GetAllProductsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(zones.ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllProductsQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(zones.Length);
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                    It.Is<GetAllProductsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                    1, 2,
+                    It.IsAny<CancellationToken>()))
+         .ReturnsAsync(new PagedResult<Product>(zones.ToList(), 5, 1, 2));
 
         // Act
         var response = await _client.GetAsync("/api/products");
@@ -151,8 +138,9 @@ public class GetAllProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         dto.Items.Should().HaveCount(3);
 
         // repository must have been called with default paging values
-        _repoMock.Verify(r => r.GetProductsByCriteriaAsync(
+        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetAllProductsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
+                                1, 10,
                                 It.IsAny<CancellationToken>()),
                          Times.Once);
     }

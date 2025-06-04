@@ -7,7 +7,7 @@ using wfc.referential.Application.Products.Dtos;
 
 namespace wfc.referential.API.Endpoints.Product;
 
-public class PatchProduct(IMediator _mediator) : Endpoint<PatchProductRequest, Guid>
+public class PatchProduct(IMediator _mediator) : Endpoint<PatchProductRequest, bool>
 {
     public override void Configure()
     {

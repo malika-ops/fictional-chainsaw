@@ -1,12 +1,13 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
+﻿using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http.Json;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.ProductAggregate;
 using wfc.referential.Domain.ServiceAggregate;
@@ -18,6 +19,7 @@ public class DeleteProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 {
     private readonly HttpClient _client;
     private readonly Mock<IProductRepository> _repoMock = new();
+    private readonly Mock<IServiceRepository> _repoServiceMock = new();
 
     public DeleteProductEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -32,10 +34,12 @@ public class DeleteProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
             {
                 // 🧹 Remove concrete registrations that hit the DB / Redis
                 services.RemoveAll<IProductRepository>();
+                services.RemoveAll<IServiceRepository>();
                 services.RemoveAll<ICacheService>();
 
                 // 🔌 Plug mocks back in
                 services.AddSingleton(_repoMock.Object);
+                services.AddSingleton(_repoServiceMock.Object);
                 services.AddSingleton(cacheMock.Object);
             });
         });
@@ -55,10 +59,10 @@ public class DeleteProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
             true
             );
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<Guid>(id => id == productId), It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 
-        _repoMock.Setup(r => r.GetServicesByProductIdAsync(It.Is<Guid>(id => id == productId), It.IsAny<CancellationToken>()))
+        _repoServiceMock.Setup(r => r.GetByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Service>()); // No service
 
         // Act
@@ -69,7 +73,7 @@ public class DeleteProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _repoMock.Verify(r => r.UpdateProductAsync(It.Is<Product>(r => r.Id == ProductId.Of(productId) && !r.IsEnabled.Equals(true)), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.Update(It.Is<Product>(r => r.Id == ProductId.Of(productId) && !r.IsEnabled.Equals(true))), Times.Once);
     }
 
     [Fact(DisplayName = "DELETE /api/products/{id} returns 404 when Product does not exist")]
@@ -77,7 +81,7 @@ public class DeleteProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         // Arrange
         var productId = Guid.NewGuid();
-        _repoMock.Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product)null); // Product not found
 
         // Act

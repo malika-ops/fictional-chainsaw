@@ -2,7 +2,7 @@
 
 namespace wfc.referential.Domain.ProductAggregate.Exceptions;
 
-public class CodeAlreadyExistException : BusinessException
+public class CodeAlreadyExistException : ConflictException
 {
     public CodeAlreadyExistException(string code): base($"{nameof(Product)} with code : {code} already exist")
     {

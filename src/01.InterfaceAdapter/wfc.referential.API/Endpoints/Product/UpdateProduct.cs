@@ -6,7 +6,7 @@ using wfc.referential.Application.Products.Dtos;
 
 namespace wfc.referential.API.Endpoints.Product;
 
-public class PutProduct(IMediator _mediator) : Endpoint<UpdateProductRequest, Guid>
+public class PutProduct(IMediator _mediator) : Endpoint<UpdateProductRequest, bool>
 {
     public override void Configure()
     {

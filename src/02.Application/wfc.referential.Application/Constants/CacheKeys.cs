@@ -63,4 +63,10 @@ public static class CacheKeys
     {
         public const string Prefix = InstancePrefix + "TaxRuleDetail_";
     }
+
+    // 🔹 Entité : Product
+    public static class ProductCache
+    {
+        public const string Prefix = InstancePrefix + "Product_";
+    }
 }
