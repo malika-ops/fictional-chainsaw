@@ -6,7 +6,7 @@ using wfc.referential.Application.Services.Dtos;
 
 namespace wfc.referential.API.Endpoints.Service;
 
-public class UpdateService(IMediator _mediator) : Endpoint<UpdateServiceRequest, Guid>
+public class UpdateService(IMediator _mediator) : Endpoint<UpdateServiceRequest, bool>
 {
     public override void Configure()
     {

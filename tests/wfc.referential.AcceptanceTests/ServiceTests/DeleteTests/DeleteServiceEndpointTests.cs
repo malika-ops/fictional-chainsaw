@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
@@ -52,8 +53,8 @@ public class DeleteServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
             ProductId.Of(Guid.NewGuid())
         );
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<Guid>(id => id == serviceId), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(service);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(service);
 
         var response = await _client.DeleteAsync($"/api/services/{serviceId}");
         var result = await response.Content.ReadFromJsonAsync<bool>();
@@ -61,15 +62,15 @@ public class DeleteServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _repoMock.Verify(r => r.UpdateServiceAsync(It.Is<Service>(s => s.Id == ServiceId.Of(serviceId) && !s.IsEnabled), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.Update(It.Is<Service>(r => r.Id == ServiceId.Of(serviceId) && !r.IsEnabled.Equals(true))), Times.Once);
     }
 
     [Fact(DisplayName = "DELETE /api/services/{id} returns 404 when Service does not exist")]
     public async Task Delete_ShouldReturn404_WhenServiceDoesNotExist()
     {
         var serviceId = Guid.NewGuid();
-        _repoMock.Setup(r => r.GetByIdAsync(serviceId, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((Service)null);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Service)null);
 
         var response = await _client.DeleteAsync($"/api/services/{serviceId}");
 

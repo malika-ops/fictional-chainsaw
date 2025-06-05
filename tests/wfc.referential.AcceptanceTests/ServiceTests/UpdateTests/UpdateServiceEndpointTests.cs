@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
@@ -33,9 +34,7 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
                 services.RemoveAll<IServiceRepository>();
                 services.RemoveAll<ICacheService>();
 
-                _repoMock
-                    .Setup(r => r.UpdateServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+                _repoMock.Setup(r => r.Update(It.IsAny<Service>()));                    
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(cacheMock.Object);
@@ -54,13 +53,20 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var oldService = DummyService(id, "SVC001", "ExpressService");
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(oldService);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+           .ReturnsAsync((Expression<Func<Service, bool>> predicate, CancellationToken _) =>
+           {
+               var func = predicate.Compile();
+
+               if (func(oldService))
+                   return oldService;
+
+               return null;
+           });
 
         Service? updated = null;
-        _repoMock.Setup(r => r.UpdateServiceAsync(oldService, It.IsAny<CancellationToken>()))
-                 .Callback<Service, CancellationToken>((rg, _) => updated = rg)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.Update(oldService))
+                .Callback<Service>((rg) => updated = rg);
 
         var payload = new
         {
@@ -79,7 +85,8 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         updated!.Code.Should().Be("NEW001");
         updated.Name.Should().Be("Updated Express");
 
-        _repoMock.Verify(r => r.UpdateServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<Service>()),
+                         Times.Once);
     }
 
     [Fact(DisplayName = "PUT /api/services/{id} returns 400 when Name is missing")]
@@ -102,7 +109,7 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
             .GetProperty("name")[0].GetString()
             .Should().Be("Name is required");
 
-        _repoMock.Verify(r => r.UpdateServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<Service>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/services/{id} returns 400 when Code already exists")]
@@ -112,11 +119,11 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var existing = DummyService(Guid.NewGuid(), "SVC001", "Express");
         var target = DummyService(id, "SVC002", "Transfer");
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(target);
 
-        _repoMock.Setup(r => r.GetByCodeAsync("SVC001", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existing); // duplicate code
 
         var payload = new
         {
@@ -135,6 +142,6 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         doc!.RootElement.GetProperty("errors").GetString()
            .Should().Contain("Service with code : SVC001 already exists");
 
-        _repoMock.Verify(r => r.UpdateServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<Service>()), Times.Never);
     }
 }

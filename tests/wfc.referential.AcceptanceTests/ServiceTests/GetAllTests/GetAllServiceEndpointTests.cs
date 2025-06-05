@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -56,15 +57,11 @@ public class GetAllServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
             DummyService("SVC003", "Jibi")
         };
 
-        _repoMock.Setup(r => r.GetServicesByCriteriaAsync(
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetAllServicesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                            1, 2,
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allServices.Take(2).ToList());
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllServicesQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(allServices.Length);
+                 .ReturnsAsync(new PagedResult<Service>(allServices.Take(2).ToList(), 3, 1, 2));
 
         var response = await _client.GetAsync("/api/services?pageNumber=1&pageSize=2");
         var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
@@ -82,15 +79,11 @@ public class GetAllServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         var svc = DummyService("SVC001", "ExpressService");
 
-        _repoMock.Setup(r => r.GetServicesByCriteriaAsync(
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetAllServicesQuery>(q => q.Code == "SVC001"),
+                            1, 2,
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<Service> { svc });
-
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllServicesQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(1);
+                 .ReturnsAsync(new PagedResult<Service>(new List<Service> { svc }, 5, 1, 2));
 
         var response = await _client.GetAsync("/api/services?code=SVC001");
         var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();
@@ -109,15 +102,12 @@ public class GetAllServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
             DummyService("SVC003", "Jibi")
         };
 
-        _repoMock.Setup(r => r.GetServicesByCriteriaAsync(
-                            It.Is<GetAllServicesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
+        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                            It.Is<GetAllServicesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
+                            1, 2,
                             It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(services.ToList());
+                 .ReturnsAsync(new PagedResult<Service>(services.Take(2).ToList(), 3, 1, 2));
 
-        _repoMock.Setup(r => r.GetCountTotalAsync(
-                            It.IsAny<GetAllServicesQuery>(),
-                            It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(services.Length);
 
         var response = await _client.GetAsync("/api/services");
         var dto = await response.Content.ReadFromJsonAsync<PagedResultDto<JsonElement>>();

@@ -13,7 +13,7 @@ public class Service : Aggregate<ServiceId>
 
     public ProductId ProductId { get; private set; }
 
-    public ICollection<TaxRuleDetailAggregate.TaxRuleDetail> TaxRuleDetails { get; private set; }
+    public ICollection<TaxRuleDetail> TaxRuleDetails { get; private set; }
     private Service() { }
 
     public static Service Create(ServiceId id, string code, string name, bool isEnabled, ProductId productId)
@@ -47,8 +47,13 @@ public class Service : Aggregate<ServiceId>
         AddDomainEvent(new ServiceUpdatedEvent(Id.Value, Code, Name, IsEnabled, DateTime.UtcNow, ProductId.Value));
     }
 
-    public void Patch()
+    public void Patch(string? code, string? name, bool? isEnabled, ProductId? productId)
     {
+        Code = code ?? Code;
+        Name = name ?? Name;
+        IsEnabled = isEnabled ?? IsEnabled;
+        ProductId = productId ?? ProductId;
+
         AddDomainEvent(new ServicePatchedEvent(Id.Value, Code, Name, IsEnabled, DateTime.UtcNow, ProductId.Value));
     }
 }

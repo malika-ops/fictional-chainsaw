@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
@@ -61,8 +62,9 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
             ProductId.Of(Guid.NewGuid())
         );
 
-        _repoMock.Setup(r => r.GetByIdAsync(serviceId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(service);
+
 
         var response = await _client.PatchAsync($"/api/services/{serviceId}", JsonContent.Create(patchRequest));
         var updatedServiceId = await response.Content.ReadFromJsonAsync<Guid>();
@@ -83,8 +85,8 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
             Name = "Non-existing Service",
         };
 
-        _repoMock.Setup(r => r.GetByIdAsync(serviceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Service)null);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+           .ReturnsAsync((Service)null);
 
         var response = await _client.PatchAsync($"/api/services/{serviceId}", JsonContent.Create(patchRequest));
 
@@ -102,14 +104,8 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
             Name = "Invalid Service",
         };
 
-        _repoMock.Setup(r => r.GetByIdAsync(serviceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Service.Create(
-                ServiceId.Of(serviceId),
-                "SVC-OLD",
-                "Old Name",
-                true,
-                ProductId.Of(Guid.NewGuid())
-            ));
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Service.Create(ServiceId.Of(serviceId), "code", "name", true,ProductId.Of(Guid.NewGuid())));
 
         var response = await _client.PatchAsync($"/api/services/{serviceId}", JsonContent.Create(patchRequest));
 

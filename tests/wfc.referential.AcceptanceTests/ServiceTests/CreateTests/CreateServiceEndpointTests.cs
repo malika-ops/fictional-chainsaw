@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Application.Interfaces;
@@ -9,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Application.Services.Dtos;
+using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.ProductAggregate;
 using wfc.referential.Domain.ServiceAggregate;
 using Xunit;
@@ -19,11 +22,11 @@ public class CreateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
 {
     private readonly HttpClient _client;
     private readonly Mock<IServiceRepository> _repoMock = new();
+    private readonly Mock<IProductRepository> _repöProductMock = new();
+    private readonly Mock<ICacheService> _cacheMock = new();
 
     public CreateServiceEndpointTests(WebApplicationFactory<Program> factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
         var customisedFactory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -33,11 +36,12 @@ public class CreateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
                 services.RemoveAll<ICacheService>();
 
                 _repoMock
-                    .Setup(r => r.AddServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()))
+                    .Setup(r => r.AddAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Service s, CancellationToken _) => s);
 
                 services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
+                services.AddSingleton(_cacheMock.Object);
+                services.AddSingleton(_repöProductMock.Object);
             });
         });
 
@@ -47,12 +51,16 @@ public class CreateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
     [Fact(DisplayName = "POST /api/services returns 201 and Guid")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
     {
-        var payload = new
+        var payload = new CreateServiceRequest
         {
             Code = "SVC001",
             Name = "Express Transfer",
-            ProductId = Guid.NewGuid()
+            ProductId = Guid.Parse("50ed04f5-d16b-49c6-af46-b3ea7dfb8cb1")
         };
+
+        _repöProductMock.Setup(r => r.GetByIdAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((ProductId productId, CancellationToken _) =>
+                        Product.Create(productId, "TEST Code", "Test Name",true));
 
         var response = await _client.PostAsJsonAsync("/api/services", payload);
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
@@ -61,7 +69,7 @@ public class CreateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         returnedId.Should().NotBeEmpty();
 
         _repoMock.Verify(r =>
-            r.AddServiceAsync(It.Is<Service>(s =>
+            r.AddAsync(It.Is<Service>(s =>
                     s.Code == payload.Code &&
                     s.Name == payload.Name),
                     It.IsAny<CancellationToken>()
@@ -93,7 +101,7 @@ public class CreateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
             .Should().Be("Code is required");
 
         _repoMock.Verify(r =>
-            r.AddServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -120,7 +128,7 @@ public class CreateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
               .Should().Be("Code is required");
 
         _repoMock.Verify(r =>
-            r.AddServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -138,7 +146,7 @@ public class CreateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         );
 
         _repoMock
-            .Setup(r => r.GetByCodeAsync(duplicateCode, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(service);
 
         var payload = new
@@ -159,7 +167,7 @@ public class CreateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         error.Should().Contain($"Service with code : {duplicateCode} already exists");
 
         _repoMock.Verify(r =>
-            r.AddServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()),
+            r.AddAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

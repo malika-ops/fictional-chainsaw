@@ -13,7 +13,6 @@ public class DeleteProductCommandHandler(IProductRepository _productRepository,I
     ICacheService cacheService) 
     : ICommandHandler<DeleteProductCommand, Result<bool>>
 {
-    
     public async Task<Result<bool>> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
     {
         var productId = ProductId.Of(request.ProductId);

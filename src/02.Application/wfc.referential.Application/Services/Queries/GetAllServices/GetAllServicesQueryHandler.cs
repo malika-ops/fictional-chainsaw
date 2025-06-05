@@ -16,13 +16,10 @@ public class GetAllServicesQueryHandler(IServiceRepository serviceRepository, IC
         if (cached is not null)
             return cached;
 
-        var entities = await serviceRepository.GetServicesByCriteriaAsync(request, cancellationToken);
-        int totalCount = await serviceRepository.GetCountTotalAsync(request, cancellationToken);
-
-        var mapped = entities.Adapt<List<GetAllServicesResponse>>();
-        var result = new PagedResult<GetAllServicesResponse>(mapped, totalCount, request.PageNumber, request.PageSize);
-
-        await cacheService.SetAsync(request.CacheKey, result, TimeSpan.FromMinutes(request.CacheExpiration), cancellationToken);
+        var services = await serviceRepository.GetPagedByCriteriaAsync(request, request.PageNumber,request.PageSize, cancellationToken);
+        var result = new PagedResult<GetAllServicesResponse>(
+            services.Items.Adapt<List<GetAllServicesResponse>>(),
+            services.TotalCount, request.PageNumber, request.PageSize);
 
         return result;
     }

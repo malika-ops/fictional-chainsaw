@@ -2,28 +2,35 @@
 using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
-using Mapster;
+using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
+using wfc.referential.Domain.ProductAggregate;
 using wfc.referential.Domain.ServiceAggregate;
+using wfc.referential.Domain.ServiceAggregate.Exceptions;
 
 namespace wfc.referential.Application.Services.Commands.PatchService;
 
 public class PatchServiceCommandHandler(IServiceRepository serviceRepository, ICacheService cacheService)
-    : ICommandHandler<PatchServiceCommand, Result<Guid>>
+    : ICommandHandler<PatchServiceCommand, Result<bool>>
 {
-    public async Task<Result<Guid>> Handle(PatchServiceCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(PatchServiceCommand request, CancellationToken cancellationToken)
     {
-        var service = await serviceRepository.GetByIdAsync(request.ServiceId, cancellationToken);
+        var service = await serviceRepository.GetOneByConditionAsync(p => p.Id == ServiceId.Of(request.ServiceId), cancellationToken);
 
         if (service is null)
             throw new ResourceNotFoundException($"{nameof(Service)} not found");
 
-        request.Adapt(service);
-        service.Patch();
-        await serviceRepository.UpdateServiceAsync(service, cancellationToken);
+        var duplicatedCode = await serviceRepository.GetOneByConditionAsync(p => p.Code.Equals(request.Code), cancellationToken);
 
-        await cacheService.SetAsync(request.CacheKey, service, TimeSpan.FromMinutes(request.CacheExpiration), cancellationToken);
+        if (duplicatedCode is not null)
+            throw new CodeAlreadyExistException($"{nameof(Product)} not found");
 
-        return Result.Success(service.Id!.Value);
+        service.Patch(request.Code,request.Name,request.IsEnabled,ProductId.Of(request.ProductId));
+
+        serviceRepository.Update(service);
+
+        await cacheService.RemoveByPrefixAsync(CacheKeys.Service.Prefix, cancellationToken);
+
+        return Result.Success(true);
     }
 }
