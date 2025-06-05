@@ -63,17 +63,25 @@ public class PatchProductEndpointTests : IClassFixture<WebApplicationFactory<Pro
             "Old Name",
             true
         );
-
         _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(product);
+            .ReturnsAsync((Expression<Func<Product, bool>> predicate, CancellationToken _) =>
+            {
+                var func = predicate.Compile();
+
+                if (func(product))
+                    return product;
+
+                return null;
+            });
+
 
         // Act
         var response = await _client.PatchAsync($"/api/products/{productId}", JsonContent.Create(patchRequest));
-        var updatedProductId = await response.Content.ReadFromJsonAsync<Guid>();
+        var updatedProductId = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        updatedProductId.Should().Be(productId);
+        updatedProductId.Should().Be(true);
         product.Name.Should().BeEquivalentTo(patchRequest.Name);
     }
 

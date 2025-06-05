@@ -20,54 +20,60 @@ public class CreateCorridorCommandHandler(ICorridorRepository corridorRepository
     {
 
         var corridorId = CorridorId.Of(Guid.NewGuid());
+        CityId? sourceCityId = null;
+        CityId? destCityId = null;
+        CountryId? sourceCountryId = null;
+        CountryId? destCountryId = null;
+        AgencyId? sourceBranchId = null;
+        AgencyId? destBranchId = null;
         // city ids verification
         if (request.SourceCityId.HasValue)
         {
-            var cityId = CityId.Of(request.SourceCityId.Value);
-            var city = await _cityRepository.GetOneByConditionAsync(c => c.Id == cityId, cancellationToken);
-            if (city == null) throw new CityNotFoundException(cityId.Value);
+            sourceCityId = CityId.Of(request.SourceCityId.Value);
+            var city = await _cityRepository.GetOneByConditionAsync(c => c.Id == sourceCityId, cancellationToken);
+            if (city == null) throw new CityNotFoundException(sourceCityId.Value);
         }
         if (request.DestinationCityId.HasValue)
         {
-            var cityId = CityId.Of(request.DestinationCityId.Value);
-            var city = await _cityRepository.GetOneByConditionAsync(c => c.Id == cityId, cancellationToken);
-            if (city == null) throw new CityNotFoundException(cityId.Value);
+            destCityId = CityId.Of(request.DestinationCityId.Value);
+            var city = await _cityRepository.GetOneByConditionAsync(c => c.Id == destCityId, cancellationToken);
+            if (city == null) throw new CityNotFoundException(destCityId.Value);
         }
         // country ids verification
         if (request.SourceCountryId.HasValue)
         {
-            var countryId = CountryId.Of(request.SourceCountryId.Value);
-            var country = await _countryRepository.GetByIdAsync(countryId.Value, cancellationToken);
-            if (country == null) throw new ResourceNotFoundException(countryId.Value.ToString());
+            sourceCountryId = CountryId.Of(request.SourceCountryId.Value);
+            var country = await _countryRepository.GetByIdAsync(sourceCountryId.Value, cancellationToken);
+            if (country == null) throw new ResourceNotFoundException(sourceCountryId.Value.ToString());
         }
         if (request.DestinationCountryId.HasValue)
         {
-            var countryId = CityId.Of(request.DestinationCountryId.Value);
-            var country = await _countryRepository.GetByIdAsync(countryId.Value, cancellationToken);
-            if (country == null) throw new ResourceNotFoundException(countryId.Value.ToString());
+            destCountryId = CountryId.Of(request.DestinationCountryId.Value);
+            var country = await _countryRepository.GetByIdAsync(destCountryId.Value, cancellationToken);
+            if (country == null) throw new ResourceNotFoundException(destCountryId.Value.ToString());
         }
         // agency ids verification
         if (request.SourceBranchId.HasValue)
         {
-            var branchId = AgencyId.Of(request.SourceBranchId.Value);
-            var branch = await _agencyRepository.GetOneByConditionAsync(b => b.Id  == branchId, cancellationToken);
-            if (branch == null) throw new ResourceNotFoundException(branchId.Value.ToString());
+            sourceBranchId = AgencyId.Of(request.SourceBranchId.Value);
+            var branch = await _agencyRepository.GetOneByConditionAsync(b => b.Id  == sourceBranchId, cancellationToken);
+            if (branch == null) throw new ResourceNotFoundException(sourceBranchId.Value.ToString());
         }
         if (request.DestinationBranchId.HasValue)
         {
-            var branchId = AgencyId.Of(request.DestinationBranchId.Value);
-            var branch = await _agencyRepository.GetOneByConditionAsync(b => b.Id == branchId, cancellationToken);
-            if (branch == null) throw new ResourceNotFoundException(branchId.Value.ToString());
+            destBranchId = AgencyId.Of(request.DestinationBranchId.Value);
+            var branch = await _agencyRepository.GetOneByConditionAsync(b => b.Id == destBranchId, cancellationToken);
+            if (branch == null) throw new ResourceNotFoundException(destBranchId.Value.ToString());
         }
 
 
         var corridor = Corridor.Create(corridorId,
-            request .SourceCountryId.HasValue ? CountryId.Of(request.SourceCountryId.Value) : null,
-            request.DestinationCountryId.HasValue ? CountryId.Of(request.DestinationCountryId.Value) : null,
-            request .SourceCityId.HasValue ? CityId.Of(request.SourceCityId.Value) : null, 
-            request .DestinationCityId.HasValue ? CityId.Of(request.DestinationCityId.Value) : null,
-            request .SourceBranchId.HasValue ? AgencyId.Of(request.SourceBranchId.Value) : null,
-            request .DestinationBranchId.HasValue ? AgencyId.Of(request.DestinationBranchId.Value) : null);
+            sourceCountryId,
+            destCountryId,
+            sourceCityId, 
+            destCityId,
+            sourceBranchId,
+            destBranchId);
 
         await corridorRepository.AddAsync(corridor, cancellationToken);
         await corridorRepository.SaveChangesAsync(cancellationToken);

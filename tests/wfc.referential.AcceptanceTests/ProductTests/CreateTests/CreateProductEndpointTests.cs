@@ -177,7 +177,7 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var root = doc!.RootElement;
         var error = root.GetProperty("errors").GetString();

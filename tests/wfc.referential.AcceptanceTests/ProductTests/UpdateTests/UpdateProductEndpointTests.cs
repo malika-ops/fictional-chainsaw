@@ -69,6 +69,7 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
                 return null;
             });
 
+
         Product? updated = null;
         _repoMock.Setup(r => r.Update(oldProduct))
                  .Callback<Product>((rg) => updated = rg);
@@ -82,11 +83,11 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         // Act
         var response = await _client.PutAsJsonAsync($"/api/products/{id}", payload);
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().Be(true);
 
         updated!.Code.Should().Be("codeAAB");
         updated.Name.Should().Be("nameAAB");

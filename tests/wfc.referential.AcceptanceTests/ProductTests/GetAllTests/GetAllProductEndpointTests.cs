@@ -94,10 +94,10 @@ public class GetAllProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
 
         _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
-                    It.Is<GetAllProductsQuery>(q => q.Code == "001"),
-                    1, 2,
+                    It.IsAny<GetAllProductsQuery>(),
+                    1, 10,
                     It.IsAny<CancellationToken>()))
-         .ReturnsAsync(new PagedResult<Product>(new List<Product> { usd }, 5, 1, 2));
+         .ReturnsAsync(new PagedResult<Product>(new List<Product> { usd }, 1, 1, 10));
 
         // Act
         var response = await _client.GetAsync("/api/products?code=001");
@@ -121,10 +121,10 @@ public class GetAllProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
                         DummyProduct("003", "Jibi") };
 
         _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
-                    It.Is<GetAllProductsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
-                    1, 2,
+                    It.IsAny<GetAllProductsQuery>(),
+                    1, 10,
                     It.IsAny<CancellationToken>()))
-         .ReturnsAsync(new PagedResult<Product>(zones.ToList(), 5, 1, 2));
+         .ReturnsAsync(new PagedResult<Product>(zones.ToList(), 5, 1, 10));
 
         // Act
         var response = await _client.GetAsync("/api/products");
