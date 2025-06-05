@@ -10,10 +10,18 @@ public record AffiliateId : IValueObject
     [JsonConstructor]
     public AffiliateId(Guid value) => Value = value;
 
+    public override string ToString()
+    {
+        return Value.ToString();
+    }
+
     public static AffiliateId Of(Guid value)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (value == Guid.Empty) throw new Exception("AffiliateId cannot be empty.");
+        if (value == Guid.Empty)
+        {
+            throw new Exception("AffiliateId cannot be empty.");
+        }
 
         return new AffiliateId(value);
     }
