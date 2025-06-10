@@ -5,6 +5,7 @@ using wfc.referential.Application.Cities.Mappings;
 using wfc.referential.Application.Corridors.Mappings;
 using wfc.referential.Application.Countries.Mappings;
 using wfc.referential.Application.CountryIdentityDocs.Mappings;
+using wfc.referential.Application.CountryServices.Mappings;
 using wfc.referential.Application.Currencies.Mappings;
 using wfc.referential.Application.IdentityDocuments.Mappings;
 using wfc.referential.Application.MonetaryZones.Mappings;
@@ -53,5 +54,6 @@ public static class MapsterConfig
         PartnerMappings.Register();
         PartnerCountryMappings.Register();
         PricingMappings.Register();
+        CountryServiceMappings.Register();
     }
 }

@@ -27,6 +27,7 @@ public static class EndpointGroups
     public const string SupportAccounts = "SupportAccounts";
     public const string PartnerCountries = "PartnerCountries";
     public const string Pricings = "Pricings";
+    public const string CountryServices = "CountryServices";
 
     public const string Affiliates = "Affiliates";
 }

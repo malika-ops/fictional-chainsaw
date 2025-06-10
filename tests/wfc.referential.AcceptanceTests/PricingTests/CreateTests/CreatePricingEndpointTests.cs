@@ -59,7 +59,7 @@ public class CreatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
                 var dummyAffiliate = FormatterServices.GetUninitializedObject(typeof(Affiliate)) as Affiliate;
 
                 _serviceRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                    .Setup(r => r.GetByIdAsync(It.IsAny<ServiceId>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(dummyService);
 
                 _corridorRepoMock

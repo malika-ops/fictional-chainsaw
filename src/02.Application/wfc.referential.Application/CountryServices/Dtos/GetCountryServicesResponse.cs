@@ -1,0 +1,9 @@
+﻿namespace wfc.referential.Application.CountryServices.Dtos;
+
+public record GetCountryServicesResponse
+{
+    public Guid CountryServiceId { get; init; }
+    public Guid CountryId { get; init; }
+    public Guid ServiceId { get; init; }
+    public bool IsEnabled { get; init; }
+}

@@ -24,6 +24,7 @@ using wfc.referential.Domain.CountryIdentityDocAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using wfc.referential.Domain.PartnerCountryAggregate;
+using wfc.referential.Domain.CountryServiceAggregate;
 
 namespace wfc.referential.Infrastructure.Data;
 public class ApplicationDbContext : DbContext, IApplicationDbContext
@@ -54,6 +55,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Partner> Partners => Set<Partner>();
     public DbSet<SupportAccount> SupportAccounts => Set<SupportAccount>();
     public DbSet<PartnerCountry> PartnerCountries => Set<PartnerCountry>();
+    public DbSet<CountryService> CountryServices => Set<CountryService>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
