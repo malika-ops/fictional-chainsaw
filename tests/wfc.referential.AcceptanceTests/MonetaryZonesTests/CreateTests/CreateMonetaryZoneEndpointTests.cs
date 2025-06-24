@@ -1,4 +1,6 @@
 ﻿using BuildingBlocks.Application.Interfaces;
+using BuildingBlocks.Core.Audit.Interface;
+using BuildingBlocks.Core.Kafka.Producer;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -19,179 +21,163 @@ public class CreateMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
 {
     private readonly HttpClient _client;
     private readonly Mock<IMonetaryZoneRepository> _repoMock = new();
+    private readonly Mock<IProducerService> _kafkaMock = new();
+    private readonly Mock<ICurrentUserContext> _userCtx = new();
 
     public CreateMonetaryZoneEndpointTests(WebApplicationFactory<Program> factory)
     {
         var cacheMock = new Mock<ICacheService>();
 
-        // clone the factory and customise the host
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
+        var customised = factory.WithWebHostBuilder(b =>
         {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
+            b.UseEnvironment("Testing");
+            b.ConfigureServices(s =>
             {
-                // 🧹 Remove concrete registrations that hit the DB / Redis
-                services.RemoveAll<IMonetaryZoneRepository>();
-                services.RemoveAll<ICacheService>();
+                s.RemoveAll<IMonetaryZoneRepository>();
+                s.RemoveAll<IProducerService>();
+                s.RemoveAll<ICurrentUserContext>();
+                s.RemoveAll<ICacheService>();
 
-                // 🪄  Set up mock behaviour (echoes entity back, as if EF saved it)
-                _repoMock
-                    .Setup(r => r.AddMonetaryZoneAsync(It.IsAny<MonetaryZone>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((MonetaryZone mz, CancellationToken _) => mz);
+                _repoMock.Setup(r => r.AddAsync(It.IsAny<MonetaryZone>(), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync((MonetaryZone m, CancellationToken _) => m);
 
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                         .Returns(Task.CompletedTask);
 
-                // 🔌 Plug mocks back in
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
+                _kafkaMock.Setup(p => p.ProduceAsync(It.IsAny<object>(), It.IsAny<string>()))
+                          .Returns(Task.CompletedTask);
+
+                _userCtx.SetupGet(u => u.UserId).Returns("test-user");
+                _userCtx.SetupGet(u => u.TraceId).Returns(Guid.NewGuid().ToString());
+
+                s.AddSingleton(_repoMock.Object);
+                s.AddSingleton(_kafkaMock.Object);
+                s.AddSingleton(_userCtx.Object);
+                s.AddSingleton(cacheMock.Object);
             });
         });
 
-        _client = customisedFactory.CreateClient();
+        _client = customised.CreateClient();
     }
 
-    [Fact(DisplayName = "POST /api/monetaryZones returns 200 and Guid (fixture version)")]
-    public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
+    private static object ValidPayload(string? code = null,
+                                       string? name = null,
+                                       string? description = null)
+    {
+        return new
+        {
+            Code = code ?? "EU",
+            Name = name ?? "Europe",
+            Description = description ?? "European monetary zone"
+        };
+    }
+
+
+    [Fact(DisplayName = "POST /api/monetaryZones → 200 & Guid on valid request")]
+    public async Task Post_ShouldReturn200_AndId_WhenValid()
     {
         // Arrange
-        var payload = new
-        {
-            Code = "USD",
-            Name = "United States Dollar",
-            Description = "Primary US currency"
-        };
+        var payload = ValidPayload();
+        var code = "EU"; var name = "Europe"; var desc = "European monetary zone";
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/monetaryZones", payload);
-        var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
+        var resp = await _client.PostAsJsonAsync("/api/monetaryZones", payload);
+        var id = await resp.Content.ReadFromJsonAsync<Guid>();
 
-        // Assert (FluentAssertions)
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returnedId.Should().NotBeEmpty();
+        // Assert
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        id.Should().NotBeEmpty();
 
-        // verify repository interaction using *FluentAssertions on Moq invocations
         _repoMock.Verify(r =>
-            r.AddMonetaryZoneAsync(It.Is<MonetaryZone>(mz =>
-                    mz.Code == payload.Code &&
-                    mz.Name == payload.Name &&
-                    mz.Description == payload.Description),
-                    It.IsAny<CancellationToken>()
-            ),
-            Times.Once
-        );
+            r.AddAsync(It.Is<MonetaryZone>(m =>
+                    m.Code == code &&
+                    m.Name == name &&
+                    m.Description == desc),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
 
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _kafkaMock.Verify(p => p.ProduceAsync(It.IsAny<object>(), "auditLogsTopic"), Times.Once);
     }
 
-    [Fact(DisplayName = "POST /api/monetaryZones returns 400 & problem‑details when Code is missing")]
-    public async Task Post_ShouldReturn400_WhenValidationFails()
+    [Fact(DisplayName = "POST /api/monetaryZones → 409 when Code already exists")]
+    public async Task Post_ShouldReturn409_WhenDuplicateCode()
     {
         // Arrange
-        var invalidPayload = new
-        {
-            // Code intentionally omitted to trigger validation error
-            Name = "United States Dollar",
-            Description = "Primary US currency"
-        };
+        const string dup = "EU";
+        var existing = MonetaryZone.Create(
+            MonetaryZoneId.Of(Guid.NewGuid()), dup, "Old-Europe", "Desc");
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/monetaryZones", invalidPayload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        _repoMock.Setup(r => r.GetOneByConditionAsync(
+                            It.IsAny<System.Linq.Expressions.Expression<Func<MonetaryZone, bool>>>(),
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existing);
+
+        var resp = await _client.PostAsJsonAsync("/api/monetaryZones", ValidPayload(code: dup));
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
-        root.GetProperty("status").GetInt32().Should().Be(400);
-
-        root.GetProperty("errors")
-            .GetProperty("code")[0].GetString()
-            .Should().Be("Code is required");
-
-        // the handler must NOT be reached
-        _repoMock.Verify(r =>
-            r.AddMonetaryZoneAsync(It.IsAny<MonetaryZone>(), It.IsAny<CancellationToken>()),
-            Times.Never,
-            "when validation fails, the command handler should not be executed");
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<MonetaryZone>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-   
-    [Fact(DisplayName =
-    "POST /api/monetaryZones returns 400 & problem‑details when Name and Description are missing")]
-    public async Task Post_ShouldReturn400_WhenNameAndDescriptionAreMissing()
+    [Fact(DisplayName = "POST /api/monetaryZones → 400 when Code exceeds 20 chars")]
+    public async Task Post_ShouldReturn400_WhenCodeTooLong()
     {
-        // Arrange: only Code provided
-        var invalidPayload = new { Code = "USD" };
+        var longCode = new string('X', 21);
+        var payload = ValidPayload(code: longCode);
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/monetaryZones", invalidPayload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var resp = await _client.PostAsJsonAsync("/api/monetaryZones", payload);
+        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var root = doc!.RootElement;
-        var errors = root.GetProperty("errors");
+        doc!.RootElement.GetProperty("errors")
+           .GetProperty("Code")[0].GetString()
+           .Should().Be("Code must be less than 10 characters");   
 
-        // helper – fetch first error message for a given key, case‑insensitive
-        static string FirstError(JsonElement errs, string key)
-        {
-            foreach (var prop in errs.EnumerateObject())
-                if (prop.NameEquals(key) || prop.Name.Equals(key, StringComparison.OrdinalIgnoreCase))
-                    return prop.Value[0].GetString()!;
-            throw new KeyNotFoundException($"error key '{key}' not found");
-        }
-
-        FirstError(errors, "Name").Should().Be("Name is required");
-
-        _repoMock.Verify(r => r.AddMonetaryZoneAsync(It.IsAny<MonetaryZone>(),
-                                                     It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<MonetaryZone>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-
-
-    [Fact(DisplayName = "POST /api/monetaryZones returns 400 when Code already exists")]
-    public async Task Post_ShouldReturn400_WhenCodeAlreadyExists()
+    [Fact(DisplayName = "POST /api/monetaryZones → 400 when Name missing")]
+    public async Task Post_ShouldReturn400_WhenNameMissing()
     {
-        // Arrange 
-        const string duplicateCode = "CHF";
+        var payload = new { Code = "EU" };   
 
-        // Tell the repo mock that the code already exists
-        var existingMz = MonetaryZone.Create(
-            MonetaryZoneId.Of(Guid.NewGuid()),
-            duplicateCode,
-            "Swiss Franc",
-            "Swiss currency",
-            null);
+        var resp = await _client.PostAsJsonAsync("/api/monetaryZones", payload);
+        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
 
-        _repoMock
-            .Setup(r => r.GetByCodeAsync(duplicateCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingMz);
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var payload = new
-        {
-            Code = duplicateCode,
-            Name = "Swiss Franc",
-            Description = "Swiss currency"
-        };
+        doc!.RootElement.GetProperty("errors")
+           .GetProperty("Name")[0].GetString()
+           .Should().Be("Name is required");
+
+        _repoMock.Verify(r => r.AddAsync(It.IsAny<MonetaryZone>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "POST /api/monetaryZones → 200 when Description omitted")]
+    public async Task Post_ShouldReturn200_WhenDescriptionOmitted()
+    {
+        // Arrange
+        var code = "AF";
+        var name = "Africa";
+        var payload = new { Code = code, Name = name };  
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/monetaryZones", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var resp = await _client.PostAsJsonAsync("/api/monetaryZones", payload);
+        var id = await resp.Content.ReadFromJsonAsync<Guid>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        id.Should().NotBeEmpty();
 
-        var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
-
-        error.Should().Be($"MonetaryZone with code {duplicateCode} already exists.");
-
-        // Handler must NOT attempt to add the entity
         _repoMock.Verify(r =>
-            r.AddMonetaryZoneAsync(It.IsAny<MonetaryZone>(), It.IsAny<CancellationToken>()),
-            Times.Never,
-            "no insertion should happen when the code is already taken");
+            r.AddAsync(It.Is<MonetaryZone>(m =>
+                    m.Code == code &&
+                    m.Name == name &&
+                    m.Description == string.Empty),   
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

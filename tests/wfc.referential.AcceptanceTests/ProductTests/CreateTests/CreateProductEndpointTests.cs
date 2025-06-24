@@ -100,11 +100,11 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         root.GetProperty("errors")
-            .GetProperty("code")[0].GetString()
+            .GetProperty("Code")[0].GetString()
             .Should().Be("Code is required");
 
         // the handler must NOT be reached
@@ -131,15 +131,15 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         var root = doc!.RootElement;
 
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         var errors = root.GetProperty("errors");
 
-        errors.GetProperty("name")[0].GetString()
+        errors.GetProperty("Name")[0].GetString()
               .Should().Be("Name is required");
 
-        errors.GetProperty("code")[0].GetString()
+        errors.GetProperty("Code")[0].GetString()
               .Should().Be("Code is required");
 
         // handler must NOT run on validation failure
@@ -180,7 +180,7 @@ public class CreateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
+        var error = root.GetProperty("errors").GetProperty("message").GetString();
 
         error.Should().Be($"Product with code : {duplicateCode} already exist");
 

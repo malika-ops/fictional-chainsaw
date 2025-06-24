@@ -5,25 +5,42 @@ using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.ParamTypeAggregate;
+using wfc.referential.Domain.ParamTypeAggregate.Exceptions;
 
 namespace wfc.referential.Application.ParamTypes.Commands.PatchParamType;
 
-public class PatchParamTypeCommandHandler(IParamTypeRepository _paramTypeRepository,ICacheService _cacheService) : ICommandHandler<PatchParamTypeCommand, Result<Guid>>
+public class PatchParamTypeCommandHandler : ICommandHandler<PatchParamTypeCommand, Result<bool>>
 {
-    public async Task<Result<Guid>> Handle(PatchParamTypeCommand request, CancellationToken cancellationToken)
+    private readonly IParamTypeRepository _repo;
+    private readonly ICacheService _cacheService;
+
+    public PatchParamTypeCommandHandler(IParamTypeRepository repo, ICacheService cacheService)
     {
-        var paramType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(request.ParamTypeId), cancellationToken);
+        _repo = repo;
+        _cacheService = cacheService;
+    }
 
-        if (paramType == null)
-            throw new BusinessException($"ParamType with ID {request.ParamTypeId} not found");
-            
-        paramType.Patch(request.Value,request.IsEnabled);
+    public async Task<Result<bool>> Handle(PatchParamTypeCommand cmd, CancellationToken ct)
+    {
+        var paramType = await _repo.GetByIdAsync(ParamTypeId.Of(cmd.ParamTypeId), ct);
+        if (paramType is null)
+            throw new ResourceNotFoundException($"ParamType [{cmd.ParamTypeId}] not found.");
 
-        await _paramTypeRepository.UpdateParamTypeAsync(paramType, cancellationToken);
-        await _paramTypeRepository.SaveChangesAsync(cancellationToken);
+        // duplicate Value check
+        if (!string.IsNullOrWhiteSpace(cmd.Value))
+        {
+            var dup = await _repo.GetOneByConditionAsync(p => p.Value == cmd.Value, ct);
+            if (dup is not null && dup.Id != paramType.Id)
+                throw new ParamTypeValueAlreadyExistException(cmd.Value);
+        }
 
-        await _cacheService.RemoveByPrefixAsync(CacheKeys.ParamType.Prefix, cancellationToken);
+        paramType.Patch(cmd.Value, cmd.IsEnabled);
 
-        return Result.Success(paramType.Id!.Value);
+        _repo.Update(paramType);
+        await _repo.SaveChangesAsync(ct);
+
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.ParamType.Prefix, ct);
+
+        return Result.Success(true);
     }
 }

@@ -7,6 +7,7 @@ public class DeleteParamTypeCommandValidator : AbstractValidator<DeleteParamType
     public DeleteParamTypeCommandValidator()
     {
         RuleFor(x => x.ParamTypeId)
-            .NotEmpty().WithMessage("ParamTypeId is required.");
+            .NotEqual(Guid.Empty)
+            .WithMessage("ParamTypeId must be a non-empty GUID.");
     }
 }

@@ -37,8 +37,15 @@ public class TaxRuleDetail : Aggregate<TaxRuleDetailsId>
         return tax;
     }
 
-    public void Update()
+    public void Update(TaxRuleDetailsId taxRuleDetailsId, CorridorId corridorId, TaxId taxId, ServiceId serviceId, ApplicationRule? appliedOn, bool isEnabled)
     {
+        Id = taxRuleDetailsId;
+        CorridorId = corridorId;
+        TaxId = taxId;
+        ServiceId = serviceId;
+        AppliedOn = appliedOn ?? AppliedOn;
+        IsEnabled = isEnabled;
+
         AddDomainEvent(new TaxRuleDetailUpdatedEvent(this));
     }
     public void SetInactive()
@@ -47,8 +54,15 @@ public class TaxRuleDetail : Aggregate<TaxRuleDetailsId>
 
         AddDomainEvent(new TaxRuleDetailStatusChangedEvent(this));
     }
-    public void Patch()
+    public void Patch(TaxRuleDetailsId taxRuleDetailsId, CorridorId? corridorId, TaxId? taxId, ServiceId? serviceId, ApplicationRule? appliedOn, bool? isEnabled)
     {
+        Id = taxRuleDetailsId;
+        CorridorId = corridorId ?? CorridorId;
+        TaxId = taxId ?? TaxId;
+        ServiceId = serviceId ?? ServiceId;
+        AppliedOn = appliedOn ?? AppliedOn;
+        IsEnabled = isEnabled ?? IsEnabled;
+
         AddDomainEvent(new TaxRuleDetailPatchedEvent(this));
     }
 

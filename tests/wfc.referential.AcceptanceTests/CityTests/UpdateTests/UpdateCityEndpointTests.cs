@@ -127,7 +127,7 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
+            .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required");
 
         //_repoCityMock.Verify(r => r.UpdateCityAsync(It.IsAny<City>(),
@@ -197,7 +197,7 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"{nameof(Region)} with code : {payload.Code} already exist");
 
         _repoCityMock.Verify(r => r.Update(It.IsAny<City>()),

@@ -13,6 +13,7 @@ public record RegionId : IValueObject
     {
         return Value.ToString();
     }
+    public static RegionId Create() => new RegionId(Guid.NewGuid());
     public static RegionId Of(Guid value)
     {
         ArgumentNullException.ThrowIfNull(value);

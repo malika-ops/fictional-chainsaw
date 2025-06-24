@@ -10,7 +10,7 @@ using wfc.referential.Domain.RegionAggregate.Exceptions;
 namespace wfc.referential.Application.Regions.Commands.DeleteRegion;
 
 public class DeleteRegionCommandHandler(IRegionRepository _regionRepository,
-    ICityRepository _cityRepository, ICacheService _cacheService) 
+    ICityRepository _cityRepository) 
     : ICommandHandler<DeleteRegionCommand, Result<bool>>
 {
     
@@ -30,8 +30,6 @@ public class DeleteRegionCommandHandler(IRegionRepository _regionRepository,
 
         _regionRepository.Update(region);
         await _regionRepository.SaveChangesAsync(cancellationToken);
-
-        await _cacheService.RemoveByPrefixAsync(CacheKeys.Region.Prefix, cancellationToken);
 
         return Result.Success(true);
     }

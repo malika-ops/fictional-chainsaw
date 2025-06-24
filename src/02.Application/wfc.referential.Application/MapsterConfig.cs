@@ -1,7 +1,9 @@
+using wfc.referential.Application.Affiliates.Mappings;
 using wfc.referential.Application.Agencies.Mappings;
 using wfc.referential.Application.AgencyTiers.Mappings;
 using wfc.referential.Application.Banks.Mappings;
 using wfc.referential.Application.Cities.Mappings;
+using wfc.referential.Application.Contracts.Mappings;
 using wfc.referential.Application.Corridors.Mappings;
 using wfc.referential.Application.Countries.Mappings;
 using wfc.referential.Application.CountryIdentityDocs.Mappings;
@@ -55,5 +57,7 @@ public static class MapsterConfig
         PartnerCountryMappings.Register();
         PricingMappings.Register();
         CountryServiceMappings.Register();
+        AffiliateMappings.Register();
+        ContractMappings.Register();
     }
 }

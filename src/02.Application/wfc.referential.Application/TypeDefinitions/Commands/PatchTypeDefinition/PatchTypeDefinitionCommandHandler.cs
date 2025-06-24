@@ -9,29 +9,38 @@ using wfc.referential.Domain.TypeDefinitionAggregate.Exceptions;
 
 namespace wfc.referential.Application.TypeDefinitions.Commands.PatchTypeDefinition;
 
-public class PatchTypeDefinitionCommandHandler(ITypeDefinitionRepository _typeDefinitionRepository,ICacheService _cacheService) 
-    : ICommandHandler<PatchTypeDefinitionCommand, Result<Guid>>
+public class PatchTypeDefinitionCommandHandler : ICommandHandler<PatchTypeDefinitionCommand, Result<bool>>
 {
-    public async Task<Result<Guid>> Handle(PatchTypeDefinitionCommand request, CancellationToken cancellationToken)
-    {
-        var typeDefinition = await _typeDefinitionRepository.GetByIdAsync(TypeDefinitionId.Of(request.TypeDefinitionId), cancellationToken);
-        if (typeDefinition == null)
-            throw new BusinessException($"TypeDefinition with ID {request.TypeDefinitionId} not found");
+    private readonly ITypeDefinitionRepository _repo;
+    private readonly ICacheService _cacheService;
 
-        if (!string.IsNullOrEmpty(request.Libelle))
+    public PatchTypeDefinitionCommandHandler(ITypeDefinitionRepository repo, ICacheService cacheService)
+    {
+        _repo = repo;
+        _cacheService = cacheService;
+    }
+
+    public async Task<Result<bool>> Handle(PatchTypeDefinitionCommand cmd, CancellationToken ct)
+    {
+        var typeDefinition = await _repo.GetByIdAsync(TypeDefinitionId.Of(cmd.TypeDefinitionId), ct);
+        if (typeDefinition is null)
+            throw new ResourceNotFoundException($"TypeDefinition [{cmd.TypeDefinitionId}] not found.");
+
+        // duplicate Libelle check
+        if (!string.IsNullOrWhiteSpace(cmd.Libelle))
         {
-            var isExist = await _typeDefinitionRepository.GetByLibelleAsync(request.Libelle, cancellationToken);
-            if (isExist is not null) throw new TypeDefinitionLibelleAlreadyExistException(request.Libelle);
+            var dup = await _repo.GetOneByConditionAsync(t => t.Libelle == cmd.Libelle, ct);
+            if (dup is not null && dup.Id != typeDefinition.Id)
+                throw new TypeDefinitionLibelleAlreadyExistException(cmd.Libelle);
         }
 
+        typeDefinition.Patch(cmd.Libelle, cmd.Description, cmd.IsEnabled);
 
-        typeDefinition.Patch(request.Libelle , request.Description , request.IsEnabled);
+        _repo.Update(typeDefinition);
+        await _repo.SaveChangesAsync(ct);
 
-        await _typeDefinitionRepository.UpdateTypeDefinitionAsync(typeDefinition, cancellationToken);
-        await _typeDefinitionRepository.SaveChangesAsync(cancellationToken);
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.TypeDefinition.Prefix, ct);
 
-        await _cacheService.RemoveByPrefixAsync(CacheKeys.TypeDefinition.Prefix, cancellationToken);
-
-        return Result.Success(typeDefinition.Id!.Value);
+        return Result.Success(true);
     }
 }

@@ -66,7 +66,6 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var regionId = RegionId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
 
         var country = Country.Create(countryId, "TC", "Test Country", "TC", "TC", "TCO", "+0", "0", false, false, 2,
-            true,
             new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid()),
             new CurrencyId(Guid.NewGuid())
             );
@@ -173,7 +172,7 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be("Sector not found");
 
         _repoMock.Verify(r => r.Update(It.IsAny<Sector>()), Times.Never);
@@ -208,7 +207,7 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be("Sector with code DUPE-CODE already exists.");
 
         _repoMock.Verify(r => r.Update(It.IsAny<Sector>()), Times.Never);
@@ -244,7 +243,7 @@ public class PatchSectorEndpointTests : IClassFixture<WebApplicationFactory<Prog
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"City with ID {nonExistentCityId} not found");
 
         _repoMock.Verify(r => r.Update(It.IsAny<Sector>()), Times.Never);

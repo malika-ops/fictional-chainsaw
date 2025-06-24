@@ -16,7 +16,7 @@ public class MonetaryZoneTests
         string description = "European Monetary Zone";
 
         // Act
-        var monetaryZone = MonetaryZone.Create(id, code, name, description, null);
+        var monetaryZone = MonetaryZone.Create(id, code, name, description);
 
         // Assert
         Assert.Equal(id, monetaryZone.Id);
@@ -38,7 +38,7 @@ public class MonetaryZoneTests
     {
         // Arrange
         var id = MonetaryZoneId.Of(Guid.NewGuid());
-        var monetaryZone = MonetaryZone.Create(id, "OLD", "Old Name", "Old Description", null);
+        var monetaryZone = MonetaryZone.Create(id, "OLD", "Old Name", "Old Description");
         monetaryZone.ClearDomainEvents(); //Ignore the creation event
 
         string newCode = "NEW";
@@ -67,7 +67,7 @@ public class MonetaryZoneTests
     {
         // Arrange
         var id = MonetaryZoneId.Of(Guid.NewGuid());
-        var monetaryZone = MonetaryZone.Create(id, "CODE", "Name", "Description", null);
+        var monetaryZone = MonetaryZone.Create(id, "CODE", "Name", "Description");
         monetaryZone.ClearDomainEvents(); // Ignore the creation event
 
         // Act

@@ -31,19 +31,16 @@ public class CreateAffiliateCommandHandler : ICommandHandler<CreateAffiliateComm
         var existingByCode = await _repo.GetByConditionAsync(a => a.Code == cmd.Code, ct);
         if (existingByCode.Any())
             throw new AffiliateCodeAlreadyExistException(cmd.Code);
-
+        var countryId = CountryId.Of(cmd.CountryId);
         // Validate Country exists
-        var country = await _countryRepository.GetByIdAsync(cmd.CountryId, ct);
+        var country = await _countryRepository.GetByIdAsync(countryId, ct);
         if (country is null)
             throw new ResourceNotFoundException($"Country with ID {cmd.CountryId} not found");
 
-        // Validate AffiliateType exists if provided
-        if (cmd.AffiliateTypeId.HasValue)
-        {
-            var affiliateType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(cmd.AffiliateTypeId.Value), ct);
-            if (affiliateType is null)
-                throw new ResourceNotFoundException($"Affiliate Type with ID {cmd.AffiliateTypeId.Value} not found");
-        }
+        // Validate AffiliateType exists 
+        var affiliateType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(cmd.AffiliateTypeId), ct);
+        if (affiliateType is null)
+            throw new ResourceNotFoundException($"Affiliate Type with ID {cmd.AffiliateTypeId} not found");
 
         var id = AffiliateId.Of(Guid.NewGuid());
         var affiliate = Affiliate.Create(
@@ -58,11 +55,10 @@ public class CreateAffiliateCommandHandler : ICommandHandler<CreateAffiliateComm
             cmd.AccountingDocumentNumber,
             cmd.AccountingAccountNumber,
             cmd.StampDutyMention,
-            CountryId.Of(cmd.CountryId));
+           countryId);
 
         // Set relationships after validation
-        if (cmd.AffiliateTypeId.HasValue)
-            affiliate.SetAffiliateType(ParamTypeId.Of(cmd.AffiliateTypeId.Value));
+        affiliate.SetAffiliateType(ParamTypeId.Of(cmd.AffiliateTypeId));
 
         await _repo.AddAsync(affiliate, ct);
         await _repo.SaveChangesAsync(ct);

@@ -25,7 +25,7 @@ public class PatchServiceCommandHandler(IServiceRepository serviceRepository, IC
         if (duplicatedCode is not null)
             throw new CodeAlreadyExistException($"{nameof(Product)} not found");
 
-        service.Patch(request.Code,request.Name,request.IsEnabled,ProductId.Of(request.ProductId));
+        service.Patch(request.Code,request.Name,request.IsEnabled, request.ProductId.HasValue ? ProductId.Of(request.ProductId.Value) : null);
 
         serviceRepository.Update(service);
 

@@ -112,7 +112,8 @@ public class DeleteCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc.RootElement.GetProperty("errors").ToString()
+        doc.RootElement.GetProperty("errors")
+                .GetProperty("message").ToString()
             .Should().Be($"{nameof(City)} with Id {cityId} already has an assigned {nameof(Agency)}.");
 
         _repoAgencyMock.Verify(c => c.GetByConditionAsync(It.IsAny<Expression<Func<Agency, bool>>>(), It.IsAny<CancellationToken>()),

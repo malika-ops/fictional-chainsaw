@@ -2,7 +2,7 @@
 
 namespace wfc.referential.Application.ParamTypes.Dtos;
 
-public record GetAllParamTypesResponse(
+public record GetFiltredParamTypesResponse(
     Guid ParamTypeId,
     string Value,
     bool IsEnabled,

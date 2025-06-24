@@ -26,7 +26,7 @@ public record CreateAffiliateRequest
     /// The opening date of the Affiliate.
     /// </summary>
     /// <example>2023-01-15</example>
-    public DateTime? OpeningDate { get; init; }
+    public DateTime OpeningDate { get; init; } 
 
     /// <summary>
     /// The cancellation day of the Affiliate.
@@ -74,5 +74,5 @@ public record CreateAffiliateRequest
     /// The ID of the Affiliate Type parameter type.
     /// </summary>
     /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa7</example>
-    public Guid? AffiliateTypeId { get; init; }
+    public Guid AffiliateTypeId { get; init; } 
 }

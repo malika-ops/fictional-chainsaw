@@ -62,15 +62,17 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
             ProductId.Of(Guid.NewGuid())
         );
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(service);
-
+        _repoMock.SetupSequence(r => r.GetOneByConditionAsync(
+            It.IsAny<Expression<Func<Service, bool>>>(),
+            It.IsAny<CancellationToken>()))
+        .Returns(Task.FromResult<Service?>(service)) 
+        .Returns(Task.FromResult<Service?>(null));
 
         var response = await _client.PatchAsync($"/api/services/{serviceId}", JsonContent.Create(patchRequest));
-        var updatedServiceId = await response.Content.ReadFromJsonAsync<Guid>();
+        var result = await response.Content.ReadFromJsonAsync<bool>();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        updatedServiceId.Should().Be(serviceId);
+        result.Should().Be(true);
         service.Name.Should().BeEquivalentTo(patchRequest.Name);
     }
 

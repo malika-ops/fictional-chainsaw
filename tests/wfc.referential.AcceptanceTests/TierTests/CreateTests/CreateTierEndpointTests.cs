@@ -63,7 +63,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
         // Assert (FluentAssertions)
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
         returnedId.Should().NotBeEmpty();
 
         // verify repository interaction using *FluentAssertions on Moq invocations
@@ -97,11 +97,11 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         root.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
+            .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required.");
 
         // the handler must NOT be reached
@@ -130,7 +130,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
         var root = doc!.RootElement;
         root.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
+            .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required.");
 
         _repoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
@@ -157,7 +157,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
         var root = doc!.RootElement;
         root.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
+            .GetProperty("Name")[0].GetString()
             .Should().Be("Name max length is 100 chars.");
 
         _repoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
@@ -194,7 +194,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
+        var error = root.GetProperty("errors").GetProperty("message").GetString();
 
         error.Should().Be($"Tier with name '{duplicateName}' already exists.");
 
@@ -239,7 +239,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
+        var error = root.GetProperty("errors").GetProperty("message").GetString();
 
         error.Should().Be($"Tier with name '{duplicateNameDifferentCase}' already exists.");
 
@@ -265,7 +265,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
         returnedId.Should().NotBeEmpty();
 
         _repoMock.Verify(r =>

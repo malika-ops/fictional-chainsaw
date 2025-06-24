@@ -1,6 +1,6 @@
 ﻿namespace wfc.referential.Application.IdentityDocuments.Dtos;
 
-public record GetAllIdentityDocumentsResponse
+public record GetFiltredIdentityDocumentsResponse
 {
     public Guid IdentityDocumentId { get; init; }
     public string Code { get; init; } = string.Empty;

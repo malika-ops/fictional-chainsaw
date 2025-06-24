@@ -70,9 +70,9 @@ public class CreateCorridorEndpointTests : IClassFixture<WebApplicationFactory<P
             SourceCountryId = Guid.NewGuid()
         };
 
-        _repoCountryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _repoCountryMock.Setup(r => r.GetByIdAsync(It.IsAny<CountryId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Country.Create(
-            new CountryId(Guid.NewGuid()), "FR","France","FRA","FR","FRA","+33","GMT+1",false,false,2,true,new MonetaryZoneId(Guid.NewGuid()),
+            new CountryId(Guid.NewGuid()), "FR","France","FRA","FR","FRA","+33","GMT+1",false,false,2,new MonetaryZoneId(Guid.NewGuid()),
             new CurrencyId(Guid.NewGuid())
         ));
         _repoCityMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))

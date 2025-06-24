@@ -83,6 +83,6 @@ public class DeleteIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
     {
         var response = await _client.DeleteAsync("/api/identitydocuments/invalid-guid");
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

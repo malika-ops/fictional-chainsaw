@@ -1,6 +1,6 @@
 ﻿namespace wfc.referential.Application.TypeDefinitions.Dtos;
 
-public record GetAllTypeDefinitionsResponse(
+public record GetFiltredTypeDefinitionsResponse(
     Guid TypeDefinitionId,
     string Libelle,
     string Description,

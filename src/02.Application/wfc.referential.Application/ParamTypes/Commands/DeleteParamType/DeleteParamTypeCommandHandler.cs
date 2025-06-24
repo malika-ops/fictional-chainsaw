@@ -8,23 +8,28 @@ using wfc.referential.Domain.ParamTypeAggregate;
 
 namespace wfc.referential.Application.ParamTypes.Commands.DeleteParamType;
 
-public class DeleteParamTypeCommandHandler(IParamTypeRepository paramTypeRepository , ICacheService cacheService) : ICommandHandler<DeleteParamTypeCommand, Result<bool>>
+public class DeleteParamTypeCommandHandler : ICommandHandler<DeleteParamTypeCommand, Result<bool>>
 {
-    public async Task<Result<bool>> Handle(DeleteParamTypeCommand request, CancellationToken cancellationToken)
+    private readonly IParamTypeRepository _repo;
+    private readonly ICacheService _cacheService;
+
+    public DeleteParamTypeCommandHandler(IParamTypeRepository repo, ICacheService cacheService)
     {
-        var paramtype = await paramTypeRepository.GetByIdAsync(ParamTypeId.Of(request.ParamTypeId), cancellationToken);
+        _repo = repo;
+        _cacheService = cacheService;
+    }
 
-        if (paramtype is null)
-            throw new ResourceNotFoundException($"{nameof(ParamType)} not found");
+    public async Task<Result<bool>> Handle(DeleteParamTypeCommand cmd, CancellationToken ct)
+    {
+        var paramType = await _repo.GetByIdAsync(ParamTypeId.Of(cmd.ParamTypeId), ct);
+        if (paramType is null)
+            throw new BusinessException($"ParamType [{cmd.ParamTypeId}] not found.");
 
-        paramtype.Disable();
+        paramType.Disable();
+        await _repo.SaveChangesAsync(ct);
 
-        await paramTypeRepository.UpdateParamTypeAsync(paramtype, cancellationToken);
-        await paramTypeRepository.SaveChangesAsync(cancellationToken);
-
-        await cacheService.RemoveByPrefixAsync(CacheKeys.ParamType.Prefix, cancellationToken);
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.ParamType.Prefix, ct);
 
         return Result.Success(true);
-
     }
 }

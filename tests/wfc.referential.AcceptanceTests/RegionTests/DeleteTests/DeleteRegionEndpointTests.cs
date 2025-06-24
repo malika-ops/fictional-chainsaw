@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Application.RegionManagement.Queries.GetAllRegions;
+using wfc.referential.Application.RegionManagement.Queries.GetFiltredRegions;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.RegionAggregate;
@@ -121,7 +121,7 @@ public class DeleteRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var root = doc!.RootElement;
         root.GetProperty("title").GetString().Should().Be("Bad Request");
         root.GetProperty("status").GetInt32().Should().Be(400);
-        root.GetProperty("errors").GetString().Should().StartWith("Cannot delete the region because it has associated cities.");
+        root.GetProperty("errors").GetProperty("message").GetString().Should().StartWith("Cannot delete the region because it has associated cities.");
 
         // Verify that the update method was not called
         _repoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Never);

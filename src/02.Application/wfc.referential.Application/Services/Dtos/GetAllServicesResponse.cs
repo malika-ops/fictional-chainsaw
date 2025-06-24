@@ -1,6 +1,6 @@
 ﻿namespace wfc.referential.Application.Services.Dtos;
 
-public record GetAllServicesResponse
+public record GetFiltredServicesResponse
 {
     public Guid ServiceId { get; init; }
     public string Code { get; init; } = string.Empty;

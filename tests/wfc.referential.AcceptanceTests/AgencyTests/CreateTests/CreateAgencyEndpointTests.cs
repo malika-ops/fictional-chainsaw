@@ -100,7 +100,7 @@ public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
-                .GetProperty("code")[0]
+                .GetProperty("Code")[0]
                 .GetString()
                 .Should()
                 .Be("Agency code must be exactly 6 digits when provided.");
@@ -136,7 +136,8 @@ public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors")
+                .GetProperty("message").GetString()
            .Should().Be($"Agency with code {duplicate} already exists.");
 
         _repo.Verify(r => r.AddAsync(It.IsAny<Agency>(), It.IsAny<CancellationToken>()),

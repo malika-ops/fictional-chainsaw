@@ -16,6 +16,7 @@ using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
+using wfc.referential.Domain.ContractAggregate;
 
 namespace wfc.referential.Application.Data;
 
@@ -36,6 +37,7 @@ public interface IApplicationDbContext
     DbSet<PartnerAccount> PartnerAccounts { get; }
     DbSet<Corridor> Corridors { get; }
     DbSet<CountryIdentityDoc> CountryIdentityDocs { get; }
+    DbSet<Contract> Contracts { get; }
     public DbSet<Partner> Partners { get; }
     public DbSet<SupportAccount> SupportAccounts { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);

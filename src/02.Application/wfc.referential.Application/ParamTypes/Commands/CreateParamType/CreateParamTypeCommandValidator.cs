@@ -6,12 +6,10 @@ public class CreateParamTypeCommandValidator : AbstractValidator<CreateParamType
 {
     public CreateParamTypeCommandValidator()
     {
+        RuleFor(x => x.Value)
+            .NotEmpty().WithMessage("Value is required.");
 
         RuleFor(x => x.TypeDefinitionId)
-            .NotEmpty().WithMessage("Type Definition is required");
-
-        RuleFor(x => x.Value)
-            .NotEmpty().WithMessage("Value is required");
-
+            .NotEqual(Guid.Empty).WithMessage("TypeDefinitionId is required.");
     }
 }

@@ -71,7 +71,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
         // Assert (FluentAssertions)
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
         returnedId.Should().NotBeEmpty();
 
         //verify repository interaction using * FluentAssertions on Moq invocations
@@ -113,11 +113,11 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         root.GetProperty("errors")
-            .GetProperty("codeEn")[0].GetString()
+            .GetProperty("CodeEn")[0].GetString()
             .Should().Be("CodeEn Code is required");
 
         // the handler must NOT be reached
@@ -160,7 +160,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
+        var error = root.GetProperty("errors").GetProperty("message").GetString();
 
         error.Should().Be($"{nameof(Tax)} with code : {duplicateCode} already exist");
 

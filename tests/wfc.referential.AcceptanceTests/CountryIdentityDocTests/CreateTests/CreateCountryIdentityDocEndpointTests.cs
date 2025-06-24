@@ -1,12 +1,13 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
@@ -64,7 +65,6 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             false,
             false,
             2,
-            true,
             new MonetaryZoneId(Guid.NewGuid()),
             new CurrencyId(Guid.NewGuid())
         );
@@ -76,17 +76,11 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             "Description"
             );
 
-        _countryRepoMock.Setup(r => r.GetByIdAsync(countryId, It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(countryId), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(country);
 
         _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(docId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
-
-        _repoMock.Setup(r => r.ExistsByCountryAndIdentityDocumentAsync(
-                        It.IsAny<CountryId>(),
-                        It.IsAny<IdentityDocumentId>(),
-                        It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
 
         _repoMock.Setup(r => r.AddAsync(It.IsAny<CountryIdentityDoc>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((CountryIdentityDoc c, CancellationToken _) => c);
@@ -124,7 +118,7 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         var countryId = Guid.NewGuid();
         var docId = Guid.NewGuid();
 
-        _countryRepoMock.Setup(r => r.GetByIdAsync(countryId, It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(countryId), It.IsAny<CancellationToken>()))
                         .ReturnsAsync((Country?)null);
 
         var doc = IdentityDocument.Create(
@@ -174,7 +168,6 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             false,
             false,
             2,
-            true,
             new MonetaryZoneId(Guid.NewGuid()),
             new CurrencyId(Guid.NewGuid())
         );
@@ -186,17 +179,24 @@ public class CreateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             "Description"
             );
 
-        _countryRepoMock.Setup(r => r.GetByIdAsync(countryId, It.IsAny<CancellationToken>()))
+        // Create an existing association to simulate the conflict
+        var existingAssociation = CountryIdentityDoc.Create(
+            CountryIdentityDocId.Of(Guid.NewGuid()),
+            CountryId.Of(countryId),
+            IdentityDocumentId.Of(docId)
+        );
+
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(countryId), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(country);
 
         _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(docId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
 
-        _repoMock.Setup(r => r.ExistsByCountryAndIdentityDocumentAsync(
-                        It.Is<CountryId>(c => c.Value == countryId),
-                        It.Is<IdentityDocumentId>(d => d.Value == docId),
-                        It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+        // Mock the GetByConditionAsync to return the existing association
+        _repoMock.Setup(r => r.GetByConditionAsync(
+                            It.IsAny<Expression<Func<CountryIdentityDoc, bool>>>(),
+                            It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CountryIdentityDoc> { existingAssociation });
 
         var payload = new
         {

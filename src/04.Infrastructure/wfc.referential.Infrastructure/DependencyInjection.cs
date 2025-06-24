@@ -110,7 +110,8 @@ public static class DependencyInjection
         builder.Services.AddScoped<IAffiliateRepository, AffiliateRepository>();
         builder.Services.AddScoped<IPricingRepository, PricingRepository>();
         builder.Services.AddScoped<ICountryServiceRepository, CountryServiceRepository>();
-
+        builder.Services.AddScoped<IControleRepository, ControleRepository>();
+        builder.Services.AddScoped<IContractRepository, ContractRepository>();
         return builder;
     }
 }

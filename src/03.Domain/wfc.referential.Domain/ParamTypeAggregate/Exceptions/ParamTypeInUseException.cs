@@ -2,10 +2,5 @@
 
 namespace wfc.referential.Domain.ParamTypeAggregate.Exceptions;
 
-public class ParamTypeInUseException : BusinessException
-{
-    public ParamTypeInUseException(Guid paramTypeId)
-        : base($"Cannot delete ParamType with ID {paramTypeId} because it is currently in use.")
-    {
-    }
-}
+public class ParamTypeInUseException(Guid paramTypeId)
+    : ConflictException($"Cannot delete ParamType with ID {paramTypeId} because it is currently in use.");

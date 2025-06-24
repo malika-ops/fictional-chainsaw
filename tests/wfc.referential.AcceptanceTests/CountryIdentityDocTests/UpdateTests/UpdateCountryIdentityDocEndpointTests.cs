@@ -78,7 +78,6 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             false,
             false,
             2,
-            true,
             new Domain.MonetaryZoneAggregate.MonetaryZoneId(Guid.NewGuid()),
             new CurrencyId(Guid.NewGuid())
         );
@@ -90,17 +89,11 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
             "Description"
         );
 
-        _countryRepoMock.Setup(r => r.GetByIdAsync(newCountryId, It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(newCountryId), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(country);
 
         _identityDocRepoMock.Setup(r => r.GetByIdAsync(IdentityDocumentId.Of(newDocId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync(doc);
-
-        _repoMock.Setup(r => r.ExistsByCountryAndIdentityDocumentAsync(
-                        It.IsAny<CountryId>(),
-                        It.IsAny<IdentityDocumentId>(),
-                        It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
 
         _repoMock.Setup(r => r.Update(It.IsAny<CountryIdentityDoc>()));
 
@@ -146,7 +139,7 @@ public class UpdateCountryIdentityDocEndpointTests : IClassFixture<WebApplicatio
         _repoMock.Setup(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(old);
 
-        _countryRepoMock.Setup(r => r.GetByIdAsync(newCountryId, It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(newCountryId), It.IsAny<CancellationToken>()))
                         .ReturnsAsync((Country?)null);
 
         var doc = IdentityDocument.Create(

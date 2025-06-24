@@ -1,8 +1,12 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
-using wfc.referential.Domain.ParamTypeAggregate;
-using wfc.referential.Domain.TypeDefinitionAggregate;
+using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.ParamTypes.Commands.UpdateParamType;
 
-public record UpdateParamTypeCommand(ParamTypeId ParamTypeId, string Value, bool IsEnabled, TypeDefinitionId TypeDefinitionId) 
-    : ICommand<Guid>;
+public record UpdateParamTypeCommand : ICommand<Result<bool>>
+{
+    public Guid ParamTypeId { get; set; }
+    public string Value { get; set; } = string.Empty;
+    public bool IsEnabled { get; set; } = true;
+    public Guid TypeDefinitionId { get; set; }
+}

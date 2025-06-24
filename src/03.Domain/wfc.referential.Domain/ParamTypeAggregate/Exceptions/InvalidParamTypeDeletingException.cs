@@ -2,10 +2,5 @@
 
 namespace wfc.referential.Domain.ParamTypeAggregate.Exceptions;
 
-public class InvalidParamTypeDeletingException : BusinessException
-{
-    public InvalidParamTypeDeletingException(string validationMessage)
-        : base(validationMessage)
-    {
-    }
-}
+public class InvalidParamTypeDeletingException(string validationMessage)
+    : BusinessException(validationMessage);

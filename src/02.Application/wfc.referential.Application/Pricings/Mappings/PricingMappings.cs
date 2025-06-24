@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.PricingAggregate;
 
 namespace wfc.referential.Application.Pricings.Mappings;
@@ -10,6 +11,9 @@ public class PricingMappings
         TypeAdapterConfig<PricingId, Guid>
             .NewConfig()
             .MapWith(src => src.Value);
+
+        TypeAdapterConfig<AffiliateId?, Guid?>.NewConfig()
+            .MapWith(src => src != null ? src.Value : null);
 
     }
 }

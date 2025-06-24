@@ -1,19 +1,20 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
+﻿using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
+using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.DeleteTests;
@@ -56,7 +57,10 @@ public class DeletePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         var bank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
 
         var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), null, "Activity");
+
+        // Create a valid TypeDefinitionId instead of passing null
+        var typeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
+        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), typeDefinitionId, "Activity");
 
         return PartnerAccount.Create(
             PartnerAccountId.Of(id),
@@ -158,7 +162,7 @@ public class DeletePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"Partner account [{accountId}] not found.");
 
         _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
@@ -236,7 +240,7 @@ public class DeletePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         var response = await _client.DeleteAsync("/api/partner-accounts/invalid-guid-format");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         // Verify no repository operations were attempted
         _partnerAccountRepoMock.Verify(r => r.GetByIdAsync(

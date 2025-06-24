@@ -6,18 +6,17 @@ namespace wfc.referential.Domain.TypeDefinitionAggregate;
 
 public class TypeDefinition : Aggregate<TypeDefinitionId>
 {
-    public string Libelle { get; private set; } = string.Empty!;
-    public string Description { get; private set; } = string.Empty!;
+    public string Libelle { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
     public bool IsEnabled { get; private set; } = true;
     public List<ParamType> ParamTypes { get; private set; } = [];
 
     private TypeDefinition() { }
 
     public static TypeDefinition Create(
-    TypeDefinitionId typeDefinitionId,
-    string libelle,
-    string description,
-    List<ParamType>? paramTypes = null)
+        TypeDefinitionId typeDefinitionId,
+        string libelle,
+        string description)
     {
         var typeDefinition = new TypeDefinition
         {
@@ -26,14 +25,6 @@ public class TypeDefinition : Aggregate<TypeDefinitionId>
             Description = description,
             IsEnabled = true
         };
-
-        if (paramTypes != null)
-        {
-            foreach (var paramType in paramTypes)
-            {
-                typeDefinition.ParamTypes.Add(paramType);
-            }
-        }
 
         typeDefinition.AddDomainEvent(new TypeDefinitionCreatedEvent(
             typeDefinition.Id.Value,
@@ -48,16 +39,19 @@ public class TypeDefinition : Aggregate<TypeDefinitionId>
 
     public void Update(
         string libelle,
-        string description)
+        string description,
+        bool? isEnabled)
     {
         Libelle = libelle;
         Description = description;
+        IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new TypeDefinitionUpdatedEvent(
             Id.Value,
             Libelle,
             Description,
-            IsEnabled
+            IsEnabled,
+            DateTime.UtcNow
         ));
     }
 
@@ -66,7 +60,7 @@ public class TypeDefinition : Aggregate<TypeDefinitionId>
         string? description,
         bool? isEnabled)
     {
-        Libelle = libelle ?? Libelle ;
+        Libelle = libelle ?? Libelle;
         Description = description ?? Description;
         IsEnabled = isEnabled ?? IsEnabled;
 
@@ -74,8 +68,8 @@ public class TypeDefinition : Aggregate<TypeDefinitionId>
             Id.Value,
             Libelle,
             Description,
-            DateTime.UtcNow,
-            IsEnabled
+            IsEnabled,
+            DateTime.UtcNow
         ));
     }
 

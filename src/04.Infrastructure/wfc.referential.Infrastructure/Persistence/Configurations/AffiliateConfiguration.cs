@@ -4,13 +4,14 @@ using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.Countries;
 
-
 namespace wfc.referential.Infrastructure.Persistence.Configurations;
 
 public class AffiliateConfiguration : IEntityTypeConfiguration<Affiliate>
 {
     public void Configure(EntityTypeBuilder<Affiliate> builder)
     {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Id)

@@ -3,5 +3,8 @@ using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.TypeDefinitions.Commands.CreateTypeDefinition;
 
-public record CreateTypeDefinitionCommand(string Libelle, string Description) 
-    : ICommand<Result<Guid>>;
+public record CreateTypeDefinitionCommand : ICommand<Result<Guid>>
+{
+    public string Libelle { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
+}

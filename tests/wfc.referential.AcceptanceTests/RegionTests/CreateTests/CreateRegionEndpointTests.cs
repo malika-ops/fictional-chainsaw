@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.CurrencyAggregate;
+using wfc.referential.Domain.MonetaryZoneAggregate;
 using wfc.referential.Domain.RegionAggregate;
 using Xunit;
 
@@ -20,6 +22,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 {
     private readonly HttpClient _client;
     private readonly Mock<IRegionRepository> _repoMock = new();
+    private readonly Mock<ICountryRepository> _repoCountryMock = new();
 
     public CreateRegionEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -33,6 +36,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             {
                 // 🧹 Remove concrete registrations that hit the DB / Redis
                 services.RemoveAll<IRegionRepository>();
+                services.RemoveAll<ICountryRepository>();
 
                 // 🪄  Set up mock behaviour (echoes entity back, as if EF saved it)
                 //_repoMock
@@ -41,6 +45,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
                 // 🔌 Plug mocks back in
                 services.AddSingleton(_repoMock.Object);
+                services.AddSingleton(_repoCountryMock.Object);
             });
         });
 
@@ -58,12 +63,21 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             CountryId = Guid.Parse("50ed04f5-d16b-49c6-af46-b3ea7dfb8cb1")
         };
 
+        _repoCountryMock.Setup(
+            r => r.GetByIdAsync(It.IsAny<CountryId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Country.Create(
+                CountryId.Of(payload.CountryId),
+                "Morocco",
+                "MA",
+                "Moroccan Dirham", "iso2", "iso3", "dialingCode", "GMT", true, true, 2,
+                MonetaryZoneId.Of(Guid.NewGuid()), CurrencyId.Of(Guid.NewGuid())));
+
         // Act
         var response = await _client.PostAsJsonAsync("/api/regions", payload);
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
         // Assert (FluentAssertions)
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
         returnedId.Should().NotBeEmpty();
 
         // verify repository interaction using *FluentAssertions on Moq invocations
@@ -98,11 +112,11 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         root.GetProperty("errors")
-            .GetProperty("code")[0].GetString()
+            .GetProperty("Code")[0].GetString()
             .Should().Be("Code is required");
 
         // the handler must NOT be reached
@@ -130,15 +144,15 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var root = doc!.RootElement;
 
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         var errors = root.GetProperty("errors");
 
-        errors.GetProperty("name")[0].GetString()
+        errors.GetProperty("Name")[0].GetString()
               .Should().Be("Name is required");
 
-        errors.GetProperty("code")[0].GetString()
+        errors.GetProperty("Code")[0].GetString()
               .Should().Be("Code is required");
 
         // handler must NOT run on validation failure
@@ -179,7 +193,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
+        var error = root.GetProperty("errors").GetProperty("message").GetString();
 
         error.Should().Be($"Region with code : {duplicateCode} already exist");
 

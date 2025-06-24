@@ -10,7 +10,7 @@ public class Affiliate : Aggregate<AffiliateId>
     public string Code { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
     public string Abbreviation { get; private set; } = string.Empty;
-    public DateTime? OpeningDate { get; private set; }
+    public DateTime OpeningDate { get; private set; }
     public string CancellationDay { get; private set; } = string.Empty;
     public string Logo { get; private set; } = string.Empty;
     public decimal ThresholdBilling { get; private set; }
@@ -34,7 +34,7 @@ public class Affiliate : Aggregate<AffiliateId>
         string code,
         string name,
         string abbreviation,
-        DateTime? openingDate,
+        DateTime openingDate,
         string cancellationDay,
         string logo,
         decimal thresholdBilling,
@@ -82,7 +82,7 @@ public class Affiliate : Aggregate<AffiliateId>
         string code,
         string name,
         string abbreviation,
-        DateTime? openingDate,
+        DateTime openingDate, 
         string cancellationDay,
         string logo,
         decimal thresholdBilling,
@@ -90,7 +90,7 @@ public class Affiliate : Aggregate<AffiliateId>
         string accountingAccountNumber,
         string stampDutyMention,
         CountryId countryId,
-        bool? isEnabled 
+        bool? isEnabled
         )
     {
         Code = code;
@@ -167,7 +167,6 @@ public class Affiliate : Aggregate<AffiliateId>
             DateTime.UtcNow));
     }
 
-    // ParamType setter for AffiliateType (enum replacement)
     public void SetAffiliateType(ParamTypeId affiliateTypeId)
     {
         AffiliateTypeId = affiliateTypeId;

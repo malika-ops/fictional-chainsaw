@@ -98,7 +98,7 @@ public class UpdateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        doc!.RootElement.GetProperty("errors").GetProperty("name")[0].GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("Name")[0].GetString()
             .Should().Be("Name is required.");
     }
 

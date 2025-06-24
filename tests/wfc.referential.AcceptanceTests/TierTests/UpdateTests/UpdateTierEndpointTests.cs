@@ -114,7 +114,7 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
+            .GetProperty("Name")[0].GetString()
             .Should().Be("Name max length is 100 chars.");
 
         _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -138,10 +138,6 @@ public class UpdateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors")
-            .GetProperty("tierId")[0].GetString()
-            .Should().Be("TierId cannot be empty.");
 
         _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

@@ -13,19 +13,27 @@ public class UpdateCountryValidator : AbstractValidator<UpdateCountryCommand>
 
         RuleFor(x => x.Code)
             .NotEmpty()
-            .WithMessage("Code is required.");
+            .WithMessage("Code is required.")
+            .MaximumLength(50);
+
 
         RuleFor(x => x.Name)
             .NotEmpty()
-            .WithMessage("Name is required.");
+            .WithMessage("Name is required.")
+            .MaximumLength(100);
+
 
         RuleFor(x => x.DialingCode)
             .NotEmpty()
-            .WithMessage("Dialing Code is required.");
+            .WithMessage("Dialing Code is required.")
+            .MaximumLength(4);
+
 
         RuleFor(x => x.TimeZone)
             .NotEmpty()
-            .WithMessage("Time Zone is required.");
+            .WithMessage("Time Zone is required.")
+            .MaximumLength(4);
+
 
         RuleFor(x => x.NumberDecimalDigits)
            .NotEmpty()

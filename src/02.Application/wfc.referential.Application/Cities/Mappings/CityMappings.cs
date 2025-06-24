@@ -10,7 +10,7 @@ public class CityMappings
     public static void Register()
     {
 
-        TypeAdapterConfig<City, GetAllCitiesResponse>.NewConfig()
+        TypeAdapterConfig<City, GetCitiyResponse>.NewConfig()
             .Map(dest => dest.CityId, src => src.Id!.Value)
             .Map(dest => dest.RegionId, src => src.RegionId.Value);
 

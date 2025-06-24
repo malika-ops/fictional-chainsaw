@@ -10,17 +10,18 @@ public class DeleteMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZ
 {
     public async Task<Result<bool>> Handle(DeleteMonetaryZoneCommand request, CancellationToken cancellationToken)
     {
-        var monetaryZone = await _monetaryZoneRepository.GetByIdAsync(MonetaryZoneId.Of(request.MonetaryZoneId), cancellationToken);
+        var monetaryZoneId = MonetaryZoneId.Of(request.MonetaryZoneId);
 
-        if (monetaryZone == null)
-            throw new InvalidDeletingException("Monetary zone not found");
+        var monetaryZone = await _monetaryZoneRepository.GetByIdWithIncludesAsync(monetaryZoneId, 
+            cancellationToken, 
+            mz => mz.Countries) 
+            ?? throw new InvalidDeletingException("Monetary zone not found");
 
         if (monetaryZone.Countries.Count > 0)
             throw new InvalidDeletingException("Can not delete a Monetary Zone with existing Countries");
 
         monetaryZone.Disable();
 
-        await _monetaryZoneRepository.UpdateMonetaryZoneAsync(monetaryZone, cancellationToken);
         await _monetaryZoneRepository.SaveChangesAsync(cancellationToken);
 
 

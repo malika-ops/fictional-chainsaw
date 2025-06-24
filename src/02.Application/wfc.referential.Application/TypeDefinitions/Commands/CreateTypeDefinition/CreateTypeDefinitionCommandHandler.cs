@@ -8,23 +8,33 @@ using wfc.referential.Domain.TypeDefinitionAggregate.Exceptions;
 
 namespace wfc.referential.Application.TypeDefinitions.Commands.CreateTypeDefinition;
 
-public class CreateTypeDefinitionCommandHandler(ITypeDefinitionRepository _typeDefinitionRepository,ICacheService _cacheService) 
-    : ICommandHandler<CreateTypeDefinitionCommand, Result<Guid>>
+public class CreateTypeDefinitionCommandHandler : ICommandHandler<CreateTypeDefinitionCommand, Result<Guid>>
 {
-    public async Task<Result<Guid>> Handle(CreateTypeDefinitionCommand request, CancellationToken cancellationToken)
+    private readonly ITypeDefinitionRepository _typeDefinitionRepository;
+    private readonly ICacheService _cacheService;
+
+    public CreateTypeDefinitionCommandHandler(ITypeDefinitionRepository typeDefinitionRepository, ICacheService cacheService)
     {
-        var isExist = await _typeDefinitionRepository.GetByLibelleAsync(request.Libelle, cancellationToken);
-        if (isExist is not null) throw new TypeDefinitionLibelleAlreadyExistException(request.Libelle);
+        _typeDefinitionRepository = typeDefinitionRepository;
+        _cacheService = cacheService;
+    }
 
-        var id = TypeDefinitionId.Of(Guid.NewGuid());
-        var typedefinition = TypeDefinition.Create(id, request.Libelle, request.Description, []);
+    public async Task<Result<Guid>> Handle(CreateTypeDefinitionCommand command, CancellationToken ct)
+    {
+        var existingByLibelle = await _typeDefinitionRepository.GetOneByConditionAsync(t => t.Libelle == command.Libelle, ct);
+        if (existingByLibelle is not null)
+            throw new TypeDefinitionLibelleAlreadyExistException(command.Libelle);
 
-        await _typeDefinitionRepository.AddTypeDefinitionAsync(typedefinition, cancellationToken);
+        var typeDefinition = TypeDefinition.Create(
+            TypeDefinitionId.Of(Guid.NewGuid()),
+            command.Libelle,
+            command.Description);
 
-        await _typeDefinitionRepository.SaveChangesAsync(cancellationToken);
+        await _typeDefinitionRepository.AddAsync(typeDefinition, ct);
+        await _typeDefinitionRepository.SaveChangesAsync(ct);
 
-        await _cacheService.RemoveByPrefixAsync(CacheKeys.TypeDefinition.Prefix, cancellationToken);
+        await _cacheService.RemoveByPrefixAsync(CacheKeys.TypeDefinition.Prefix, ct);
 
-        return Result.Success(typedefinition.Id!.Value);
+        return Result.Success(typeDefinition.Id!.Value);
     }
 }

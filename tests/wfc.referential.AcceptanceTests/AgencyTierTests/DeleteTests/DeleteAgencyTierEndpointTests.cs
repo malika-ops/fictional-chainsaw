@@ -119,11 +119,11 @@ public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         root.GetProperty("errors")
-            .GetProperty("agencyTierId")[0].GetString()
+            .GetProperty("AgencyTierId")[0].GetString()
             .Should().Be("AgencyTierId must be a non-empty GUID.");
 
         _agencyTierRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<AgencyTierId>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -140,7 +140,7 @@ public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
         var response = await _client.DeleteAsync($"/api/agencyTiers/{malformedId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         _agencyTierRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<AgencyTierId>(), It.IsAny<CancellationToken>()), Times.Never);
         _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

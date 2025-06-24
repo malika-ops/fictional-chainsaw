@@ -9,7 +9,7 @@ using wfc.referential.Domain.ServiceAggregate;
 
 namespace wfc.referential.Application.CountryServices.Commands.PatchCountryService;
 
-public class PatchCountryServiceCommandHandler (
+public class PatchCountryServiceCommandHandler(
     ICountryServiceRepository _countryServiceRepository,
     ICountryRepository _countryRepository,
     IServiceRepository _serviceRepository
@@ -28,19 +28,19 @@ public class PatchCountryServiceCommandHandler (
         // Validate country if provided
         if (cmd.CountryId.HasValue)
         {
-            var country = await _countryRepository.GetByIdAsync(cmd.CountryId.Value, ct);
+            countryId = CountryId.Of(cmd.CountryId.Value);
+            var country = await _countryRepository.GetByIdAsync(countryId, ct);
             if (country is null)
                 throw new ResourceNotFoundException($"Country [{cmd.CountryId}] not found.");
-            countryId = CountryId.Of(cmd.CountryId.Value);
         }
 
         // Validate service if provided
         if (cmd.ServiceId.HasValue)
         {
-            var service = await _serviceRepository.GetByIdAsync(ServiceId.Of(cmd.ServiceId.Value), ct);
+            serviceId = ServiceId.Of(cmd.ServiceId.Value);
+            var service = await _serviceRepository.GetByIdAsync(serviceId, ct);
             if (service is null)
                 throw new ResourceNotFoundException($"service [{cmd.ServiceId}] not found.");
-            serviceId = ServiceId.Of(cmd.ServiceId.Value);
         }
 
         // Check for duplicate association if both IDs are being changed
@@ -51,8 +51,8 @@ public class PatchCountryServiceCommandHandler (
 
             if (finalCountryId != countryService.CountryId || finalserviceId != countryService.ServiceId)
             {
-                var duplicateExists = await _countryServiceRepository.ExistsByCountryAndServiceAsync(finalCountryId, finalserviceId, ct);
-                if (duplicateExists)
+                var duplicateExists = await _countryServiceRepository.GetByConditionAsync(c => c.CountryId == finalCountryId && c.ServiceId == finalserviceId, ct);
+                if (duplicateExists.Any())
                     throw new CountryServiceAlreadyExistsException(finalCountryId.Value, finalserviceId.Value);
             }
         }

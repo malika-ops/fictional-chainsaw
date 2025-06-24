@@ -5,6 +5,5 @@ namespace wfc.referential.Application.CountryIdentityDocs.Commands.DeleteCountry
 
 public record DeleteCountryIdentityDocCommand : ICommand<Result<bool>>
 {
-    public Guid CountryIdentityDocId { get; }
-    public DeleteCountryIdentityDocCommand(Guid countryIdentityDocId) => CountryIdentityDocId = countryIdentityDocId;
+    public Guid CountryIdentityDocId { get; init; }
 }

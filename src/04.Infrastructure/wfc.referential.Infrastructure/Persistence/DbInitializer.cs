@@ -23,8 +23,8 @@ public static class DbInitializer
 
         if (!context.Countries.Any())
         {
-            var monetaryzoneMA = MonetaryZone.Create(new MonetaryZoneId(Guid.NewGuid()), "MAR", "Maroc", "MA", []);
-            var monetaryzoneEU = MonetaryZone.Create(new MonetaryZoneId(Guid.NewGuid()), "EU", "Europe", "EU", []);
+            var monetaryzoneMA = MonetaryZone.Create(new MonetaryZoneId(Guid.NewGuid()), "MAR", "Maroc", "MA");
+            var monetaryzoneEU = MonetaryZone.Create(new MonetaryZoneId(Guid.NewGuid()), "EU", "Europe", "EU");
 
             var currencyMAD = Currency.Create(new CurrencyId(Guid.NewGuid()), "MAD", "Dirham marocain", "MAD", "MAD", 2);
             context.Currencies.Add(currencyMAD);
@@ -35,11 +35,11 @@ public static class DbInitializer
 
 
             // ✅ 1️⃣ Ajouter les countries
-            var maroc = Country.Create(new CountryId(Guid.NewGuid()), "Maroc", "Maroc", "MAR", "MA", "MAR", "+212", "0", true, true, 2, true, monetaryzoneMA.Id!, currencyMAD.Id!);
-            var egypte = Country.Create(new CountryId(Guid.NewGuid()), "Egypte", "Egypte", "EGY", "EG", "EGY", "+20", "+2", false, false, 2, false, monetaryzoneMA.Id!, currencyMAD.Id!);
-            var senegal = Country.Create(new CountryId(Guid.NewGuid()), "Senegal", "Senegal", "SEN", "SE", "SEN", "+221", "0", false, false, 2, false, monetaryzoneMA.Id!, currencyMAD.Id!);
-            var france = Country.Create(new CountryId(Guid.NewGuid()), "France", "France", "FRA", "FR", "FRA", "+33", "+1", false, false, 2, false, monetaryzoneEU.Id!, currencyMAD.Id!);
-            var suisse = Country.Create(new CountryId(Guid.NewGuid()), "Suisse", "Suisse", "CHE", "CH", "CHE", "+41", "+1", false, false, 2, false, monetaryzoneEU.Id!, currencyMAD.Id!);
+            var maroc = Country.Create(new CountryId(Guid.NewGuid()), "Maroc", "Maroc", "MAR", "MA", "MAR", "+212", "0", true, true, 2, monetaryzoneMA.Id!, currencyMAD.Id!);
+            var egypte = Country.Create(new CountryId(Guid.NewGuid()), "Egypte", "Egypte", "EGY", "EG", "EGY", "+20", "+2", false, false, 2, monetaryzoneMA.Id!, currencyMAD.Id!);
+            var senegal = Country.Create(new CountryId(Guid.NewGuid()), "Senegal", "Senegal", "SEN", "SE", "SEN", "+221", "0", false, false, 2, monetaryzoneMA.Id!, currencyMAD.Id!);
+            var france = Country.Create(new CountryId(Guid.NewGuid()), "France", "France", "FRA", "FR", "FRA", "+33", "+1", false, false, 2, monetaryzoneEU.Id!, currencyMAD.Id!);
+            var suisse = Country.Create(new CountryId(Guid.NewGuid()), "Suisse", "Suisse", "CHE", "CH", "CHE", "+41", "+1", false, false, 2, monetaryzoneEU.Id!, currencyMAD.Id!);
 
 
             context.Countries.Add(maroc);

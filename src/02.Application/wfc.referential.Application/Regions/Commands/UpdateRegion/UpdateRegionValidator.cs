@@ -18,7 +18,7 @@ public class UpdateRegionValidator : AbstractValidator<UpdateRegionCommand>
         RuleFor(x => x.IsEnabled)
             .NotEmpty().WithMessage("IsEnabled is required");
 
-        RuleFor(x => x.CountryId)
-            .NotEmpty().WithMessage("CountryID is required");
+        RuleFor(x => x.CountryId).
+            NotEqual(Guid.Empty).WithMessage("CountryID is required");
     }
 }

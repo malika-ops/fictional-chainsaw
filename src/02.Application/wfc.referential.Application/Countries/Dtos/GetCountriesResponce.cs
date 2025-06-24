@@ -2,19 +2,24 @@
 
 namespace wfc.referential.Application.Countries.Dtos;
 
-public record GetCountriesResponce ( 
-    Guid CountryId,
-    string Abbreviation,
-    string Name,
-    string Code,
-    string ISO2, 
-    string ISO3,
-    string DialingCode,
-    string TimeZone,
-    bool HasSector,
-    bool IsSmsEnabled,
-    int NumberDecimalDigits,
-    bool IsEnabled,
-    GetCurrenciesResponse Currency,
-    Guid MonetaryZoneId
-    );
+public record GetCountriesResponce
+{
+    public Guid Id { get; init; }
+    public string Abbreviation { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Code { get; init; } = string.Empty;
+    public string ISO2 { get; init; } = string.Empty;
+    public string ISO3 { get; init; } = string.Empty;
+    public string DialingCode { get; init; } = string.Empty;
+    public string TimeZone { get; init; } = string.Empty;
+    public bool HasSector { get; init; }
+    public bool IsSmsEnabled { get; init; }
+    public int NumberDecimalDigits { get; init; }
+    public bool IsEnabled { get; init; }
+    public GetCurrenciesResponse Currency { get; init; } = default!;
+    public Guid MonetaryZoneId { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset LastModified { get; init; }
+    public string CreatedBy { get; init; } = string.Empty;
+    public string LastModifiedBy { get; init; } = string.Empty;
+}

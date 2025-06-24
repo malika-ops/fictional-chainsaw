@@ -29,5 +29,5 @@ public record UpdateRegionRequest
     /// <summary> 
     /// The country ID associated with the region. 
     /// </summary>
-    public CountryId CountryId { get; set; }
+    public Guid CountryId { get; set; }
 }

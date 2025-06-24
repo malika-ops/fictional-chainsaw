@@ -27,7 +27,7 @@ public class UpdateCountryServiceCommandHandler (
         var serviceId = ServiceId.Of(cmd.ServiceId);
 
         // Verify country exists
-        var country = await _countryRepository.GetByIdAsync(cmd.CountryId, ct);
+        var country = await _countryRepository.GetByIdAsync(countryId, ct);
         if (country is null)
             throw new ResourceNotFoundException($"Country [{cmd.CountryId}] not found.");
 
@@ -39,8 +39,8 @@ public class UpdateCountryServiceCommandHandler (
         // Check for duplicate association (if different from current)
         if (countryService.CountryId != countryId || countryService.ServiceId != serviceId)
         {
-            var duplicateExists = await _countryServiceRepository.ExistsByCountryAndServiceAsync(countryId, serviceId, ct);
-            if (duplicateExists)
+            var duplicateExists = await _countryServiceRepository.GetByConditionAsync(c => c.CountryId == countryId && c.ServiceId == serviceId, ct);
+            if (duplicateExists.Any())
                 throw new CountryServiceAlreadyExistsException(cmd.CountryId, cmd.ServiceId);
         }
 

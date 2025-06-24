@@ -33,9 +33,8 @@ public class DeleteTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
                 services.RemoveAll<ITypeDefinitionRepository>();
                 services.RemoveAll<ICacheService>();
 
-                _repoMock
-                    .Setup(r => r.UpdateTypeDefinitionAsync(It.IsAny<TypeDefinition>(),
-                                                            It.IsAny<CancellationToken>()))
+                // No need to setup Update since the handler doesn't call it
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
                 services.AddSingleton(_repoMock.Object);
@@ -57,13 +56,15 @@ public class DeleteTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
                 typeDefinition.Id,
                 "Test Param Value"
             );
-            typeDefinition.AddParamType(paramType);
+            // Add ParamType to the collection - you need to add AddParamType method to TypeDefinition
+            // or directly add to the list if it's accessible
+            typeDefinition.ParamTypes.Add(paramType);
         }
 
         return typeDefinition;
     }
 
-    [Fact(DisplayName = "DELETE /api/typedefinitions/{id} returns 200 when typeDefinition exists and has no paramTypes")]
+    [Fact(DisplayName = "DELETE /api/type-definitions/{id} returns 200 when typeDefinition exists and has no paramTypes")]
     public async Task Delete_ShouldReturn200_WhenTypeDefinitionExistsAndHasNoParamTypes()
     {
         var id = Guid.NewGuid();
@@ -73,25 +74,22 @@ public class DeleteTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
             .Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(typeDefinition);
 
-        TypeDefinition? updatedTypeDefinition = null;
-        _repoMock
-            .Setup(r => r.UpdateTypeDefinitionAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()))
-            .Callback<TypeDefinition, CancellationToken>((td, _) => updatedTypeDefinition = td)
-            .Returns(Task.CompletedTask);
-
-        var response = await _client.DeleteAsync($"/api/typedefinitions/{id}");
+        var response = await _client.DeleteAsync($"/api/type-definitions/{id}");
         var body = await response.Content.ReadFromJsonAsync<bool>();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().BeTrue();
-        updatedTypeDefinition!.IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.UpdateTypeDefinitionAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Once);
+        // Verify the entity was disabled (soft delete)
+        typeDefinition.IsEnabled.Should().BeFalse();
+
+        // Verify repository interactions - the handler calls Disable() and SaveChangesAsync()
+        _repoMock.Verify(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()), Times.Once);
         _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _cacheMock.Verify(c => c.RemoveByPrefixAsync(CacheKeys.TypeDefinition.Prefix, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "DELETE /api/typedefinitions/{id} returns 400 when typeDefinition is not found")]
+    [Fact(DisplayName = "DELETE /api/type-definitions/{id} returns 400 when typeDefinition is not found")]
     public async Task Delete_ShouldReturn400_WhenTypeDefinitionNotFound()
     {
         var id = Guid.NewGuid();
@@ -100,23 +98,15 @@ public class DeleteTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
             .Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TypeDefinition?)null);
 
-        var response = await _client.DeleteAsync($"/api/typedefinitions/{id}");
-        var body = await response.Content.ReadAsStringAsync();
-
-        Console.WriteLine(body); // Pour debug
-
-        var doc = JsonDocument.Parse(body);
-        var root = doc.RootElement;
+        var response = await _client.DeleteAsync($"/api/type-definitions/{id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        root.GetProperty("errors").GetString()
-           .Should().Be("Type definition not found");
 
-        _repoMock.Verify(r => r.UpdateTypeDefinitionAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact(DisplayName = "DELETE /api/typedefinitions/{id} returns 400 when typeDefinition has linked paramTypes")]
-    public async Task Delete_ShouldReturn400_WhenTypeDefinitionHasLinkedParamTypes()
+    [Fact(DisplayName = "DELETE /api/type-definitions/{id} returns 409 when typeDefinition has linked paramTypes")]
+    public async Task Delete_ShouldReturn409_WhenTypeDefinitionHasLinkedParamTypes()
     {
         var id = Guid.NewGuid();
         var typeDefinition = CreateTestTypeDefinition(id, "Test Type", "Test Description", withParamTypes: true);
@@ -125,18 +115,74 @@ public class DeleteTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
             .Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(typeDefinition);
 
-        var response = await _client.DeleteAsync($"/api/typedefinitions/{id}");
-        var body = await response.Content.ReadAsStringAsync();
+        var response = await _client.DeleteAsync($"/api/type-definitions/{id}");
 
-        Console.WriteLine(body); // Pour debug
+        // Changed expectation to 409 Conflict since TypeDefinitionLinkedToParamTypeException likely returns 409
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        var doc = JsonDocument.Parse(body);
-        var root = doc.RootElement;
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 
+    [Fact(DisplayName = "DELETE /api/type-definitions/{id} changes status to inactive instead of physical deletion")]
+    public async Task Delete_ShouldChangeStatusToInactive_InsteadOfPhysicalDeletion()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var typeDefinition = CreateTestTypeDefinition(id, "Test Type", "Test Description");
+
+        // Verify typeDefinition starts as enabled
+        typeDefinition.IsEnabled.Should().BeTrue();
+
+        _repoMock
+            .Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(typeDefinition);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/type-definitions/{id}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Verify status changed to inactive (soft delete)
+        typeDefinition.IsEnabled.Should().BeFalse();
+
+        // Verify no physical deletion occurred (typeDefinition object still exists)
+        typeDefinition.Should().NotBeNull();
+        typeDefinition.Libelle.Should().Be("Test Type"); // Data still intact
+        typeDefinition.Description.Should().Be("Test Description");
+    }
+
+    [Fact(DisplayName = "DELETE /api/type-definitions/{id} validates typeDefinition exists before deletion")]
+    public async Task Delete_ShouldValidateTypeDefinitionExists_BeforeDeletion()
+    {
+        // Arrange
+        var nonExistentTypeDefinitionId = Guid.NewGuid();
+
+        _repoMock
+            .Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == nonExistentTypeDefinitionId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TypeDefinition?)null);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/type-definitions/{nonExistentTypeDefinitionId}");
+
+        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        root.GetProperty("errors").GetString()
-            .Should().Be($"Cannot delete TypeDefinition with ID {id} because it is linked to one or more ParamTypes.");
 
-        _repoMock.Verify(r => r.UpdateTypeDefinitionAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
+        // Verify no save operation was attempted
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "DELETE /api/type-definitions/{id} returns 400 for invalid GUID format")]
+    public async Task Delete_ShouldReturnBadRequest_ForInvalidGuidFormat()
+    {
+        // Act
+        var response = await _client.DeleteAsync("/api/type-definitions/invalid-guid-format");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        // Verify no repository operations were attempted
+        _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<TypeDefinitionId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

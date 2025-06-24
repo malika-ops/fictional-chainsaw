@@ -1,6 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
-using wfc.referential.Domain.Countries;
 
 namespace wfc.referential.Application.Regions.Commands.PatchRegion;
 
@@ -13,5 +12,5 @@ public record PatchRegionCommand : ICommand<Result<bool>>
     public string? Code { get; init; }
     public string? Name { get; init; }
     public bool? IsEnabled { get; init; }
-    public CountryId? CountryId { get; init; }
+    public Guid? CountryId { get; init; }
 }

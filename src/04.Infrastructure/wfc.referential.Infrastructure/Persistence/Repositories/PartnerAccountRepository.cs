@@ -2,7 +2,6 @@
 using BuildingBlocks.Core.Abstraction.Repositories;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.PartnerAccountAggregate;
-using wfc.referential.Infrastructure.Data;
 
 namespace wfc.referential.Infrastructure.Data.Repositories;
 

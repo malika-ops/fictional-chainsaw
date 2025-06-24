@@ -31,7 +31,7 @@ public class CreateCountryIdentityDocCommandHandler : ICommandHandler<CreateCoun
         var identityDocumentId = IdentityDocumentId.Of(command.IdentityDocumentId);
 
         // Verify country exists
-        var country = await _countryRepository.GetByIdAsync(command.CountryId, ct);
+        var country = await _countryRepository.GetByIdAsync(countryId, ct);
         if (country is null)
             throw new ResourceNotFoundException($"Country [{command.CountryId}] not found.");
 
@@ -41,8 +41,8 @@ public class CreateCountryIdentityDocCommandHandler : ICommandHandler<CreateCoun
             throw new ResourceNotFoundException($"Identity document [{command.IdentityDocumentId}] not found.");
 
         // Check if association already exists
-        var exists = await _countryIdentityDocRepository.ExistsByCountryAndIdentityDocumentAsync(countryId, identityDocumentId, ct);
-        if (exists)
+        var exists = await _countryIdentityDocRepository.GetByConditionAsync(c=>c.CountryId == countryId && c.IdentityDocumentId == identityDocumentId,ct);
+        if (exists.Any())
             throw new CountryIdentityDocAlreadyExistsException(command.CountryId, command.IdentityDocumentId);
 
         var countryIdentityDoc = CountryIdentityDoc.Create(

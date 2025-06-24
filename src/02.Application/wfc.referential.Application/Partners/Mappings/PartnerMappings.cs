@@ -12,5 +12,12 @@ public class PartnerMappings
             .NewConfig()
             .Map(dest => dest.PartnerId, src => src.Id.Value);
 
+        TypeAdapterConfig<PartnerId, Guid?>
+            .NewConfig()
+            .MapWith(src => src == null ? null : src.Value);
+        TypeAdapterConfig<PartnerId, Guid>
+            .NewConfig()
+            .MapWith(src =>  src.Value);
+
     }
 }

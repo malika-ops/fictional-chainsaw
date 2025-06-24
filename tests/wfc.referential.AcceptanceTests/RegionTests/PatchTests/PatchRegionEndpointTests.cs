@@ -11,6 +11,8 @@ using Moq;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Regions.Dtos;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.CurrencyAggregate;
+using wfc.referential.Domain.MonetaryZoneAggregate;
 using wfc.referential.Domain.RegionAggregate;
 using Xunit;
 
@@ -20,6 +22,7 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
 {
     private readonly HttpClient _client;
     private readonly Mock<IRegionRepository> _repoMock = new();
+    private readonly Mock<ICountryRepository> _repoCountryMock = new();
 
     public PatchRegionEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -34,10 +37,12 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
             {
                 // 🧹 Remove concrete registrations that hit the DB / Redis
                 services.RemoveAll<IRegionRepository>();
+                services.RemoveAll<ICountryRepository>();
                 services.RemoveAll<ICacheService>();
 
                 // 🔌 Plug mocks back in
                 services.AddSingleton(_repoMock.Object);
+                services.AddSingleton(_repoCountryMock.Object);
                 services.AddSingleton(cacheMock.Object);
             });
         });
@@ -56,7 +61,7 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
             Code = "new-code",
             Name = "Updated Name",
             IsEnabled = true,
-            CountryId = CountryId.Of(Guid.NewGuid())
+            CountryId = Guid.NewGuid()
         };
 
         var region = Region.Create(
@@ -75,6 +80,14 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
 
                 return null;
             });
+        _repoCountryMock.Setup(
+            r => r.GetByIdAsync(It.IsAny<CountryId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Country.Create(
+                CountryId.Of(patchRequest.CountryId.Value),
+                "Morocco",
+                "MA",
+                "Moroccan Dirham", "iso2", "iso3", "dialingCode", "GMT", true, true, 2,
+                MonetaryZoneId.Of(Guid.NewGuid()), CurrencyId.Of(Guid.NewGuid())));
         // Act
         var response = await _client.PatchAsync($"/api/regions/{regionId}", JsonContent.Create(patchRequest));
         var updatedRegionId = await response.Content.ReadFromJsonAsync<bool>();

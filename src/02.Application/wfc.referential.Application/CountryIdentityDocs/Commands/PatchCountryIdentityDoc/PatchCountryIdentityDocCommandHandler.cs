@@ -37,19 +37,19 @@ public class PatchCountryIdentityDocCommandHandler : ICommandHandler<PatchCountr
         // Validate country if provided
         if (cmd.CountryId.HasValue)
         {
-            var country = await _countryRepository.GetByIdAsync(cmd.CountryId.Value, ct);
+            countryId = CountryId.Of(cmd.CountryId.Value);
+            var country = await _countryRepository.GetByIdAsync(countryId, ct);
             if (country is null)
                 throw new ResourceNotFoundException($"Country [{cmd.CountryId}] not found.");
-            countryId = CountryId.Of(cmd.CountryId.Value);
         }
 
         // Validate identity document if provided
         if (cmd.IdentityDocumentId.HasValue)
         {
-            var identityDocument = await _identityDocumentRepository.GetByIdAsync(IdentityDocumentId.Of(cmd.IdentityDocumentId.Value), ct);
+            identityDocumentId = IdentityDocumentId.Of(cmd.IdentityDocumentId.Value);
+            var identityDocument = await _identityDocumentRepository.GetByIdAsync(identityDocumentId, ct);
             if (identityDocument is null)
                 throw new ResourceNotFoundException($"Identity document [{cmd.IdentityDocumentId}] not found.");
-            identityDocumentId = IdentityDocumentId.Of(cmd.IdentityDocumentId.Value);
         }
 
         // Check for duplicate association if both IDs are being changed
@@ -60,8 +60,8 @@ public class PatchCountryIdentityDocCommandHandler : ICommandHandler<PatchCountr
 
             if (finalCountryId != countryIdentityDoc.CountryId || finalIdentityDocumentId != countryIdentityDoc.IdentityDocumentId)
             {
-                var duplicateExists = await _countryIdentityDocRepository.ExistsByCountryAndIdentityDocumentAsync(finalCountryId, finalIdentityDocumentId, ct);
-                if (duplicateExists)
+                var duplicateExists = await _countryIdentityDocRepository.GetByConditionAsync(c => c.CountryId == finalCountryId && c.IdentityDocumentId == finalIdentityDocumentId, ct);
+                if (duplicateExists.Any())
                     throw new CountryIdentityDocAlreadyExistsException(finalCountryId.Value, finalIdentityDocumentId.Value);
             }
         }

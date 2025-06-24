@@ -7,19 +7,19 @@ using wfc.referential.Domain.MonetaryZoneAggregate.Exceptions;
 
 namespace wfc.referential.Application.MonetaryZones.Commands.PatchMonetaryZone;
 
-public class PatchMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZoneRepository) : ICommandHandler<PatchMonetaryZoneCommand, Result<Guid>>
+public class PatchMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZoneRepository) 
+    : ICommandHandler<PatchMonetaryZoneCommand, Result<bool>>
 {
-    public async Task<Result<Guid>> Handle(PatchMonetaryZoneCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(PatchMonetaryZoneCommand request, CancellationToken cancellationToken)
     {
-        var monetaryZone = await _monetaryZoneRepository
-            .GetByIdAsync(MonetaryZoneId.Of(request.MonetaryZoneId), cancellationToken);
+        var monetaryZoneId = MonetaryZoneId.Of(request.MonetaryZoneId);
 
-        if (monetaryZone == null)
-            throw new BusinessException("Monetary zone not found");
+        var monetaryZone = await _monetaryZoneRepository.GetByIdAsync(monetaryZoneId, cancellationToken) 
+            ?? throw new BusinessException("Monetary zone not found");
 
         if (!string.IsNullOrEmpty(request.Code))
         {
-            var isExist = await _monetaryZoneRepository.GetByCodeAsync(request.Code, cancellationToken);
+            var isExist = await _monetaryZoneRepository.GetOneByConditionAsync(m=>m.Code == request.Code, cancellationToken);
 
             if (isExist is not null && !string.Equals(isExist.Code, monetaryZone!.Code, StringComparison.OrdinalIgnoreCase))
                 throw new CodeAlreadyExistException(request.Code);
@@ -29,6 +29,6 @@ public class PatchMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZo
 
         await _monetaryZoneRepository.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(monetaryZone.Id!.Value);
+        return Result.Success(true);
     }
 }

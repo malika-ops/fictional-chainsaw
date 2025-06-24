@@ -9,11 +9,13 @@ public class CreateCountryValidator : AbstractValidator<CreateCountryCommand>
 
         RuleFor(x => x.Name)
             .NotEmpty()
-            .WithMessage("Country name is required.");
+            .WithMessage("Country name is required.")
+            .MaximumLength(100);
 
         RuleFor(x => x.Code)
             .NotEmpty()
-            .WithMessage("Country code is required.");
+            .WithMessage("Country code is required.")
+            .MaximumLength(50);
 
 
         RuleFor(x => x.ISO2)
@@ -26,19 +28,18 @@ public class CreateCountryValidator : AbstractValidator<CreateCountryCommand>
 
         RuleFor(x => x.DialingCode)
             .NotEmpty()
-            .WithMessage("Dialing code is required.");
+            .WithMessage("Dialing code is required.")
+            .MaximumLength(4);
 
         RuleFor(x => x.TimeZone)
             .NotEmpty()
-            .WithMessage("Time zone is required.");
+            .WithMessage("Time zone is required.")
+            .MaximumLength(4);
+
 
         RuleFor(x => x.HasSector)
             .NotNull()
             .WithMessage("HasSector is required.");
-
-        RuleFor(x => x.IsSmsEnabled)
-            .NotNull()
-            .WithMessage("IsSmsEnabled is required.");
 
         RuleFor(x => x.NumberDecimalDigits)
             .NotEmpty()

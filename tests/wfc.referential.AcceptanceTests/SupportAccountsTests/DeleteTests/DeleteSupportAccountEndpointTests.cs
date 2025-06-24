@@ -150,7 +150,7 @@ public class DeleteSupportAccountEndpointTests : IClassFixture<WebApplicationFac
         var response = await _client.DeleteAsync("/api/support-accounts/invalid-guid-format");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         // Verify no repository operations were attempted
         _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<SupportAccountId>(), It.IsAny<CancellationToken>()), Times.Never);

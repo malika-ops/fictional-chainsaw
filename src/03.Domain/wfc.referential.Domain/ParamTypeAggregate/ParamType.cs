@@ -3,6 +3,7 @@ using wfc.referential.Domain.ParamTypeAggregate.Events;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 
 namespace wfc.referential.Domain.ParamTypeAggregate;
+
 public class ParamType : Aggregate<ParamTypeId>
 {
     public TypeDefinitionId TypeDefinitionId { get; private set; }
@@ -13,9 +14,9 @@ public class ParamType : Aggregate<ParamTypeId>
     private ParamType() { }
 
     public static ParamType Create(
-    ParamTypeId paramTypeId,
-    TypeDefinitionId typeDefinitionId,
-    string value)
+        ParamTypeId paramTypeId,
+        TypeDefinitionId typeDefinitionId,
+        string value)
     {
         var paramType = new ParamType
         {
@@ -27,6 +28,7 @@ public class ParamType : Aggregate<ParamTypeId>
 
         paramType.AddDomainEvent(new ParamTypeCreatedEvent(
             paramType.Id.Value,
+            paramType.TypeDefinitionId.Value,
             paramType.Value,
             paramType.IsEnabled,
             DateTime.UtcNow
@@ -35,25 +37,34 @@ public class ParamType : Aggregate<ParamTypeId>
         return paramType;
     }
 
-    public void Update(string value, bool isEnabled)
+    public void Update(
+        string value,
+        bool? isEnabled)
     {
         Value = value;
-        IsEnabled = isEnabled;
+        IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new ParamTypeUpdatedEvent(
             Id.Value,
-            Value
+            TypeDefinitionId.Value,
+            Value,
+            IsEnabled,
+            DateTime.UtcNow
         ));
     }
 
-    public void Patch(string? value, bool? isEnabled)
+    public void Patch(
+        string? value,
+        bool? isEnabled)
     {
         Value = value ?? Value;
         IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new ParamTypePatchedEvent(
             Id.Value,
+            TypeDefinitionId.Value,
             Value,
+            IsEnabled,
             DateTime.UtcNow
         ));
     }
@@ -62,7 +73,6 @@ public class ParamType : Aggregate<ParamTypeId>
     {
         IsEnabled = false;
 
-        // raise the disable event
         AddDomainEvent(new ParamTypeDisabledEvent(
             Id.Value,
             DateTime.UtcNow
@@ -73,7 +83,6 @@ public class ParamType : Aggregate<ParamTypeId>
     {
         IsEnabled = true;
 
-        // raise the activate event
         AddDomainEvent(new ParamTypeActivatedEvent(
             Id.Value,
             DateTime.UtcNow

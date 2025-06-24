@@ -7,12 +7,14 @@ public class UpdateParamTypeCommandValidator : AbstractValidator<UpdateParamType
     public UpdateParamTypeCommandValidator()
     {
         RuleFor(x => x.ParamTypeId)
-            .NotNull().WithMessage("ParamTypeId cannot be null");
-
-        RuleFor(x => x.TypeDefinitionId)
-            .NotNull().WithMessage("TypeDefinitionId cannot be null");
+            .NotEqual(Guid.Empty)
+            .WithMessage("ParamTypeId cannot be empty.");
 
         RuleFor(x => x.Value)
-            .NotEmpty().WithMessage("Value is required");
+            .NotEmpty().WithMessage("Value is required.");
+
+        RuleFor(x => x.TypeDefinitionId)
+            .NotEqual(Guid.Empty)
+            .WithMessage("TypeDefinitionId cannot be empty.");
     }
 }

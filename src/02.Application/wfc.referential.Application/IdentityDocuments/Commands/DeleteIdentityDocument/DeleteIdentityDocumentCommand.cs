@@ -5,6 +5,5 @@ namespace wfc.referential.Application.IdentityDocuments.Commands.DeleteIdentityD
 
 public record DeleteIdentityDocumentCommand : ICommand<Result<bool>>
 {
-    public Guid IdentityDocumentId { get; }
-    public DeleteIdentityDocumentCommand(Guid identityDocumentId) => IdentityDocumentId = identityDocumentId;
+    public Guid IdentityDocumentId { get; init; }
 }

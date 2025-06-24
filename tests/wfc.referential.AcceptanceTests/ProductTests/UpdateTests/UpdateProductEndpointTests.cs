@@ -115,7 +115,7 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
+            .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required");
 
         _repoMock.Verify(r => r.Update(It.IsAny<Product>()),
@@ -151,7 +151,7 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"{nameof(Product)} with code : {payload.Code} already exist");
 
         _repoMock.Verify(r => r.Update(It.IsAny<Product>()),

@@ -69,8 +69,7 @@ public record UpdateCountryRequest
     /// <summary>
     /// is the country has a SMS
     /// </summary>
-    [Required]
-    public bool? IsSmsEnabled { get; init; }
+    public bool IsSmsEnabled { get; init; } = false;
     /// <summary>
     /// the number of decimal digits for the number format
     /// </summary>

@@ -28,5 +28,5 @@ public record PatchRegionRequest
     /// <summary> 
     /// If provided, updates the country id. If omitted, description remains unchanged. 
     /// </summary>
-    public CountryId? CountryId { get; init; }
+    public Guid? CountryId { get; init; }
 }

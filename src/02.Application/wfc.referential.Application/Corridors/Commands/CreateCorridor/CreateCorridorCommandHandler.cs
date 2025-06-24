@@ -43,13 +43,13 @@ public class CreateCorridorCommandHandler(ICorridorRepository corridorRepository
         if (request.SourceCountryId.HasValue)
         {
             sourceCountryId = CountryId.Of(request.SourceCountryId.Value);
-            var country = await _countryRepository.GetByIdAsync(sourceCountryId.Value, cancellationToken);
+            var country = await _countryRepository.GetByIdAsync(sourceCountryId, cancellationToken);
             if (country == null) throw new ResourceNotFoundException(sourceCountryId.Value.ToString());
         }
         if (request.DestinationCountryId.HasValue)
         {
             destCountryId = CountryId.Of(request.DestinationCountryId.Value);
-            var country = await _countryRepository.GetByIdAsync(destCountryId.Value, cancellationToken);
+            var country = await _countryRepository.GetByIdAsync(destCountryId, cancellationToken);
             if (country == null) throw new ResourceNotFoundException(destCountryId.Value.ToString());
         }
         // agency ids verification

@@ -98,11 +98,11 @@ public class DeleteTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         root.GetProperty("errors")
-            .GetProperty("tierId")[0].GetString()
+            .GetProperty("TierId")[0].GetString()
             .Should().Be("TierId must be a non-empty GUID.");
 
         _tierRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<TierId>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -119,7 +119,7 @@ public class DeleteTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         var response = await _client.DeleteAsync($"/api/tiers/{malformedId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         _tierRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<TierId>(), It.IsAny<CancellationToken>()), Times.Never);
         _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

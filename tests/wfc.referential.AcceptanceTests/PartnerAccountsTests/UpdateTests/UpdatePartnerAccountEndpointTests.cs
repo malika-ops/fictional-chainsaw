@@ -1,17 +1,18 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
+﻿using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
+using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.UpdateTests;
@@ -53,8 +54,12 @@ public class UpdatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
                 var activityTypeId = ParamTypeId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
                 var commissionTypeId = ParamTypeId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
 
-                var activityType = ParamType.Create(activityTypeId, null, "Activity");
-                var commissionType = ParamType.Create(commissionTypeId, null, "Commission");
+                // Create valid TypeDefinitionId instances instead of passing null
+                var activityTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
+                var commissionTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("55555555-5555-5555-5555-555555555555"));
+
+                var activityType = ParamType.Create(activityTypeId, activityTypeDefinitionId, "Activity");
+                var commissionType = ParamType.Create(commissionTypeId, commissionTypeDefinitionId, "Commission");
 
                 _paramTypeRepoMock
                     .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == activityTypeId.Value), It.IsAny<CancellationToken>()))
@@ -81,7 +86,10 @@ public class UpdatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         var bank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
 
         var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), null, "Activity");
+
+        // Create a valid TypeDefinitionId instead of passing null
+        var typeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
+        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), typeDefinitionId, "Activity");
 
         return PartnerAccount.Create(
             PartnerAccountId.Of(id), // Updated to use factory method
@@ -236,7 +244,7 @@ public class UpdatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("accountNumber")[0].GetString()
+            .GetProperty("AccountNumber")[0].GetString()
             .Should().Be("Account number is required");
 
         _repoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Never);
@@ -320,7 +328,7 @@ public class UpdatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"Partner account with ID {id} not found");
 
         _repoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Never);
@@ -366,7 +374,7 @@ public class UpdatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"Bank with ID {nonExistentBankId} not found");
 
         _repoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Never);
@@ -412,7 +420,7 @@ public class UpdatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"Account Type with ID {nonExistentAccountTypeId} not found");
 
         _repoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Never);

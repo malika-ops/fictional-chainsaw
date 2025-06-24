@@ -22,7 +22,7 @@ public class CreateCountryServiceCommandHandler(
         var serviceId = ServiceId.Of(command.ServiceId);
 
         // Verify country exists
-        var country = await _countryRepository.GetByIdAsync(command.CountryId, ct);
+        var country = await _countryRepository.GetByIdAsync(countryId, ct);
         if (country is null)
             throw new ResourceNotFoundException($"Country [{command.CountryId}] not found.");
 
@@ -32,8 +32,8 @@ public class CreateCountryServiceCommandHandler(
             throw new ResourceNotFoundException($"Service [{command.ServiceId}] not found.");
 
         // Check if association already exists
-        var exists = await _countryServiceRepository.ExistsByCountryAndServiceAsync(countryId, serviceId, ct);
-        if (exists)
+        var exists = await _countryServiceRepository.GetByConditionAsync(c => c.CountryId == countryId && c.ServiceId == serviceId, ct);
+        if (exists.Any())
             throw new CountryServiceAlreadyExistsException(command.CountryId, command.ServiceId);
 
         var countryService = CountryService.Create(

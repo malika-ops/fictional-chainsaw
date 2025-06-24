@@ -11,7 +11,7 @@ public class PatchMonetaryZoneValidator : AbstractValidator<PatchMonetaryZoneCom
             RuleFor(x => x.Code!)
                 .NotEmpty()
                 .WithMessage("Code cannot be empty if provided.")
-                .MaximumLength(20).WithMessage("Code must be less than 10 characters");
+                .MaximumLength(50).WithMessage("Code must be less than 50 characters");
         });
 
         // If name is provided, check not empty, etc.
@@ -20,6 +20,11 @@ public class PatchMonetaryZoneValidator : AbstractValidator<PatchMonetaryZoneCom
             .NotEmpty()
             .WithMessage("Name cannot be empty if provided.")
             .MaximumLength(100).WithMessage("Name must be less than 100 characters");
+        });
+
+        When(x => x.Description is not null, () => {
+            RuleFor(x => x.Description!)
+            .MaximumLength(500).WithMessage("Description must be less than 500 characters");
         });
     }
 }

@@ -264,7 +264,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
         // Assert
         resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be("Tier name 'Silver' already exists.");
 
         _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

@@ -17,15 +17,13 @@ public class PartnerCountry : Aggregate<PartnerCountryId>
 
     public static PartnerCountry Create(PartnerCountryId id,
                                     PartnerId partnerId,
-                                    CountryId countryId,
-                                    bool isEnabled = true)
+                                    CountryId countryId)
     {
         var entity = new PartnerCountry
         {
             Id = id,
             PartnerId = partnerId,
-            CountryId = countryId,
-            IsEnabled = isEnabled
+            CountryId = countryId
         };
 
         entity.AddDomainEvent(new PartnerCountryCreatedEvent(
@@ -33,7 +31,8 @@ public class PartnerCountry : Aggregate<PartnerCountryId>
             entity.PartnerId.Value,
             entity.CountryId.Value,
             entity.IsEnabled,
-            DateTime.UtcNow));
+            DateTime.UtcNow)
+        );
 
         return entity;
     }
@@ -47,7 +46,7 @@ public class PartnerCountry : Aggregate<PartnerCountryId>
         IsEnabled = isEnabled;
 
         AddDomainEvent(new PartnerCountryUpdatedEvent(
-            Id.Value, PartnerId.Value, CountryId.Value, IsEnabled, DateTime.UtcNow));
+            Id!.Value, PartnerId.Value, CountryId.Value, IsEnabled, DateTime.UtcNow));
     }
 
     public void Disable()
@@ -55,7 +54,7 @@ public class PartnerCountry : Aggregate<PartnerCountryId>
         IsEnabled = false;
 
         AddDomainEvent(new PartnerCountryDisabledEvent(
-            Id.Value,
+            Id!.Value,
             DateTime.UtcNow));
     }
 }

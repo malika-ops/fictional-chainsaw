@@ -2,10 +2,5 @@
 
 namespace wfc.referential.Domain.TypeDefinitionAggregate.Exceptions;
 
-public class InvalidTypeDefinitionDeletingException : BusinessException
-{
-    public InvalidTypeDefinitionDeletingException(string validationMessage)
-        : base(validationMessage)
-    {
-    }
-}
+public class InvalidTypeDefinitionDeletingException(string validationMessage)
+    : BusinessException(validationMessage);

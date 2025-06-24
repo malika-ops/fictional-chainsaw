@@ -139,7 +139,7 @@ public class UpdateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
 
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
-           .GetProperty("code")[0].GetString()
+           .GetProperty("Code")[0].GetString()
            .Should().Be("Code max length = 30.");
 
         _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

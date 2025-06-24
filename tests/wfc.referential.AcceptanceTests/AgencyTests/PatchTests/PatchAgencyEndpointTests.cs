@@ -195,7 +195,8 @@ public class PatchAgencyEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
 
         resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors")
+                .GetProperty("message").GetString()
            .Should().Be("Agency with code XYZ999 already exists.");
 
         _agencyRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

@@ -3,7 +3,7 @@ using BuildingBlocks.Core.Abstraction.Domain;
 
 namespace wfc.referential.Application.Countries.Commands.PatchCountry;
 
-public record PatchCountryCommand : ICommand<Result<Guid>>
+public record PatchCountryCommand : ICommand<Result<bool>>
 {
     public Guid CountryId { get; init; }
     public string? Abbreviation { get; init; }

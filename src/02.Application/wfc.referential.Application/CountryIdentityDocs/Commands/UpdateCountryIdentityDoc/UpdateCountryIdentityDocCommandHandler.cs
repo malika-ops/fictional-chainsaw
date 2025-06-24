@@ -35,7 +35,7 @@ public class UpdateCountryIdentityDocCommandHandler : ICommandHandler<UpdateCoun
         var identityDocumentId = IdentityDocumentId.Of(cmd.IdentityDocumentId);
 
         // Verify country exists
-        var country = await _countryRepository.GetByIdAsync(cmd.CountryId, ct);
+        var country = await _countryRepository.GetByIdAsync(countryId, ct);
         if (country is null)
             throw new ResourceNotFoundException($"Country [{cmd.CountryId}] not found.");
 
@@ -47,8 +47,8 @@ public class UpdateCountryIdentityDocCommandHandler : ICommandHandler<UpdateCoun
         // Check for duplicate association (if different from current)
         if (countryIdentityDoc.CountryId != countryId || countryIdentityDoc.IdentityDocumentId != identityDocumentId)
         {
-            var duplicateExists = await _countryIdentityDocRepository.ExistsByCountryAndIdentityDocumentAsync(countryId, identityDocumentId, ct);
-            if (duplicateExists)
+            var duplicateExists = await _countryIdentityDocRepository.GetByConditionAsync(c => c.CountryId == countryId && c.IdentityDocumentId == identityDocumentId, ct);
+            if (duplicateExists.Any())
                 throw new CountryIdentityDocAlreadyExistsException(cmd.CountryId, cmd.IdentityDocumentId);
         }
 

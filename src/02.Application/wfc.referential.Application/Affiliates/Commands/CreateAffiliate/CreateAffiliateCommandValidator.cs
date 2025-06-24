@@ -17,8 +17,14 @@ public class CreateAffiliateCommandValidator : AbstractValidator<CreateAffiliate
         RuleFor(x => x.Abbreviation)
             .MaximumLength(10).WithMessage("Abbreviation cannot exceed 10 characters");
 
+        RuleFor(x => x.OpeningDate)
+            .NotEmpty().WithMessage("OpeningDate is required");
+
         RuleFor(x => x.CountryId)
             .NotEqual(Guid.Empty).WithMessage("CountryId must be a valid GUID");
+
+        RuleFor(x => x.AffiliateTypeId)
+            .NotEqual(Guid.Empty).WithMessage("AffiliateTypeId is required and must be a valid GUID");
 
         RuleFor(x => x.ThresholdBilling)
             .GreaterThanOrEqualTo(0).WithMessage("ThresholdBilling must be greater than or equal to 0");
@@ -27,6 +33,7 @@ public class CreateAffiliateCommandValidator : AbstractValidator<CreateAffiliate
             .MaximumLength(100).WithMessage("AccountingDocumentNumber cannot exceed 100 characters");
 
         RuleFor(x => x.AccountingAccountNumber)
+            .NotEmpty().WithMessage("AccountingAccountNumber is required")
             .MaximumLength(100).WithMessage("AccountingAccountNumber cannot exceed 100 characters");
 
         RuleFor(x => x.StampDutyMention)

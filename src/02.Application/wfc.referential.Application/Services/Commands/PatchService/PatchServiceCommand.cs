@@ -9,5 +9,5 @@ public record PatchServiceCommand : ICommand<Result<bool>>
     public string? Code { get; init; }
     public string? Name { get; init; }
     public bool? IsEnabled { get; init; }
-    public Guid ProductId { get; init; }
+    public Guid? ProductId { get; init; }
 }

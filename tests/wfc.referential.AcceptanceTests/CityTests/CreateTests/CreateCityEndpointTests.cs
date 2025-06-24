@@ -118,11 +118,11 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var root = doc!.RootElement;
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         root.GetProperty("errors")
-            .GetProperty("cityCode")[0].GetString()
+            .GetProperty("CityCode")[0].GetString()
             .Should().Be("Code is required");
 
         // the handler must NOT be reached
@@ -152,15 +152,15 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
         var root = doc!.RootElement;
 
-        root.GetProperty("title").GetString().Should().Be("Bad Request");
+        root.GetProperty("title").GetString().Should().Be("One or more validation errors occurred.");
         root.GetProperty("status").GetInt32().Should().Be(400);
 
         var errors = root.GetProperty("errors");
 
-        errors.GetProperty("cityName")[0].GetString()
+        errors.GetProperty("CityName")[0].GetString()
               .Should().Be("Name is required");
 
-        errors.GetProperty("cityCode")[0].GetString()
+        errors.GetProperty("CityCode")[0].GetString()
               .Should().Be("Code is required");
 
         // handler must NOT run on validation failure
@@ -199,7 +199,8 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var root = doc!.RootElement;
-        var error = root.GetProperty("errors").GetString();
+        var error = root.GetProperty("errors")
+                .GetProperty("message").GetString();
 
         error.Should().Be($"{nameof(City)} with code : {duplicateCode} already exist");
 

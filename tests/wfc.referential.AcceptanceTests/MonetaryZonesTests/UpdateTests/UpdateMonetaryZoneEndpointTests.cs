@@ -9,7 +9,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using Xunit;
 
@@ -20,149 +19,199 @@ public class UpdateMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
     private readonly HttpClient _client;
     private readonly Mock<IMonetaryZoneRepository> _repoMock = new();
 
-
     public UpdateMonetaryZoneEndpointTests(WebApplicationFactory<Program> factory)
     {
         var cacheMock = new Mock<ICacheService>();
 
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
+        var custom = factory.WithWebHostBuilder(b =>
         {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
+            b.UseEnvironment("Testing");
+            b.ConfigureServices(s =>
             {
-                services.RemoveAll<IMonetaryZoneRepository>();
-                services.RemoveAll<ICacheService>();
+                s.RemoveAll<IMonetaryZoneRepository>();
+                s.RemoveAll<ICacheService>();
 
-                // default noop for Update
-                _repoMock
-                    .Setup(r => r.UpdateMonetaryZoneAsync(It.IsAny<MonetaryZone>(),
-                                                          It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                         .Returns(Task.CompletedTask);
 
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
+                s.AddSingleton(_repoMock.Object);
+                s.AddSingleton(cacheMock.Object);
             });
         });
 
-        _client = customisedFactory.CreateClient();
+        _client = custom.CreateClient();
     }
 
-    // helper to create a MonetaryZone quickly
-    private static MonetaryZone Zone(Guid id, string code, string name) =>
-        MonetaryZone.Create(MonetaryZoneId.Of(id), code, name, "desc",
-                             new List<Country>());
-
-    // 1) Happy‑path update
-    [Fact(DisplayName = "PUT /api/monetaryZones/{id} returns 200 when update succeeds")]
-    public async Task Put_ShouldReturn200_WhenUpdateIsSuccessful()
+    private static MonetaryZone Make(Guid id, string code = "OLD", string name = "Old-Name",
+                                     string desc = "Old desc", bool enabled = true)
     {
-        // Arrange
+        var zone = MonetaryZone.Create(MonetaryZoneId.Of(id), code, name, desc);
+        if (!enabled) zone.Disable();
+        return zone;
+    }
+
+    [Fact(DisplayName = "PUT /api/monetaryZones/{id} → 200 when update succeeds")]
+    public async Task Put_ShouldReturn200_WhenUpdateSuccessful()
+    {
         var id = Guid.NewGuid();
-        var oldZone = Zone(id, "SEK", "Swedish Krona");
+        var zone = Make(id);
 
         _repoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(oldZone);
+                 .ReturnsAsync(zone);
 
-        _repoMock.Setup(r => r.GetByCodeAsync("NOK", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((MonetaryZone?)null);   // code is unique
-
-        MonetaryZone? updated = null;
-        _repoMock.Setup(r => r.UpdateMonetaryZoneAsync(It.IsAny<MonetaryZone>(),
-                                                       It.IsAny<CancellationToken>()))
-                 .Callback<MonetaryZone, CancellationToken>((mz, _) => updated = mz)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.GetOneByConditionAsync(
+                            It.IsAny<System.Linq.Expressions.Expression<Func<MonetaryZone, bool>>>(),
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((MonetaryZone?)null);  
 
         var payload = new
         {
             MonetaryZoneId = id,
-            Code = "NOK",
-            Name = "Norwegian Krone",
-            Description = "Norway currency"
+            Code = "NEW",
+            Name = "New-Name",
+            Description = "Updated desc",
+            IsEnabled = false
         };
 
-        // Act
-        var response = await _client.PutAsJsonAsync($"/api/monetaryZones/{id}", payload);
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var res = await _client.PutAsJsonAsync($"/api/monetaryZones/{id}", payload);
+        var ok = await res.Content.ReadFromJsonAsync<bool>();
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        ok.Should().BeTrue();
 
-        updated!.Code.Should().Be("NOK");
-        updated.Name.Should().Be("Norwegian Krone");
-        updated.Description.Should().Be("Norway currency");
+        zone.Code.Should().Be("NEW");
+        zone.Name.Should().Be("New-Name");
+        zone.Description.Should().Be("Updated desc");
+        zone.IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.UpdateMonetaryZoneAsync(It.IsAny<MonetaryZone>(),
-                                                        It.IsAny<CancellationToken>()),
-                         Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // 2) Validation error – Name missing
-    [Fact(DisplayName = "PUT /api/monetaryZones/{id} returns 400 when Name is missing")]
-    public async Task Put_ShouldReturn400_WhenNameMissing()
+    [Fact(DisplayName = "PUT /api/monetaryZones/{id} → 400 when Code > 50 chars")]
+    public async Task Put_ShouldReturn400_WhenCodeTooLong()
     {
-        // Arrange
         var id = Guid.NewGuid();
+        var longCode = new string('X', 51);
+
         var payload = new
         {
             MonetaryZoneId = id,
-            Code = "USD",
-            // Name omitted
-            Description = "desc"
+            Code = longCode,
+            Name = "N",
+            Description = "D"
         };
 
-        // Act
-        var response = await _client.PutAsJsonAsync($"/api/monetaryZones/{id}", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var res = await _client.PutAsJsonAsync($"/api/monetaryZones/{id}", payload);
+        var doc = await res.Content.ReadFromJsonAsync<JsonDocument>();
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
-            .Should().Be("Name is required");
-
-        _repoMock.Verify(r => r.UpdateMonetaryZoneAsync(It.IsAny<MonetaryZone>(),
-                                                        It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // 3) Duplicate code
-    [Fact(DisplayName = "PUT /api/monetaryZones/{id} returns 400 when new code already exists")]
-    public async Task Put_ShouldReturn400_WhenCodeAlreadyExists()
+
+    [Fact(DisplayName = "PUT /api/monetaryZones/{id} → 400 when zone missing")]
+    public async Task Put_ShouldReturn400_WhenZoneNotFound()
     {
-        // Arrange
         var id = Guid.NewGuid();
-        var existing = Zone(Guid.NewGuid(), "EUR", "Euro");
-        var target = Zone(id, "USD", "US Dollar");
 
         _repoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((MonetaryZone?)null);
+
+        var payload = new { MonetaryZoneId = id, Code = "X", Name = "X" };
+
+        var res = await _client.PutAsJsonAsync($"/api/monetaryZones/{id}", payload);
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+
+    [Fact(DisplayName = "PUT /api/monetaryZones/{id} → 409 when duplicate Code exists")]
+    public async Task Put_ShouldReturn409_WhenDuplicateCode()
+    {
+        var idTarget = Guid.NewGuid();
+        var idOther = Guid.NewGuid();
+
+        var target = Make(idTarget, code: "OLD");
+        var existing = Make(idOther, code: "DUPL");
+
+        _repoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(idTarget), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(target);
 
-        _repoMock.Setup(r => r.GetByCodeAsync("EUR", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing); // duplicate code
+        _repoMock.Setup(r => r.GetOneByConditionAsync(
+                            It.IsAny<System.Linq.Expressions.Expression<Func<MonetaryZone, bool>>>(),
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(existing);
 
-        var payload = new
-        {
-            MonetaryZoneId = id,
-            Code = "EUR",          // duplicate
-            Name = "Euro",
-            Description = "desc"
-        };
+        var payload = new { MonetaryZoneId = idTarget, Code = "DUPL", Name = "X" };
 
-        // Act
-        var response = await _client.PutAsJsonAsync($"/api/monetaryZones/{id}", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var res = await _client.PutAsJsonAsync($"/api/monetaryZones/{idTarget}", payload);
+        res.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be("MonetaryZone with code EUR already exists.");
 
-        _repoMock.Verify(r => r.UpdateMonetaryZoneAsync(It.IsAny<MonetaryZone>(),
-                                                        It.IsAny<CancellationToken>()),
-                         Times.Never);
+    [Fact(DisplayName = "PUT /api/monetaryZones/{id} → 200 when disabling zone")]
+    public async Task Put_ShouldReturn200_WhenDisabling()
+    {
+        var id = Guid.NewGuid();
+        var zone = Make(id, enabled: true);
+
+        _repoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(zone);
+
+        _repoMock.Setup(r => r.GetOneByConditionAsync(
+                            It.IsAny<System.Linq.Expressions.Expression<Func<MonetaryZone, bool>>>(),
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((MonetaryZone?)null);
+
+        var payload = new { MonetaryZoneId = id, Code = "OLD", Name = "Old-Name", IsEnabled = false };
+
+        var res = await _client.PutAsJsonAsync($"/api/monetaryZones/{id}", payload);
+        var ok = await res.Content.ReadFromJsonAsync<bool>();
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        ok.Should().BeTrue();
+        zone.IsEnabled.Should().BeFalse();
+    }
+
+
+    [Fact(DisplayName = "PUT /api/monetaryZones/{id} → 200 when keeping same Code")]
+    public async Task Put_ShouldReturn200_WhenKeepingSameCode()
+    {
+        var id = Guid.NewGuid();
+        var zone = Make(id, code: "SAME");
+
+        _repoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(zone);
+
+        _repoMock.Setup(r => r.GetOneByConditionAsync(
+                            It.IsAny<System.Linq.Expressions.Expression<Func<MonetaryZone, bool>>>(),
+                            It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(zone);   
+
+        var payload = new { MonetaryZoneId = id, Code = "SAME", Name = "New-Name" };
+
+        var res = await _client.PutAsJsonAsync($"/api/monetaryZones/{id}", payload);
+        var ok = await res.Content.ReadFromJsonAsync<bool>();
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        ok.Should().BeTrue();
+
+        zone.Name.Should().Be("New-Name");
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+
+    [Fact(DisplayName = "PUT /api/monetaryZones/{id} → 400 when MonetaryZoneId empty")]
+    public async Task Put_ShouldReturn400_WhenIdEmpty()
+    {
+        var payload = new { MonetaryZoneId = Guid.Empty, Code = "X", Name = "Y" };
+
+        var res = await _client.PutAsJsonAsync(
+            "/api/monetaryZones/00000000-0000-0000-0000-000000000000",
+            payload);
+
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

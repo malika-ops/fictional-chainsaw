@@ -79,7 +79,7 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("code")[0].GetString()
+            .GetProperty("Code")[0].GetString()
             .Should().Be("Identity document code is required.");
 
         _repoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -96,8 +96,8 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var errors = doc!.RootElement.GetProperty("errors");
-        errors.GetProperty("name")[0].GetString().Should().Be("Identity document name is required.");
-        errors.GetProperty("code")[0].GetString().Should().Be("Identity document code is required.");
+        errors.GetProperty("Name")[0].GetString().Should().Be("Identity document name is required.");
+        errors.GetProperty("Code")[0].GetString().Should().Be("Identity document code is required.");
 
         _repoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -131,7 +131,8 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         var result = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        result!.RootElement.GetProperty("errors").GetString()
+        result!.RootElement.GetProperty("errors")
+                .GetProperty("message").GetString()
             .Should().Contain($"Identity document with code {duplicateCode} already exists");
 
         _repoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);

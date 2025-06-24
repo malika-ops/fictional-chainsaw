@@ -2,10 +2,10 @@
 
 namespace wfc.referential.Application.Products.Dtos;
 
-public record GetAllProductsResponse(
+public record GetFiltredProductsResponse(
     Guid ProductId,
     string Code,
     string Name,
     bool IsEnabled,
-    List<GetAllServicesResponse>? Services
+    List<GetFiltredServicesResponse>? Services
     );

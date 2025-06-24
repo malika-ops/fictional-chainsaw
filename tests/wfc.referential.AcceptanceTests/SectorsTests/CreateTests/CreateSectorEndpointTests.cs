@@ -67,7 +67,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var sectorId = await response.Content.ReadFromJsonAsync<Guid>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
         sectorId.Should().NotBeEmpty();
 
         _repoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
@@ -121,7 +121,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var sectorId = await response.Content.ReadFromJsonAsync<Guid>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
         sectorId.Should().NotBeEmpty();
 
         _repoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
@@ -143,7 +143,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var response = await _client.PostAsJsonAsync("/api/sectors", createRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         _repoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
             s.IsEnabled == true), It.IsAny<CancellationToken>()), Times.Once);
@@ -237,7 +237,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         // Assert
         if (code.Length > 0 && code.Length <= 50) // Assuming reasonable limits
         {
-            response.StatusCode.Should().Be(HttpStatusCode.OK, because: scenario);
+            response.StatusCode.Should().Be(HttpStatusCode.Created, because: scenario);
         }
         else
         {
@@ -260,7 +260,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var response = await _client.PostAsJsonAsync("/api/sectors", createRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
         _repoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
             s.Name == "Secteur Ville-Centre & Périphérie (Zone 1)"), It.IsAny<CancellationToken>()), Times.Once);
     }

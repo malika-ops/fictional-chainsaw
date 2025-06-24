@@ -4,7 +4,7 @@ using wfc.referential.Application.Products.Commands.DeleteProduct;
 using wfc.referential.Application.Products.Commands.PatchProduct;
 using wfc.referential.Application.Products.Commands.UpdateProduct;
 using wfc.referential.Application.Products.Dtos;
-using wfc.referential.Application.Products.Queries.GetAllProducts;
+using wfc.referential.Application.Products.Queries.GetFiltredProducts;
 using wfc.referential.Domain.ProductAggregate;
 
 namespace wfc.referential.Application.Products.Mappings;
@@ -14,7 +14,7 @@ public class ProductMappings
     public static void Register()
     {
 
-        TypeAdapterConfig<Product, GetAllProductsResponse>.NewConfig()
+        TypeAdapterConfig<Product, GetFiltredProductsResponse>.NewConfig()
             .Map(dest => dest.ProductId, src => src.Id!.Value);
 
         // Map from ProductId to nullable Guid

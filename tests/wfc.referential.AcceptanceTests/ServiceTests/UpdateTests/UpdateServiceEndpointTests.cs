@@ -34,7 +34,7 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
                 services.RemoveAll<IServiceRepository>();
                 services.RemoveAll<ICacheService>();
 
-                _repoMock.Setup(r => r.Update(It.IsAny<Service>()));                    
+                _repoMock.Setup(r => r.Update(It.IsAny<Service>()));
 
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(cacheMock.Object);
@@ -53,17 +53,12 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var oldService = DummyService(id, "SVC001", "ExpressService");
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
-           .ReturnsAsync((Expression<Func<Service, bool>> predicate, CancellationToken _) =>
-           {
-               var func = predicate.Compile();
 
-               if (func(oldService))
-                   return oldService;
-
-               return null;
-           });
-
+        _repoMock.SetupSequence(r => r.GetOneByConditionAsync(
+        It.IsAny<Expression<Func<Service, bool>>>(),
+        It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult<Service?>(oldService))  // Premier appel
+            .Returns(Task.FromResult<Service?>(null));
         Service? updated = null;
         _repoMock.Setup(r => r.Update(oldService))
                 .Callback<Service>((rg) => updated = rg);
@@ -77,10 +72,10 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         };
 
         var response = await _client.PutAsJsonAsync($"/api/services/{id}", payload);
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().Be(true);
 
         updated!.Code.Should().Be("NEW001");
         updated.Name.Should().Be("Updated Express");
@@ -106,7 +101,7 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("name")[0].GetString()
+            .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required");
 
         _repoMock.Verify(r => r.Update(It.IsAny<Service>()), Times.Never);
@@ -139,7 +134,7 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors").GetString()
+        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Contain("Service with code : SVC001 already exists");
 
         _repoMock.Verify(r => r.Update(It.IsAny<Service>()), Times.Never);

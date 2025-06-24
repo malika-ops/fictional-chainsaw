@@ -61,7 +61,7 @@ public class CreateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
         returnedId.Should().NotBeEmpty();
 
         _repoMock.Verify(r =>

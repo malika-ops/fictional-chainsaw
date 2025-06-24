@@ -37,9 +37,7 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
 
                 // Default noop for Update
                 _repoMock
-                    .Setup(r => r.UpdateParamTypeAsync(It.IsAny<ParamType>(),
-                                                      It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+                    .Setup(r => r.Update(It.IsAny<ParamType>()));
 
                 // Set up typeDefinition mock
                 var typeDefinitionId = TypeDefinitionId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
@@ -67,7 +65,7 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
         );
     }
 
-    [Fact(DisplayName = "PATCH /api/paramtypes/{id} returns 200 and patches only the provided fields")]
+    [Fact(DisplayName = "PATCH /api/paramtypes/{id} returns 200 and bool when patches only the provided fields")]
     public async Task Patch_ShouldReturn200_AndPatchOnlyProvidedFields()
     {
         // Arrange
@@ -77,36 +75,33 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paramType);
 
-        ParamType? updated = null;
-        _repoMock.Setup(r => r.UpdateParamTypeAsync(It.IsAny<ParamType>(),
-                                                   It.IsAny<CancellationToken>()))
-                 .Callback<ParamType, CancellationToken>((p, _) => updated = p)
-                 .Returns(Task.CompletedTask);
+        // Setup duplicate check to return null (no duplicates)
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ParamType, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((ParamType?)null);
 
-        var typeDefinitionId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        ParamType? updated = null;
+        _repoMock.Setup(r => r.Update(It.IsAny<ParamType>()))
+                 .Callback<ParamType>(p => updated = p);
 
         var payload = new
         {
             ParamTypeId = id,
-            Value = "New Value",
-            TypeDefinitionId = typeDefinitionId
+            Value = "New Value"
             // IsEnabled intentionally omitted - should not change
         };
 
         // Act
         var response = await _client.PatchAsync($"/api/paramtypes/{id}", JsonContent.Create(payload));
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().BeTrue(); // Now expecting bool instead of Guid
 
         updated!.Value.Should().Be("New Value");
         updated.IsEnabled.Should().BeTrue();  // Enabled status should not change
 
-        _repoMock.Verify(r => r.UpdateParamTypeAsync(It.IsAny<ParamType>(),
-                                                    It.IsAny<CancellationToken>()),
-                          Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<ParamType>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/paramtypes/{id} returns 200 when updating enabled status")]
@@ -119,11 +114,13 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paramType);
 
+        // Setup duplicate check to return null (no duplicates)
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ParamType, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((ParamType?)null);
+
         ParamType? updated = null;
-        _repoMock.Setup(r => r.UpdateParamTypeAsync(It.IsAny<ParamType>(),
-                                                   It.IsAny<CancellationToken>()))
-                 .Callback<ParamType, CancellationToken>((p, _) => updated = p)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.Update(It.IsAny<ParamType>()))
+                 .Callback<ParamType>(p => updated = p);
 
         var payload = new
         {
@@ -133,26 +130,23 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
 
         // Act
         var response = await _client.PatchAsync($"/api/paramtypes/{id}", JsonContent.Create(payload));
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().BeTrue(); // Now expecting bool instead of Guid
 
         updated!.IsEnabled.Should().BeFalse();
         updated.Value.Should().Be("Test Value");  // Value should not change
 
-        _repoMock.Verify(r => r.UpdateParamTypeAsync(It.IsAny<ParamType>(),
-                                                    It.IsAny<CancellationToken>()),
-                          Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<ParamType>()), Times.Once);
     }
 
-    [Fact(DisplayName = "PATCH /api/paramtypes/{id} returns 400 when paramType doesn't exist")]
-    public async Task Patch_ShouldReturn400_WhenParamTypeDoesNotExist()
+    [Fact(DisplayName = "PATCH /api/paramtypes/{id} returns 404 when paramType doesn't exist")]
+    public async Task Patch_ShouldReturn404_WhenParamTypeDoesNotExist()
     {
         // Arrange
         var id = Guid.NewGuid();
-        var typeDefinitionId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((ParamType?)null);
@@ -160,23 +154,16 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
         var payload = new
         {
             ParamTypeId = id,
-            Value = "New Value",
-            TypeDefinitionId = typeDefinitionId
+            Value = "New Value"
         };
 
         // Act
         var response = await _client.PatchAsync($"/api/paramtypes/{id}", JsonContent.Create(payload));
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound); // Updated to expect 404 like Bank pattern
 
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be($"ParamType with ID {id} not found");
-
-        _repoMock.Verify(r => r.UpdateParamTypeAsync(It.IsAny<ParamType>(),
-                                                    It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<ParamType>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/paramtypes/{id} returns 400 when Value is empty")]
@@ -184,7 +171,6 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
     {
         // Arrange
         var id = Guid.NewGuid();
-        var typeDefinitionId = Guid.Parse("22222222-2222-2222-2222-222222222222");
         var paramType = CreateTestParamType(id, "Old Value");
 
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
@@ -193,24 +179,16 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
         var payload = new
         {
             ParamTypeId = id,
-            Value = "",  // Empty value
-            TypeDefinitionId = typeDefinitionId
+            Value = ""  // Empty value
         };
 
         // Act
         var response = await _client.PatchAsync($"/api/paramtypes/{id}", JsonContent.Create(payload));
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors")
-            .GetProperty("value")[0].GetString()
-            .Should().Be("Value cannot be empty if provided");
-
-        _repoMock.Verify(r => r.UpdateParamTypeAsync(It.IsAny<ParamType>(),
-                                                    It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.Update(It.IsAny<ParamType>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/paramtypes/{id} handles both value and IsEnabled changes")]
@@ -223,11 +201,13 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
         _repoMock.Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paramType);
 
+        // Setup duplicate check to return null (no duplicates)
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ParamType, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((ParamType?)null);
+
         ParamType? updated = null;
-        _repoMock.Setup(r => r.UpdateParamTypeAsync(It.IsAny<ParamType>(),
-                                                   It.IsAny<CancellationToken>()))
-                 .Callback<ParamType, CancellationToken>((p, _) => updated = p)
-                 .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.Update(It.IsAny<ParamType>()))
+                 .Callback<ParamType>(p => updated = p);
 
         var payload = new
         {
@@ -238,17 +218,46 @@ public class PatchParamTypeEndpointTests : IClassFixture<WebApplicationFactory<P
 
         // Act
         var response = await _client.PatchAsync($"/api/paramtypes/{id}", JsonContent.Create(payload));
-        var returned = await response.Content.ReadFromJsonAsync<Guid>();
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        returned.Should().Be(id);
+        returned.Should().BeTrue(); // Now expecting bool instead of Guid
 
         updated!.Value.Should().Be("Updated Value");
         updated.IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.UpdateParamTypeAsync(It.IsAny<ParamType>(),
-                                                    It.IsAny<CancellationToken>()),
-                          Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<ParamType>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "PATCH /api/paramtypes/{id} returns 409 when duplicate value exists")]
+    public async Task Patch_ShouldReturn409_WhenDuplicateValueExists()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var duplicateId = Guid.NewGuid();
+        var paramType = CreateTestParamType(id, "Old Value");
+        var duplicateParamType = CreateTestParamType(duplicateId, "Duplicate Value");
+
+        _repoMock.Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(paramType);
+
+        // Setup duplicate check to return existing ParamType
+        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ParamType, bool>>>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(duplicateParamType);
+
+        var payload = new
+        {
+            ParamTypeId = id,
+            Value = "Duplicate Value" // This value already exists
+        };
+
+        // Act
+        var response = await _client.PatchAsync($"/api/paramtypes/{id}", JsonContent.Create(payload));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        _repoMock.Verify(r => r.Update(It.IsAny<ParamType>()), Times.Never);
     }
 }

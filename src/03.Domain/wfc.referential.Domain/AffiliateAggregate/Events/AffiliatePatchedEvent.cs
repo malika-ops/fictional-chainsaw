@@ -8,7 +8,7 @@ public record AffiliatePatchedEvent(
     string Code,
     string Name,
     string Abbreviation,
-    DateTime? OpeningDate,
+    DateTime OpeningDate,
     string CancellationDay,
     string Logo,
     decimal ThresholdBilling,

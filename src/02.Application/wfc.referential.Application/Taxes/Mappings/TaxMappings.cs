@@ -9,7 +9,7 @@ public class TaxMappings
 {
     public static void Register()
     {
-        TypeAdapterConfig<Tax, GetAllTaxesResponse>.NewConfig()
+        TypeAdapterConfig<Tax, GetTaxesResponse>.NewConfig()
             .Map(dest => dest.Id, src => src.Id!.Value);
 
         TypeAdapterConfig<PatchTaxRequest, PatchTaxCommand>

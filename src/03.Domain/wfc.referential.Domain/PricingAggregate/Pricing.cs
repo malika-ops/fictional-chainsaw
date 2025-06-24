@@ -23,9 +23,9 @@ public class Pricing : Aggregate<PricingId>
     public ServiceId ServiceId { get; private set; }            
     public AffiliateId? AffiliateId { get; private set; }     
 
-    public Service? Service { get; private set; }
-    public Affiliate? Affiliate { get; private set; }
-    public Corridor? Corridor { get; private set; }
+    public virtual Service? Service { get; private set; }
+    public virtual Affiliate? Affiliate { get; private set; }
+    public virtual Corridor? Corridor { get; private set; }
 
     private Pricing() { }
 
@@ -52,7 +52,7 @@ public class Pricing : Aggregate<PricingId>
             Rate = rate,
             CorridorId = corridorId,
             ServiceId = serviceId,
-            AffiliateId = affiliateId,
+            AffiliateId = affiliateId
         };
 
         entity.AddDomainEvent(new PricingCreatedEvent(
@@ -63,6 +63,76 @@ public class Pricing : Aggregate<PricingId>
             DateTime.UtcNow));
 
         return entity;
+    }
+
+    public void Update(
+    string code,
+    string channel,
+    decimal minimumAmount,
+    decimal maximumAmount,
+    decimal? fixedAmount,
+    decimal? rate,
+    CorridorId corridorId,
+    ServiceId serviceId,
+    AffiliateId? affiliateId,
+    bool isEnabled)
+    {
+        Code = code;
+        Channel = channel;
+        MinimumAmount = minimumAmount;
+        MaximumAmount = maximumAmount;
+        FixedAmount = fixedAmount;
+        Rate = rate;
+        CorridorId = corridorId;
+        ServiceId = serviceId;
+        AffiliateId = affiliateId;
+        IsEnabled = isEnabled;
+
+        AddDomainEvent(new PricingUpdatedEvent(
+            Id!,
+            Code,
+            ServiceId,
+            CorridorId,
+            IsEnabled,
+            DateTime.UtcNow));
+    }
+
+    public void Patch(
+    string? code,
+    string? channel,
+    decimal? minimumAmount,
+    decimal? maximumAmount,
+    decimal? fixedAmount,
+    decimal? rate,
+    CorridorId? corridorId,
+    ServiceId? serviceId,
+    AffiliateId? affiliateId,
+    bool? isEnabled)
+    {
+        Code = code ?? Code;
+        Channel = channel ?? Channel;
+        MinimumAmount = minimumAmount ?? MinimumAmount;
+        MaximumAmount = maximumAmount ?? MaximumAmount;
+        FixedAmount = fixedAmount ?? FixedAmount;
+        Rate = rate ?? Rate;
+        CorridorId = corridorId ?? CorridorId;
+        ServiceId = serviceId ?? ServiceId;
+        AffiliateId = affiliateId ?? AffiliateId;
+        IsEnabled = isEnabled ?? IsEnabled;
+
+        AddDomainEvent(new PricingPatchedEvent(
+            Id!,
+            Code,
+            ServiceId,
+            CorridorId,
+            IsEnabled,
+            DateTime.UtcNow));
+    }
+
+    public void Disable()
+    {
+        IsEnabled = false;
+        AddDomainEvent(new PricingDisabledEvent(Id!.Value, DateTime.UtcNow));
     }
 
 }

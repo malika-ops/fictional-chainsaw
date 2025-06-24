@@ -11,10 +11,10 @@ public class PatchCountryValidator : AbstractValidator<PatchCountryCommand>
             RuleFor(x => x.Abbreviation!).NotEmpty());
 
         When(x => x.Name is not null, () =>
-            RuleFor(x => x.Name!).NotEmpty());
+            RuleFor(x => x.Name!).NotEmpty().MaximumLength(100));
 
         When(x => x.Code is not null, () =>
-            RuleFor(x => x.Code!).NotEmpty());
+            RuleFor(x => x.Code!).NotEmpty().MaximumLength(50));
 
         When(x => x.ISO2 is not null, () =>
             RuleFor(x => x.ISO2!)
@@ -29,7 +29,7 @@ public class PatchCountryValidator : AbstractValidator<PatchCountryCommand>
             .WithMessage("ISO3 code must be exactly 3 characters."));
 
         When(x => x.DialingCode is not null, () =>
-            RuleFor(x => x.DialingCode!).NotEmpty());
+            RuleFor(x => x.DialingCode!).NotEmpty().MaximumLength(4));
 
         When(x => x.TimeZone is not null, () =>
             RuleFor(x => x.TimeZone!).NotEmpty());

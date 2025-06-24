@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
 
 namespace wfc.referential.Domain.MonetaryZone.Events;
 
@@ -23,8 +23,8 @@ public record MonetaryZoneCreatedAuditEvent
     {
         UserId = userId;
         EntityId = entityId.ToString();
-        NewValueJson = JsonConvert.SerializeObject(newValue);
-        MetadataJson = metadata != null ? JsonConvert.SerializeObject(metadata) : null;
+        NewValueJson = JsonSerializer.Serialize(newValue);
+        MetadataJson = metadata != null ? JsonSerializer.Serialize(metadata) : null;
         TraceId = ExtractTraceId(metadata);
         Timestamp = DateTime.UtcNow;
     }
@@ -35,8 +35,8 @@ public record MonetaryZoneCreatedAuditEvent
 
         try
         {
-            var json = JsonConvert.SerializeObject(metadata);
-            var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+            var json = JsonSerializer.Serialize(metadata);
+            var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
             if (dict != null && dict.TryGetValue("TraceId", out var value)
                 && Guid.TryParse(value?.ToString(), out var guid))
                 return guid;

@@ -237,7 +237,7 @@ public class CreatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("code")[0].GetString()
+            .GetProperty("Code")[0].GetString()
             .Should().Be("Code max length = 50.");
 
         _pricingRepoMock.Verify(r => r.AddAsync(It.IsAny<Pricing>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -265,7 +265,7 @@ public class CreatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("channel")[0].GetString()
+            .GetProperty("Channel")[0].GetString()
             .Should().Be("Channel max length = 50.");
 
         _pricingRepoMock.Verify(r => r.AddAsync(It.IsAny<Pricing>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -293,7 +293,7 @@ public class CreatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("minimumAmount")[0].GetString()
+            .GetProperty("MinimumAmount")[0].GetString()
             .Should().Be("MinimumAmount must be positive.");
 
         _pricingRepoMock.Verify(r => r.AddAsync(It.IsAny<Pricing>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -321,7 +321,7 @@ public class CreatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("maximumAmount")[0].GetString()
+            .GetProperty("MaximumAmount")[0].GetString()
             .Should().Be("MaximumAmount must be strictly greater than MinimumAmount.");
 
         _pricingRepoMock.Verify(r => r.AddAsync(It.IsAny<Pricing>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -377,7 +377,7 @@ public class CreatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("fixedAmount")[0].GetString()
+            .GetProperty("FixedAmount")[0].GetString()
             .Should().Be("FixedAmount must be positive.");
 
         _pricingRepoMock.Verify(r => r.AddAsync(It.IsAny<Pricing>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -405,7 +405,7 @@ public class CreatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         doc!.RootElement.GetProperty("errors")
-            .GetProperty("rate")[0].GetString()
+            .GetProperty("Rate")[0].GetString()
             .Should().Be("Rate must be positive.");
 
         _pricingRepoMock.Verify(r => r.AddAsync(It.IsAny<Pricing>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -529,10 +529,10 @@ public class CreatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var errors = doc!.RootElement.GetProperty("errors");
-        errors.GetProperty("code")[0].GetString().Should().Be("Code is required.");
-        errors.GetProperty("channel")[0].GetString().Should().Be("Channel is required.");
-        errors.GetProperty("serviceId")[0].GetString().Should().Be("ServiceId cannot be empty.");
-        errors.GetProperty("corridorId")[0].GetString().Should().Be("CorridorId cannot be empty.");
+        errors.GetProperty("Code")[0].GetString().Should().Be("Code is required.");
+        errors.GetProperty("Channel")[0].GetString().Should().Be("Channel is required.");
+        errors.GetProperty("ServiceId")[0].GetString().Should().Be("ServiceId cannot be empty.");
+        errors.GetProperty("CorridorId")[0].GetString().Should().Be("CorridorId cannot be empty.");
 
         _pricingRepoMock.Verify(r => r.AddAsync(It.IsAny<Pricing>(), It.IsAny<CancellationToken>()), Times.Never);
     }

@@ -39,7 +39,6 @@ namespace wfc.referential.Domain.Countries
            bool hasSector,
            bool isSmsEnabled,
            int numberDecimalDigits,
-           bool isEnabled,
            MonetaryZoneId monetaryZoneId,
            CurrencyId currencyId)
         {
@@ -56,7 +55,6 @@ namespace wfc.referential.Domain.Countries
                 HasSector = hasSector,
                 IsSmsEnabled = isSmsEnabled,
                 NumberDecimalDigits = numberDecimalDigits,
-                IsEnabled = isEnabled,
                 MonetaryZoneId = monetaryZoneId,
                 CurrencyId = currencyId
             };
@@ -104,22 +102,50 @@ namespace wfc.referential.Domain.Countries
 
             // Raise the update event for the country.
             AddDomainEvent(new CountryUpdatedEvent(
-                Id.Value,
+                Id!.Value,
                 Code,
                 Name,
                 DateTime.UtcNow
             ));
         }
 
-        public void Patch()
+        public void Patch(
+            string? abbreviation,
+            string? name,
+            string? code,
+            string? ISO2,
+            string? ISO3,
+            string? dialingCode,
+            string? timeZone,
+            bool? hasSector,
+            bool? isSmsEnabled,
+            int? numberDecimalDigits,
+            MonetaryZoneId? monetaryZoneId,
+            CurrencyId? currencyId,
+            bool? isEnabled)
         {
+            Abbreviation = abbreviation ?? Abbreviation;
+            Name = name ?? Name;
+            Code = code ?? Code;
+            this.ISO2 = ISO2 ?? this.ISO2;
+            this.ISO3 = ISO3 ?? this.ISO3;
+            DialingCode = dialingCode ?? DialingCode;
+            TimeZone = timeZone ?? TimeZone;
+            HasSector = hasSector ?? HasSector;
+            IsSmsEnabled = isSmsEnabled ?? IsSmsEnabled;
+            NumberDecimalDigits = numberDecimalDigits ?? NumberDecimalDigits;
+            MonetaryZoneId = monetaryZoneId ?? MonetaryZoneId;
+            CurrencyId = currencyId ?? CurrencyId;
+            IsEnabled = isEnabled ?? IsEnabled;
+
+            // Raise the patch event for the country.
             AddDomainEvent(new CountryPatchedEvent(
-                Id.Value,
+                Id!.Value,
                 Abbreviation,
                 Name,
                 Code,
-                ISO2,
-                ISO3,
+                this.ISO2,
+                this.ISO3,
                 DialingCode,
                 TimeZone,
                 IsEnabled,
@@ -128,13 +154,14 @@ namespace wfc.referential.Domain.Countries
                 DateTime.UtcNow
             ));
         }
+     
 
         public void Disable()
         {
             IsEnabled = false;
             // Raise the disabled event.
             AddDomainEvent(new CountryDisabledEvent(
-                Id.Value,
+                Id!.Value,
                 DateTime.UtcNow
             ));
         }

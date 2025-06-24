@@ -16,15 +16,14 @@ public class MonetaryZone : Aggregate<MonetaryZoneId>
     private MonetaryZone() { }
 
 
-    public static MonetaryZone Create(MonetaryZoneId id, string code, string name, string description, List<Country>? countries = null)
+    public static MonetaryZone Create(MonetaryZoneId id, string code, string name, string description)
     {
         var monetaryZone = new MonetaryZone
         {
             Id = id,
             Code = code,
             Name = name,
-            Description = description,
-            Countries = countries
+            Description = description
         };
 
         // raise the creation event
@@ -52,7 +51,7 @@ public class MonetaryZone : Aggregate<MonetaryZoneId>
 
         // raise the update event
         AddDomainEvent(new MonetaryZoneUpdatedEvent(
-            Id.Value,
+            Id!.Value,
             Code,
             Name,
             Description,
@@ -71,7 +70,7 @@ public class MonetaryZone : Aggregate<MonetaryZoneId>
         IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new MonetaryZonePatchedEvent(
-            Id.Value,
+            Id!.Value,
             Code,
             Name,
             Description,
@@ -85,7 +84,7 @@ public class MonetaryZone : Aggregate<MonetaryZoneId>
 
         // raise the disable event
         AddDomainEvent(new MonetaryZoneDisabledEvent(
-            Id.Value,
+            Id!.Value,
             DateTime.UtcNow
         ));
     }

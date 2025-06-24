@@ -134,7 +134,7 @@ public class DeleteBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
         var response = await _client.DeleteAsync("/api/banks/invalid-guid-format");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         // Verify no repository operations were attempted
         _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<BankId>(), It.IsAny<CancellationToken>()), Times.Never);

@@ -1,6 +1,7 @@
-﻿using BuildingBlocks.Core.Encryption;
-using BuildingBlocks.Core.Behaviors.Handlers;
-using FastEndpoints;
+﻿using BuildingBlocks.Core.Behaviors.Handlers;
+using BuildingBlocks.Core.Encryption;
+using wfc.referential.API.Endpoints;
+using wfc.referential.API.Features;
 using static BuildingBlocks.Core.Behaviors.Handlers.GlobalExceptionHandler;
 
 namespace wfc.referential.API;
@@ -38,8 +39,39 @@ public static class DependencyInjection
     public static WebApplication UseApiServices(this WebApplication app)
     {
         app.UseExceptionHandler(opt => { });                                                                                                                  
-        app.UseFastEndpoints();
- 
+
+        return app;
+    }
+
+    public static WebApplication MapEndpoints(this WebApplication app)
+    {
+        app.MapAgencyEndpoints();
+        app.MapCityEndpoints();
+        app.MapCountryEndpoints();
+        app.MapRegionEndpoints();
+        app.MapAffiliateEndpoints();
+        app.MapBankEndpoints();
+        app.MapContractEndpoints();
+        app.MapCountryIdentityDocEndpoints();
+        app.MapIdentityDocumentEndpoints(); 
+        app.MapServiceEndpoints();
+        app.MapParamTypeEndpoints();
+        app.MapPartnerAccountEndpoints();   
+        app.MapPartnerCountryEndpoints();
+        app.MapPartnerEndpoints();
+        app.MapCountryServiceEndpoints();
+        app.MapSectorEndpoints();
+        app.MapTaxEndpoints();
+        app.MapTaxRuleDetailEndpoints();
+        app.MapTierEndpoints();
+        app.MapAgencyTierEndpoints();
+        app.MapSupportAccountEndpoints();
+        app.MapCorridorEndpoints();
+        app.MapCurrencyEndpoints();
+        app.MapMonetaryZoneEndpoints();
+        app.MapPricingEndpoints();
+        app.MapProductEndpoints();
+        app.MapTypeDefinitionEndpoints();
 
         return app;
     }

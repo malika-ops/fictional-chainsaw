@@ -5,7 +5,7 @@ namespace wfc.referential.Application.TaxRuleDetails.Dtos;
 /// <summary>
 /// Response DTO representing a single TaxRuleDetail in a list.
 /// </summary>
-public record GetAllTaxRuleDetailsResponse
+public record GetFiltredTaxRuleDetailsResponse
 {
     public Guid TaxRuleDetailsId { get; init; }
     public Guid CorridorId { get; init; }

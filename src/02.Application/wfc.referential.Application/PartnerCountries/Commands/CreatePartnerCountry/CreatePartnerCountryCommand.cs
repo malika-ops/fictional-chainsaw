@@ -7,5 +7,4 @@ public record CreatePartnerCountryCommand : ICommand<Result<Guid>>
 {
     public Guid PartnerId { get; init; }
     public Guid CountryId { get; init; }
-    public bool IsEnabled { get; init; } = true;
 }

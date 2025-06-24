@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
+using System.Runtime.Serialization;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.PartnerAggregate;
@@ -19,134 +19,276 @@ namespace wfc.referential.AcceptanceTests.PartnerCountryTests.UpdateTests;
 public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
-    private readonly Mock<IPartnerCountryRepository> _repoMock = new();
+
+    private readonly Mock<IPartnerCountryRepository> _pcRepo = new();
+    private readonly Mock<IPartnerRepository> _partnerRepo = new();
+    private readonly Mock<ICountryRepository> _countryRepo = new();
 
     public UpdatePartnerCountryEndpointTests(WebApplicationFactory<Program> factory)
     {
         var cacheMock = new Mock<ICacheService>();
 
-        var customised = factory.WithWebHostBuilder(b =>
+        var custom = factory.WithWebHostBuilder(b =>
         {
             b.UseEnvironment("Testing");
-
             b.ConfigureServices(s =>
             {
                 s.RemoveAll<IPartnerCountryRepository>();
+                s.RemoveAll<IPartnerRepository>();
+                s.RemoveAll<ICountryRepository>();
                 s.RemoveAll<ICacheService>();
 
-                _repoMock.Setup(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                                   It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
+                _pcRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                       .Returns(Task.CompletedTask);
 
-                s.AddSingleton(_repoMock.Object);
+                s.AddSingleton(_pcRepo.Object);
+                s.AddSingleton(_partnerRepo.Object);
+                s.AddSingleton(_countryRepo.Object);
                 s.AddSingleton(cacheMock.Object);
             });
         });
 
-        _client = customised.CreateClient();
+        _client = custom.CreateClient();
     }
 
-    private static PartnerCountry Pc(Guid id, Guid partnerId, Guid countryId, bool enabled = true) =>
-        PartnerCountry.Create(
-            PartnerCountryId.Of(id),
-            new PartnerId(partnerId),
-            new CountryId(countryId),
-            enabled);
-
-    private static string FirstError(JsonElement errs, string key)
+    private static PartnerCountry Make(Guid id, Guid partner, Guid country, bool enabled = true)
     {
-        foreach (var p in errs.EnumerateObject())
-            if (p.NameEquals(key) || p.Name.Equals(key, StringComparison.OrdinalIgnoreCase))
-                return p.Value[0].GetString()!;
-        throw new KeyNotFoundException($"error key '{key}' not found");
+        var pc = PartnerCountry.Create(
+                    PartnerCountryId.Of(id),
+                    PartnerId.Of(partner),
+                    CountryId.Of(country));
+
+        if (!enabled) pc.Disable();
+        return pc;
     }
 
 
-    [Fact(DisplayName = "PUT /api/partnerCountries/{id} returns 200 when update succeeds")]
+    [Fact(DisplayName = "PUT /api/partner-countries/{id} → 200 when update succeeds")]
     public async Task Put_ShouldReturn200_WhenUpdateSuccessful()
     {
         var id = Guid.NewGuid();
-        var oldPartnerId = Guid.NewGuid();
-        var oldCountryId = Guid.NewGuid();
-        var entity = Pc(id, oldPartnerId, oldCountryId);
+        var oldP = Guid.NewGuid();
+        var oldC = Guid.NewGuid();
+        var newP = Guid.NewGuid();
+        var newC = Guid.NewGuid();
 
-        var newPartnerId = Guid.NewGuid();
-        var newCountryId = Guid.NewGuid();
+        var entity = Make(id, oldP, oldC, enabled: true);
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(entity);
+        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+               .ReturnsAsync(entity);
 
-        _repoMock.Setup(r => r.GetByPartnerAndCountryAsync(newPartnerId, newCountryId,
-                                                           It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((PartnerCountry?)null);
+        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(newP), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
 
-        PartnerCountry? saved = null;
-        _repoMock.Setup(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                           It.IsAny<CancellationToken>()))
-                 .Callback<PartnerCountry, CancellationToken>((pc, _) => saved = pc);
+        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(newC), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+
+        _pcRepo.Setup(r => r.GetOneByConditionAsync(
+                        It.IsAny<System.Linq.Expressions.Expression<Func<PartnerCountry, bool>>>(),
+                        It.IsAny<CancellationToken>()))
+               .ReturnsAsync((PartnerCountry?)null);   
 
         var payload = new
         {
             PartnerCountryId = id,
-            PartnerId = newPartnerId,
-            CountryId = newCountryId,
+            PartnerId = newP,
+            CountryId = newC,
             IsEnabled = false
         };
 
-        var resp = await _client.PutAsJsonAsync($"/api/partnerCountries/{id}", payload);
-        var result = await resp.Content.ReadFromJsonAsync<Guid>();
+        var res = await _client.PutAsJsonAsync($"/api/partner-countries/{id}", payload);
+        var ok = await res.Content.ReadFromJsonAsync<bool>();
 
-        resp.StatusCode.Should().Be(HttpStatusCode.OK);
-        result.Should().Be(id);
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        ok.Should().BeTrue();
 
-        saved!.PartnerId.Value.Should().Be(newPartnerId);
-        saved.CountryId.Value.Should().Be(newCountryId);
-        saved.IsEnabled.Should().BeFalse();
+        entity.PartnerId.Value.Should().Be(newP);
+        entity.CountryId.Value.Should().Be(newC);
+        entity.IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Once);
+        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "PUT /api/partnerCountries/{id} returns 400 when partner/country pair already exists")]
-    public async Task Put_ShouldReturn400_WhenDuplicatePair()
+
+    [Fact(DisplayName = "PUT /api/partner-countries/{id} → 404 when PartnerCountry missing")]
+    public async Task Put_ShouldReturn404_WhenPartnerCountryMissing()
     {
-        var idTarget = Guid.NewGuid();
-        var partnerIdNew = Guid.NewGuid();
-        var countryIdNew = Guid.NewGuid();
+        var id = Guid.NewGuid();
 
-        var target = Pc(idTarget, Guid.NewGuid(), Guid.NewGuid());
-        var existing = Pc(Guid.NewGuid(), partnerIdNew, countryIdNew);
-
-        _repoMock.Setup(r => r.GetByIdAsync(idTarget, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(target);
-
-        _repoMock.Setup(r => r.GetByPartnerAndCountryAsync(partnerIdNew, countryIdNew,
-                                                           It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(existing);
+        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+               .ReturnsAsync((PartnerCountry?)null);
 
         var payload = new
         {
-            PartnerCountryId = idTarget,
-            PartnerId = partnerIdNew,
-            CountryId = countryIdNew,
-            IsEnabled = true
+            PartnerCountryId = id,
+            PartnerId = Guid.NewGuid(),
+            CountryId = Guid.NewGuid()
         };
 
-        var resp = await _client.PutAsJsonAsync($"/api/partnerCountries/{idTarget}", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+        var res = await _client.PutAsJsonAsync($"/api/partner-countries/{id}", payload);
 
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be($"Partner ({partnerIdNew}) is already linked to Country ({countryIdNew}).");
-
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Never);
+        res.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Fact(DisplayName = "PUT /api/partnerCountries/{id} returns 400 when PartnerCountryId is empty GUID")]
+
+    [Fact(DisplayName = "PUT /api/partner-countries/{id} → 404 when Partner missing")]
+    public async Task Put_ShouldReturn404_WhenPartnerMissing()
+    {
+        var id = Guid.NewGuid();
+        var partId = Guid.NewGuid();
+        var ctryId = Guid.NewGuid();
+
+        var entity = Make(id, Guid.NewGuid(), Guid.NewGuid());
+
+        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+               .ReturnsAsync(entity);
+
+        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(partId), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((Domain.PartnerAggregate.Partner?)null);    
+
+        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(ctryId), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+
+        var payload = new { PartnerCountryId = id, PartnerId = partId, CountryId = ctryId };
+
+        var res = await _client.PutAsJsonAsync($"/api/partner-countries/{id}", payload);
+
+        res.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+
+    [Fact(DisplayName = "PUT /api/partner-countries/{id} → 404 when Country missing")]
+    public async Task Put_ShouldReturn404_WhenCountryMissing()
+    {
+        var id = Guid.NewGuid();
+        var partId = Guid.NewGuid();
+        var ctryId = Guid.NewGuid();
+
+        var entity = Make(id, Guid.NewGuid(), Guid.NewGuid());
+
+        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+               .ReturnsAsync(entity);
+
+        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(partId), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
+
+        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(ctryId), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((Domain.Countries.Country?)null);
+
+        var payload = new { PartnerCountryId = id, PartnerId = partId, CountryId = ctryId };
+
+        var res = await _client.PutAsJsonAsync($"/api/partner-countries/{id}", payload);
+
+        res.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+
+    [Fact(DisplayName = "PUT /api/partner-countries/{id} → 409 when duplicate link exists")]
+    public async Task Put_ShouldReturn409_WhenDuplicateExists()
+    {
+        var idTarget = Guid.NewGuid();
+        var partner = Guid.NewGuid();
+        var country = Guid.NewGuid();
+
+        var target = Make(idTarget, partner, country);
+        var existing = Make(Guid.NewGuid(), partner, country);
+
+        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(idTarget), It.IsAny<CancellationToken>()))
+               .ReturnsAsync(target);
+
+        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(partner), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
+
+        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(country), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+
+        _pcRepo.Setup(r => r.GetOneByConditionAsync(
+                        It.IsAny<System.Linq.Expressions.Expression<Func<PartnerCountry, bool>>>(),
+                        It.IsAny<CancellationToken>()))
+               .ReturnsAsync(existing);
+
+        var payload = new { PartnerCountryId = idTarget, PartnerId = partner, CountryId = country };
+
+        var res = await _client.PutAsJsonAsync($"/api/partner-countries/{idTarget}", payload);
+        res.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+
+    [Fact(DisplayName = "PUT /api/partner-countries/{id} → 200 when disabling link")]
+    public async Task Put_ShouldReturn200_WhenDisabling()
+    {
+        var id = Guid.NewGuid();
+        var pid = Guid.NewGuid();
+        var cid = Guid.NewGuid();
+
+        var link = Make(id, pid, cid, enabled: true);
+
+        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+               .ReturnsAsync(link);
+
+        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(pid), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
+
+        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(cid), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+
+        _pcRepo.Setup(r => r.GetOneByConditionAsync(
+                        It.IsAny<System.Linq.Expressions.Expression<Func<PartnerCountry, bool>>>(),
+                        It.IsAny<CancellationToken>()))
+               .ReturnsAsync((PartnerCountry?)null);
+
+        var payload = new { PartnerCountryId = id, PartnerId = pid, CountryId = cid, IsEnabled = false };
+
+        var res = await _client.PutAsJsonAsync($"/api/partner-countries/{id}", payload);
+        var ok = await res.Content.ReadFromJsonAsync<bool>();
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        ok.Should().BeTrue();
+
+        link.IsEnabled.Should().BeFalse();
+    }
+
+
+    [Fact(DisplayName = "PUT /api/partner-countries/{id} → 200 when same Partner+Country")]
+    public async Task Put_ShouldReturn200_WhenSameMapping()
+    {
+        var id = Guid.NewGuid();
+        var pid = Guid.NewGuid();
+        var cid = Guid.NewGuid();
+
+        var link = Make(id, pid, cid);
+
+        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+               .ReturnsAsync(link);
+
+        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(pid), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
+
+        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(cid), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+
+        _pcRepo.Setup(r => r.GetOneByConditionAsync(
+                        It.IsAny<System.Linq.Expressions.Expression<Func<PartnerCountry, bool>>>(),
+                        It.IsAny<CancellationToken>()))
+               .ReturnsAsync(link);  
+
+        var payload = new { PartnerCountryId = id, PartnerId = pid, CountryId = cid };
+
+        var res = await _client.PutAsJsonAsync($"/api/partner-countries/{id}", payload);
+        var ok = await res.Content.ReadFromJsonAsync<bool>();
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        ok.Should().BeTrue();
+
+        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+
+    [Fact(DisplayName = "PUT /api/partner-countries/{id} → 400 when PartnerCountryId empty")]
     public async Task Put_ShouldReturn400_WhenIdEmpty()
     {
         var payload = new
@@ -156,47 +298,10 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
             CountryId = Guid.NewGuid()
         };
 
-        var resp = await _client.PutAsJsonAsync(
-                       "/api/partnerCountries/00000000-0000-0000-0000-000000000000",
-                       payload);
+        var res = await _client.PutAsJsonAsync(
+            "/api/partner-countries/00000000-0000-0000-0000-000000000000",
+            payload);
 
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // no custom message → just assert error key exists
-        FirstError(doc!.RootElement.GetProperty("errors"), "PartnerCountryId")
-            .Should().NotBeNullOrWhiteSpace();
-
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Never);
-    }
-
-    [Fact(DisplayName = "PUT /api/partnerCountries/{id} returns 400 when PartnerCountry not found")]
-    public async Task Put_ShouldReturn400_WhenEntityMissing()
-    {
-        var id = Guid.NewGuid();
-
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((PartnerCountry?)null);
-
-        var payload = new
-        {
-            PartnerCountryId = id,
-            PartnerId = Guid.NewGuid(),
-            CountryId = Guid.NewGuid()
-        };
-
-        var resp = await _client.PutAsJsonAsync($"/api/partnerCountries/{id}", payload);
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        doc!.RootElement.GetProperty("errors").GetString()
-           .Should().Be("PartnerCountry not found");
-
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Never);
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

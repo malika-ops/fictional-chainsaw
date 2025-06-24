@@ -8,7 +8,7 @@ public class DeleteTaxRuleDetailCommandValidator : AbstractValidator<DeleteTaxRu
 
     public DeleteTaxRuleDetailCommandValidator()
     {
-        RuleFor(x => x.TaxRuleDetailsId)
-            .NotEmpty().WithMessage($"{nameof(DeleteTaxRuleDetailCommand.TaxRuleDetailsId)} is required.");
+        RuleFor(x => x.TaxRuleDetailId)
+            .NotEmpty().WithMessage($"{nameof(DeleteTaxRuleDetailCommand.TaxRuleDetailId)} is required.");
     }
 }

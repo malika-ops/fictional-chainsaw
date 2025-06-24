@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
@@ -21,7 +22,7 @@ public class DeleteTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFact
     private readonly HttpClient _client;
     private readonly Mock<ITaxRuleDetailRepository> _repoMock = new();
     private readonly Mock<ICacheService> _cacheMock = new();
-    private const string BaseUrl = "api/taxruledetails";
+    private const string BaseUrl = "api/tax-rule-details";
 
     public DeleteTaxRuleDetailEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -55,11 +56,10 @@ public class DeleteTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFact
             serviceId: ServiceId.Of(Guid.NewGuid()),
             appliedOn: ApplicationRule.Amount);
 
-        _repoMock.Setup(r => r.GetTaxRuleDetailByIdAsync(taxRuleDetailId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(taxRuleDetail);
 
-        _repoMock.Setup(r => r.UpdateTaxRuleDetailAsync(It.IsAny<TaxRuleDetail>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.Update(It.IsAny<TaxRuleDetail>()));
 
         _cacheMock.Setup(c => c.SetAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -72,8 +72,8 @@ public class DeleteTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFact
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _repoMock.Verify(r => r.GetTaxRuleDetailByIdAsync(taxRuleDetailId, It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.UpdateTaxRuleDetailAsync(It.Is<TaxRuleDetail>(trd => trd.Id.Value == taxRuleDetailId && trd.IsEnabled == false), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.Update(It.Is<TaxRuleDetail>(trd => trd.Id.Value == taxRuleDetailId && trd.IsEnabled == false)), Times.Once);
     }
 
     [Fact(DisplayName = $"DELETE {BaseUrl}/id returns 404 when TaxRuleDetail does not exist")]
@@ -82,7 +82,7 @@ public class DeleteTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFact
         // Arrange
         var taxRuleDetailId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetTaxRuleDetailByIdAsync(taxRuleDetailId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaxRuleDetail)null);
 
         // Act
@@ -91,7 +91,7 @@ public class DeleteTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repoMock.Verify(r => r.GetTaxRuleDetailByIdAsync(taxRuleDetailId, It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.UpdateTaxRuleDetailAsync(It.IsAny<TaxRuleDetail>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.Update(It.IsAny<TaxRuleDetail>()), Times.Never);
     }
 }

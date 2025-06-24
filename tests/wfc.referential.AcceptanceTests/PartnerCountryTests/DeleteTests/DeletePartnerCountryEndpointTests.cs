@@ -26,18 +26,15 @@ public class DeletePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
     {
         var cacheMock = new Mock<ICacheService>();
 
-        var configured = factory.WithWebHostBuilder(b =>
+        var customised = factory.WithWebHostBuilder(b =>
         {
             b.UseEnvironment("Testing");
-
             b.ConfigureServices(s =>
             {
-                /* replace infra with mocks */
                 s.RemoveAll<IPartnerCountryRepository>();
                 s.RemoveAll<ICacheService>();
 
-                _repoMock.Setup(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                                   It.IsAny<CancellationToken>()))
+                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
                          .Returns(Task.CompletedTask);
 
                 s.AddSingleton(_repoMock.Object);
@@ -45,93 +42,100 @@ public class DeletePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
             });
         });
 
-        _client = configured.CreateClient();
+        _client = customised.CreateClient();
     }
 
 
-    private static PartnerCountry Make(Guid id, Guid? partnerId = null, Guid? countryId = null) =>
-        PartnerCountry.Create(
-            PartnerCountryId.Of(id),
-            new PartnerId(partnerId ?? Guid.NewGuid()),
-            new CountryId(countryId ?? Guid.NewGuid()),
-            true);
-
-    private static string FirstError(JsonElement errs, string key)
+    private static PartnerCountry MakeLink(Guid id, Guid partnerId, Guid countryId, bool enabled = true)
     {
-        foreach (var p in errs.EnumerateObject())
-            if (p.NameEquals(key) || p.Name.Equals(key, StringComparison.OrdinalIgnoreCase))
-                return p.Value[0].GetString()!;
-        throw new KeyNotFoundException($"error key '{key}' not found");
+        var pc = PartnerCountry.Create(
+                    PartnerCountryId.Of(id),
+                    PartnerId.Of(partnerId),
+                    CountryId.Of(countryId));
+
+        if (!enabled) pc.Disable();
+        return pc;
     }
 
 
-    [Fact(DisplayName = "DELETE /api/partnerCountries/{id} returns 200 when deletion succeeds")]
-    public async Task Delete_ShouldReturn200_WhenSuccessful()
+    [Fact(DisplayName = "DELETE /api/partner-countries/{id} → 200 when link exists")]
+    public async Task Delete_ShouldReturn200_WhenLinkExists()
     {
         // Arrange
         var id = Guid.NewGuid();
-        var row = Make(id);
+        var partnerId = Guid.NewGuid();
+        var countryId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(row);
+        var link = MakeLink(id, partnerId, countryId);
 
-        PartnerCountry? saved = null;
-        _repoMock.Setup(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                           It.IsAny<CancellationToken>()))
-                 .Callback<PartnerCountry, CancellationToken>((pc, _) => saved = pc);
+        _repoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(link);
+
+        PartnerCountry? captured = null;
+        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                 .Callback(() => captured = link)
+                 .Returns(Task.CompletedTask);
 
         // Act
-        var resp = await _client.DeleteAsync($"/api/partnerCountries/{id}");
-        var success = await resp.Content.ReadFromJsonAsync<bool>();
+        var resp = await _client.DeleteAsync($"/api/partner-countries/{id}");
+        var ok = await resp.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
-        success.Should().BeTrue();
+        ok.Should().BeTrue();
 
-        saved!.IsEnabled.Should().BeFalse();      // soft-deleted
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Once);
+        captured!.IsEnabled.Should().BeFalse();               
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "DELETE /api/partnerCountries/{id} returns 400 when id is empty GUID")]
-    public async Task Delete_ShouldReturn400_WhenIdIsEmpty()
+    [Fact(DisplayName = "DELETE /api/partner-countries/{id} → 404 when link not found")]
+    public async Task Delete_ShouldReturn404_WhenNotFound()
     {
-        // Act
-        var resp = await _client.DeleteAsync("/api/partnerCountries/00000000-0000-0000-0000-000000000000");
-        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        FirstError(doc!.RootElement.GetProperty("errors"), "PartnerCountryId")
-            .Should().Be("PartnerCountryId must be a non-empty GUID.");
-
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Never);
-    }
-
-    [Fact(DisplayName = "DELETE /api/partnerCountries/{id} returns 400 when PartnerCountry not found")]
-    public async Task Delete_ShouldReturn400_WhenPartnerCountryNotFound()
-    {
-        // Arrange
         var id = Guid.NewGuid();
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+
+        _repoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((PartnerCountry?)null);
 
-        // Act
-        var resp = await _client.DeleteAsync($"/api/partnerCountries/{id}");
+        var resp = await _client.DeleteAsync($"/api/partner-countries/{id}");
         var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
 
-        // Assert
+        resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var root = doc!.RootElement;
+        root.GetProperty("title").GetString().Should().Be("Resource Not Found");
+        root.GetProperty("status").GetInt32().Should().Be(404);
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "DELETE /api/partner-countries/{id} → 400 when id is empty GUID")]
+    public async Task Delete_ShouldReturn400_WhenIdEmpty()
+    {
+        var empty = Guid.Empty;
+
+        var resp = await _client.DeleteAsync($"/api/partner-countries/{empty}");
+        var doc = await resp.Content.ReadFromJsonAsync<JsonDocument>();
+
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        doc!.RootElement.GetProperty("errors").GetString()
-            .Should().Be($"PartnerCountry [{id}] not found.");
+        var root = doc!.RootElement;
+        root.GetProperty("errors")
+            .GetProperty("PartnerCountryId")[0].GetString()
+            .Should().Be("PartnerCountryId must be a non-empty GUID.");
 
-        _repoMock.Verify(r => r.UpdateAsync(It.IsAny<PartnerCountry>(),
-                                            It.IsAny<CancellationToken>()),
-                         Times.Never);
+        _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<PartnerCountryId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "DELETE /api/partner-countries/{id} → 400 when id is malformed GUID")]
+    public async Task Delete_ShouldReturn400_WhenIdMalformed()
+    {
+        const string bad = "not-a-guid";
+
+        var resp = await _client.DeleteAsync($"/api/partner-countries/{bad}");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }
