@@ -10,7 +10,7 @@ using wfc.referential.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container
 builder.AddServiceDefaults("ReferentialApi");
 builder.Services.AddAuthorization();
 
