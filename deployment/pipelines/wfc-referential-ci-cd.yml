@@ -116,7 +116,7 @@ stages:
 - stage: DeployDev
   displayName: Deploy to Development
   dependsOn: Build_CI
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/devops'))
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   - deployment: DeployDev
     displayName: Deploy to Dev Environment
@@ -190,7 +190,7 @@ stages:
   dependsOn: 
   - Build_CI
   - DeployDev
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/devops'))
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   # Pre-deployment approval
   - job: PreDeploymentApproval
@@ -297,7 +297,7 @@ stages:
   dependsOn: 
   - Build_CI
   - DeployPprod
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/devops'))
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   # Pre-deployment approval
   - job: PreDeploymentApproval
@@ -405,7 +405,7 @@ stages:
   displayName: 'Send Notifications'
   dependsOn: 
   - DeployProd
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/devops'))
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   variables:
   - group: PROD
   
