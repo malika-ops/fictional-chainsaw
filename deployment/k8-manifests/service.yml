@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wfc-referential-api-service
+  annotations:
+    kube-vip.io/requestedIP: "10.10.211.105"
+  namespace: #{k8sNamespace}#
+  labels:
+    app: wfc-referential-api
+spec:
+  type: LoadBalancer
+  selector:           
+    app: wfc-referential-api 
+  loadBalancerIP: "10.10.211.105"
+  ports:
+  - name: https
+    port: 443
+    targetPort: 8080
+    protocol: TCP

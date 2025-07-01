@@ -1,0 +1,527 @@
+trigger:
+- main
+
+resources:
+  - repo: self
+
+parameters:
+  - name: Build_Release
+    type: boolean
+    default: true
+  - name: Build_BDD
+    type: boolean
+    default: false
+    
+name: 9.9$(Rev:.r)
+
+variables:
+  - name: currentBranchName 
+    value: '$(Build.SourceBranchName)'
+  - name: buildConfiguration 
+    value: 'Release'
+  - name: imageRepository 
+    value: 'phoenix/wfc-referential-api'
+  - name: tag 
+    value: '$(Build.BuildId)'
+  - name: dockerRegistryServiceConnection
+    value: 'Harbor-Registry'
+
+stages:
+- stage: Build_CI
+  condition: eq(${{parameters.Build_Release}}, 'true')
+  displayName: Build CI
+  jobs:
+  - job: Build_CI
+    displayName: Build and push image docker
+    pool:
+      name: Agents_Win_Linux
+      demands: Agent.OS -equals Linux
+    workspace:
+      clean: all
+    steps:
+    - task: UseDotNet@2
+      displayName: "Use .NET Core sdk 8.0.x"
+      inputs:
+        version: 8.0.x
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore solution'
+      inputs:
+        command: 'restore'
+        projects: 'src/**/**/*.csproj'
+        feedsToUse: 'config'
+        nugetConfigPath: 'nuget.config'
+        workingDirectory: '$(Build.SourcesDirectory)'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build solution'
+      inputs:
+        command: 'build'
+        projects: 'src/**/**/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+
+    - task: DotNetCoreCLI@2
+      displayName: "publish solution"
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: 'src/**/**/*.csproj'
+        zipAfterPublish: false
+        arguments: "-o $(Build.SourcesDirectory)/src/Output"
+
+    - script: |
+        echo "Contents of the publish directory:"
+        ls -R $(Build.SourcesDirectory)/src/Output
+      displayName: 'Display publish directory contents'
+
+    - task: Docker@2
+      displayName: Docker Build
+      inputs:
+        command: Build
+        dockerfile: $(Build.SourcesDirectory)/deployment/dockerfile/wfc-referential-api.dockerfile
+        buildContext: $(Build.SourcesDirectory)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        repository: $(imageRepository)
+        tags: |
+          latest
+          $(tag)
+        arguments: "--build-arg NUGET_PAT=$(System.AccessToken)"
+
+    - task: Docker@2
+      displayName: Docker Push to Harbor
+      inputs:
+        command: Push
+        dockerfile: $(Build.SourcesDirectory)/deployment/dockerfile/wfc-referential-api.dockerfile
+        buildContext: $(Build.SourcesDirectory)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        repository: $(imageRepository)
+        tags: |
+          latest
+          $(tag)
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Kubernetes manifests'
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)/deployment/k8-manifests'
+        ArtifactName: 'k8s-manifests'
+        publishLocation: 'Container'
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish files
+      inputs:
+        PathtoPublish: "$(Build.SourcesDirectory)/deployment/phoenix"
+        ArtifactName: "phoenix"
+        publishLocation: "Container"
+
+- stage: DeployDev
+  displayName: Deploy to Development
+  dependsOn: Build_CI
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/devops'))
+  jobs:
+  - deployment: DeployDev
+    displayName: Deploy to Dev Environment
+    pool:
+      name: Agents_Win_Linux
+      demands: Agent.OS -equals Linux
+    workspace:
+      clean: all
+    environment: 'DEV'
+    variables:
+    - group: DEV
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download Kubernetes manifests'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'k8s-manifests'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: qetza.replacetokens.replacetokens-task.replacetokens@6
+            displayName: 'Replace tokens in manifests'
+            inputs:
+              rootDirectory: '$(System.ArtifactsDirectory)/k8s-manifests'
+              targetFiles: '**/*.yml'
+              encoding: 'auto'
+              tokenPattern: 'default'
+              writeBOM: true
+              actionOnMissing: 'warn'
+              keepToken: false
+              actionOnNoFiles: 'continue'
+              enableTransforms: false
+              enableRecursion: false
+              useLegacyPattern: false
+              enableTelemetry: true
+
+          - task: Bash@3
+            displayName: 'Deploy to Kubernetes cluster'
+            inputs:
+              targetType: 'inline'
+              script: |
+                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-storageclass.yml
+                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pv.yml
+                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/namespace.yml                
+                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pvc.yml
+                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/configmap.yml
+                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/secret.yml
+                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/service.yml
+                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/deployment.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/ingress.yml
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download file'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'phoenix'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: Bash@3
+            displayName: Phoenix done!
+            inputs:
+              targetType: 'inline'
+              script: |
+                cat $(System.ArtifactsDirectory)/phoenix/readme-dev
+                
+- stage: DeployPprod
+  displayName: Deploy to PPROD
+  dependsOn: 
+  - Build_CI
+  - DeployDev
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/devops'))
+  jobs:
+  # Pre-deployment approval
+  - job: PreDeploymentApproval
+    displayName: 'Pre-Deployment Approval Gate'
+    pool: server
+    timeoutInMinutes: 4320 # 3 days timeout
+    variables:
+    - group: PPROD
+    
+    steps:
+    - task: ManualValidation@0
+      displayName: 'Manual Approval Required'
+      inputs:
+        notifyUsers: "$(notifyUsers)"
+        instructions: |
+          Please review the following before approving deployment to PRE-PROD:
+          
+          ✅ Build Quality Gates Passed
+          ✅ Unit Tests Passed  
+          ✅ Security Scan Completed
+          ✅ Performance Tests Validated
+          ✅ Business Stakeholder Sign-off
+          
+          Deployment Details:
+          - Build Number: $(Build.BuildNumber)
+          - Source Branch: $(Build.SourceBranch)
+          - Triggered By: $(Build.RequestedFor)
+          
+          Check the boxes above and click "Resume" to proceed with dev deployment.
+        onTimeout: 'reject'
+        
+  - deployment: DeployPprod
+    displayName: Deploy to PRE-PRODUCTION Environment
+    dependsOn: PreDeploymentApproval
+    pool:
+      name: Agents_Win_Linux
+      demands: Agent.OS -equals Linux
+    workspace:
+      clean: all
+    environment: 'PPROD'
+    variables:
+    - group: PPROD
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download Kubernetes manifests'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'k8s-manifests'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: qetza.replacetokens.replacetokens-task.replacetokens@6
+            displayName: 'Replace tokens in manifests'
+            inputs:
+              rootDirectory: '$(System.ArtifactsDirectory)/k8s-manifests'
+              targetFiles: '**/*.yml'
+              encoding: 'auto'
+              tokenPattern: 'default'
+              writeBOM: true
+              actionOnMissing: 'warn'
+              keepToken: false
+              actionOnNoFiles: 'continue'
+              enableTransforms: false
+              enableRecursion: false
+              useLegacyPattern: false
+              enableTelemetry: true
+
+          - task: Bash@3
+            displayName: 'Deploy to Kubernetes cluster'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # use of configcontext
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-storageclass.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pv.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/namespace.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pvc.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/configmap.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/secret.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/service.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/deployment.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/ingress.yml
+          
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download file'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'phoenix'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: Bash@3
+            displayName: Phoenix done!
+            inputs:
+              targetType: 'inline'
+              script: |
+                cat $(System.ArtifactsDirectory)/phoenix/readme-pprd
+
+- stage: DeployProd
+  displayName: Deploy to Production
+  dependsOn: 
+  - Build_CI
+  - DeployPprod
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/devops'))
+  jobs:
+  # Pre-deployment approval
+  - job: PreDeploymentApproval
+    displayName: 'Pre-Deployment Approval Gate'
+    pool: server
+    timeoutInMinutes: 4320 # 3 days timeout
+    variables:
+    - group: PROD
+    
+    steps:
+    - task: ManualValidation@0
+      displayName: 'Manual Approval Required'
+      inputs:
+        notifyUsers: "$(notifyUsers)"
+        instructions: |
+          Please review the following before approving deployment to PROD:
+          
+          ✅ Build Quality Gates Passed
+          ✅ Unit Tests Passed  
+          ✅ Security Scan Completed
+          ✅ Performance Tests Validated
+          ✅ Business Stakeholder Sign-off
+          
+          Deployment Details:
+          - Build Number: $(Build.BuildNumber)
+          - Source Branch: $(Build.SourceBranch)
+          - Triggered By: $(Build.RequestedFor)
+          
+          Check the boxes above and click "Resume" to proceed with dev deployment.
+        onTimeout: 'reject'
+        
+  - deployment: DeployProd
+    displayName: Deploy to Prod Environment
+    dependsOn: PreDeploymentApproval
+    pool:
+      name: Agents_Win_Linux
+      demands: Agent.OS -equals Linux
+    workspace:
+      clean: all
+    environment: 'PROD'
+    variables:
+    - group: PROD
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download Kubernetes manifests'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'k8s-manifests'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: qetza.replacetokens.replacetokens-task.replacetokens@6
+            displayName: 'Replace tokens in manifests'
+            inputs:
+              rootDirectory: '$(System.ArtifactsDirectory)/k8s-manifests'
+              targetFiles: '**/*.yml'
+              encoding: 'auto'
+              tokenPattern: 'default'
+              writeBOM: true
+              actionOnMissing: 'warn'
+              keepToken: false
+              actionOnNoFiles: 'continue'
+              enableTransforms: false
+              enableRecursion: false
+              useLegacyPattern: false
+              enableTelemetry: true
+
+          - task: Bash@3
+            displayName: 'Deploy to Kubernetes cluster'
+            inputs:
+              targetType: 'inline'
+              script: |
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-storageclass.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pv.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/namespace.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pvc.yml                
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/configmap.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/secret.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/service.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/deployment.yml
+                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/ingress.yml
+          
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download file'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'phoenix'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: Bash@3
+            displayName: Phoenix done!
+            inputs:
+              targetType: 'inline'
+              script: |
+                cat $(System.ArtifactsDirectory)/phoenix/readme
+
+# =====================================
+# NOTIFICATION STAGE
+# =====================================
+- stage: Notification
+  displayName: 'Send Notifications'
+  dependsOn: 
+  - DeployProd
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/devops'))
+  variables:
+  - group: PROD
+  
+  jobs:
+  - job: SendNotification
+    displayName: 'Send Deployment Notifications'
+    pool:
+      name: Agents_Win_Linux
+      demands: Agent.OS -equals Linux
+    
+    steps:
+    - task: PowerShell@2
+      displayName: 'Send Email Notification'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Determine final status
+          $jobStatus = "$(Agent.JobStatus)"
+          Write-Host "Deployment completed with status: $jobStatus"
+          $stageStatus = if ($jobStatus -eq "Succeeded") { "✅ Deployment successful" } else { "❌ Deployment failed" }
+          $statusColor = if ($jobStatus -eq "Succeeded") { "#107c10" } else { "#d13438" }
+          
+          # Email configuration
+          $smtpServer = "$(SmtpServer)"
+          $smtpPort = "$(SmtpPort)"
+          $fromEmail = "$(FromEmail)"
+          $toEmails = "$(ToEmails)"  -split ";"
+          $emailUser = "$(EmailUser)"
+          $emailPassword = "$(EmailPassword)"
+          
+          # Pipeline information
+          $buildNumber = "$(Build.BuildNumber)"
+          $environment = "$(DeploymentEnvironment)"
+          $projectName = "$(imageRepository)"
+          $buildUrl = "$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
+          
+          # Create completion email
+          $subject = "$stageStatus - $projectName - $environment - Build #$buildNumber"
+          $body = @"
+          <html>
+          <head>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+                  .container { max-width: 600px; margin: 0 auto; }
+                  .header { background-color: $statusColor; color: white; padding: 20px; text-align: center; }
+                  .content { padding: 20px; background-color: #f9f9f9; }
+                  .footer { background-color: #333; color: white; padding: 10px; text-align: center; }
+                  table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                  th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                  th { background-color: #f2f2f2; font-weight: bold; }
+                  .button { background-color: #0078d4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="header">
+                      <h1>Pipeline Execution Complete</h1>
+                      <h2 style="margin: 0;">Status: $stageStatus</h2>
+                  </div>
+                  <div class="content">
+                      <h3>Pipeline Summary</h3>
+                      <table>
+                          <tr><th>Project</th><td>$projectName</td></tr>
+                          <tr><th>Environment</th><td>$environment</td></tr>
+                          <tr><th>Build Number</th><td>$buildNumber</td></tr>
+                          <tr><th>Final Status</th><td style="color: $statusColor; font-weight: bold;">$stageStatus</td></tr>
+                          <tr><th>Completed At</th><td>$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')</td></tr>
+                          <tr><th>Requested By</th><td>$(Build.RequestedFor)</td></tr>
+                          <tr><th>Source Branch</th><td>$(Build.SourceBranch)</td></tr>
+                      </table>
+                      
+                      <p>The pipeline execution has completed. Click the button below to view detailed results:</p>
+                      <a href="$buildUrl" class="button">View Pipeline Results</a>
+                  </div>
+                  <div class="footer">
+                      <p>Azure DevOps - Automated Pipeline Notification</p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          "@
+          
+          try 
+          {
+              # Create mail message
+              $mailMessage = New-Object System.Net.Mail.MailMessage
+              $mailMessage.From = $fromEmail
+              # Add each recipient individually
+              foreach ($email in $toEmails) 
+              {
+                  if (![string]::IsNullOrWhiteSpace($email)) 
+                  {
+                    $mailMessage.To.Add($email.Trim())
+                  }
+              }
+              $mailMessage.Subject = $subject
+              $mailMessage.Body = $body
+              $mailMessage.IsBodyHtml = $true  
+
+              # Configure SMTP client
+              $smtpClient = New-Object System.Net.Mail.SmtpClient($smtpServer, $smtpPort)
+
+              # If authentication is required
+              $smtpClient.Credentials = New-Object System.Net.NetworkCredential($emailUser, $emailPassword)
+
+              # Enable SSL/TLS if required (recommended)
+              $smtpClient.EnableSsl = $true
+
+              # Send email
+              $smtpClient.Send($mailMessage)
+
+              Write-Host "Pipeline completion notification sent successfully"
+              Write-Host "$stageStatus"
+          }
+          catch 
+          {
+              Write-Host "Failed to send completion notification: $($_.Exception.Message)" -ForegroundColor Red
+              exit 1
+          }

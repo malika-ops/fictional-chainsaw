@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wfc-referential-api-ingress
+  namespace: #{k8sNamespace}#
+  labels:
+    app: wfc-referential-api
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    # Force HTTPS - redirect all HTTP to HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Backend protocol (since we're using NodePort)
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    
+spec:
+   # TLS Configuration - HTTPS ONLY
+  ingressClassName: nginx 
+  tls:
+  - hosts:
+    - wfc-referential-api.wafacash.com
+    secretName: tls-secret-phoenix-ca-root
+  rules:
+  - host: wfc-referential-api.wafacash.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wfc-referential-api-service
+            port:
+              number: 80

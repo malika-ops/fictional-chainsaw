@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wfc-referential-api-config
+  namespace: #{k8sNamespace}#
+  labels:
+    app: wfc-referential-api
+    version: v1
+data:
+  appsettings.json: |
+    {
+      "Kestrel": {
+            "Endpoints": {
+              "Https": {
+                "Url": "https://*:8080",  // Listen on HTTPS
+                "Certificate": {
+                  "Path": "/app/certs/tls.crt",
+                  "KeyPath": "/app/certs/tls.key"
+                }
+              }
+            }
+      },
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "AppSettings": {
+        "ApiTimeout": 30,
+        "MaxRetries": 3,
+        "EnableFeatureX": true
+      },
+      "Cors": {
+        "AllowedHosts": [ "#{Cors__AllowedHosts__0}#" ]
+      },
+      "AllowedHosts": "*",
+      "ConnectionStrings": {
+          "Database": "#{ConnectionStrings__wfc.referential.dbc}#",
+          "Redis": "#{ConnectionStrings__wfc.referential.redis}#"
+      }
+    }
