@@ -4,10 +4,6 @@ namespace wfc.referential.Application.Pricings.Dtos;
 
 public record PatchPricingRequest
 {
-    /// <summary>Pricing ID (route).</summary>
-    [Required] 
-    public Guid PricingId { get; init; }
-
     /// <summary>Optional new code.</summary>
     public string? Code { get; init; }
 

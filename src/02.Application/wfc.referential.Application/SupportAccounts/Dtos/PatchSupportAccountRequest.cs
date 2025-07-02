@@ -3,12 +3,6 @@
 public record PatchSupportAccountRequest
 {
     /// <summary>
-    /// The ID of the Support Account to patch.
-    /// </summary>
-    /// <example>9d805d81-8g38-7d4e-1e0h-81849gg947f7</example>
-    public Guid SupportAccountId { get; init; }
-
-    /// <summary>
     /// If provided, updates the code. If omitted, code remains unchanged.
     /// </summary>
     /// <example>SUPAC002</example>

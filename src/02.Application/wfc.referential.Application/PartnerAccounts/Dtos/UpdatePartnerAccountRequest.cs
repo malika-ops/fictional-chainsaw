@@ -3,12 +3,6 @@
 public record UpdatePartnerAccountRequest
 {
     /// <summary>
-    /// The ID of the Partner Account to update.
-    /// </summary>
-    /// <example>9d805d81-8g38-7d4e-1e0h-81849gg947f6</example>
-    public Guid PartnerAccountId { get; init; }
-
-    /// <summary>
     /// A unique account number for the Partner Account.
     /// </summary>
     /// <example>000123456789</example>

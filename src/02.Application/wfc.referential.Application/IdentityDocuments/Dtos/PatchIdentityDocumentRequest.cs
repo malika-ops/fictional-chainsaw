@@ -2,9 +2,6 @@
 
 public record PatchIdentityDocumentRequest
 {
-    /// <summary>Identity document GUID (from route).</summary>
-    public Guid IdentityDocumentId { get; init; }
-
     /// <summary>Unique identity document code.</summary>
     public string? Code { get; init; }
 

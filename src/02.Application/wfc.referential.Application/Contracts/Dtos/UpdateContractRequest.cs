@@ -3,12 +3,6 @@
 public record UpdateContractRequest
 {
     /// <summary>
-    /// The ID of the Contract to update.
-    /// </summary>
-    /// <example>9d805d81-8g38-7d4e-1e0h-81849gg947f8</example>
-    public Guid ContractId { get; init; }
-
-    /// <summary>
     /// A unique code identifier for the Contract.
     /// </summary>
     /// <example>CTR001</example>

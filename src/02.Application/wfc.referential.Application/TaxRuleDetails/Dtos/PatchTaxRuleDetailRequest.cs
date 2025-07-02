@@ -7,7 +7,6 @@ namespace wfc.referential.Application.TaxRuleDetails.Dtos;
 /// </summary>
 public record PatchTaxRuleDetailRequest
 {
-    public Guid TaxRuleDetailsId { get; init; }
     public Guid? CorridorId { get; init; }
     public Guid? TaxId { get; init; }
     public Guid? ServiceId { get; init; }

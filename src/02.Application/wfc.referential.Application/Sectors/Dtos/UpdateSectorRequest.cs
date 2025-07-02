@@ -2,9 +2,6 @@
 
 public record UpdateSectorRequest
 {
-    /// <summary>Sector GUID (from route).</summary>
-    public Guid SectorId { get; init; }
-
     /// <summary>Unique sector code.</summary>
     public string Code { get; init; } = string.Empty;
 

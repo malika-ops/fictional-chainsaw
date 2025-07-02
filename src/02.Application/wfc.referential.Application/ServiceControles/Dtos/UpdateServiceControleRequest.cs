@@ -4,10 +4,6 @@ namespace wfc.referential.Application.ServiceControles.Dtos;
 
 public record UpdateServiceControleRequest
 {
-    /// <summary>Route param — ID of the Service-Controle mapping to update.</summary>
-    /// <example>4e1d1c11-7f3b-4e28-a9c2-79cfb4e4995f</example>
-    [Required] public Guid ServiceControleId { get; init; }
-
     /// <summary>ID of the Service.</summary>
     /// <example>d1ee58ec-e4de-4b71-86d3-8d2c8d9e1d3f</example>
     [Required] public Guid ServiceId { get; init; }

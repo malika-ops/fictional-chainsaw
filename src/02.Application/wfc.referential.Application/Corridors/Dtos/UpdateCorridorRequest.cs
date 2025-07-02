@@ -3,9 +3,6 @@
 /// <summary>Full update of a corridor</summary>
 public record UpdateCorridorRequest
 {
-    /// <summary>Corridor ID</summary>
-    public Guid CorridorId { get; init; }
-
     /// <summary>Source country ID</summary>
     public Guid? SourceCountryId { get; init; }
 

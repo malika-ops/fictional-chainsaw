@@ -4,10 +4,6 @@ namespace wfc.referential.Application.Pricings.Dtos;
 
 public record UpdatePricingRequest
 {
-    /// <summary>ID of the Pricing to update (route parameter).</summary>
-    [Required] 
-    public Guid PricingId { get; init; }
-
     /// <summary>Unique alphanumeric code identifying the pricing line.</summary>
     [Required]
     public string Code { get; init; } = string.Empty;

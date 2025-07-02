@@ -1,8 +1,4 @@
-﻿using wfc.referential.Domain.CityAggregate;
-using wfc.referential.Domain.RegionAggregate;
-
-
-namespace wfc.referential.Application.Cities.Dtos;
+﻿namespace wfc.referential.Application.Cities.Dtos;
 
 /// <summary>
 /// Represents the data required to fully update a city's information.
@@ -20,12 +16,6 @@ namespace wfc.referential.Application.Cities.Dtos;
 /// </example>
 public record UpdateCityRequest
 {
-    /// <summary>
-    /// The unique identifier of the city to update (typically provided as a route parameter).
-    /// </summary>
-    /// <example>6a472a58-5d05-4a1b-8b7f-58516dd614c3</example>
-    public Guid CityId { get; init; }
-
     /// <summary>
     /// The updated city code.
     /// </summary>

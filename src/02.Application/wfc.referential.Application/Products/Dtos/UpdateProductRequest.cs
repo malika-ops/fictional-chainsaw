@@ -2,12 +2,6 @@
 
 public record UpdateProductRequest
 {
-    /// <summary>
-    /// The string representation of the Product's GUID (route param).
-    /// </summary>
-    /// <example>6a472a58-5d05-4a1b-8b7f-58516dd614c3</example>
-    public Guid ProductId { get; set; }
-
     /// <summary> 
     /// The code of the Product. 
     /// </summary>

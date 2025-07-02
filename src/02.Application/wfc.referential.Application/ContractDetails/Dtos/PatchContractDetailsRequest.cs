@@ -3,12 +3,6 @@
 public record PatchContractDetailsRequest
 {
     /// <summary>
-    /// The ID of the ContractDetails to patch.
-    /// </summary>
-    /// <example>9d805d81-8g38-7d4e-1e0h-81849gg947f8</example>
-    public Guid ContractDetailsId { get; init; }
-
-    /// <summary>
     /// If provided, updates the Contract ID. If omitted, Contract remains unchanged.
     /// </summary>
     /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa6</example>

@@ -4,15 +4,6 @@ namespace wfc.referential.Application.Countries.Dtos;
 
 public record UpdateCountryRequest
 {
-
-    /// <summary>
-    /// The ID of the Country to update.
-    /// Must be a valid (non-empty) GUID.
-    /// </summary>
-    /// <example>e3f1c4b8-8bdf-4c2a-9b7b-776a12345678</example>
-    [Required]
-    public Guid CountryId { get; init; }
-
     /// <summary>
     /// The abbreviation of the country.
     /// </summary>

@@ -4,9 +4,6 @@ namespace wfc.referential.Application.Controles.Dtos;
 
 public record PatchControleRequest
 {
-    /// <summary>Controle ID (route).</summary>
-    [Required] public Guid ControleId { get; init; }
-
     /// <summary>Optional new Code.</summary>
     public string? Code { get; init; }
 

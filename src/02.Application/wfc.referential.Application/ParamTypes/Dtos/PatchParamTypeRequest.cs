@@ -2,12 +2,6 @@
 
 public record PatchParamTypeRequest
 {
-    /// <summary>
-    /// L'identifiant unique du paramètre à modifier partiellement.
-    /// </summary>
-    /// <example>6a472a58-5d05-4a1b-8b7f-58516dd614c3</example>
-    public Guid ParamTypeId { get; init; }
-
     /// <summary> 
     /// Si fourni, met à jour la valeur du paramètre. Si omis, la valeur reste inchangée. 
     /// </summary>

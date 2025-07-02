@@ -2,9 +2,6 @@
 
 public record PatchCurrencyRequest
 {
-    /// <summary>Currency GUID (from route).</summary>
-    public Guid CurrencyId { get; init; }
-
     /// <summary>Unique currency code.</summary>
     public string? Code { get; init; }
 

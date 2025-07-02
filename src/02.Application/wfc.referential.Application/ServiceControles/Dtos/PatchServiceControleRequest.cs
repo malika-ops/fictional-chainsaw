@@ -5,13 +5,6 @@ namespace wfc.referential.Application.ServiceControles.Dtos;
 public record PatchServiceControleRequest
 {
     /// <summary>
-    /// Route parameter — ID of the link to patch.
-    /// <example>b3b6a1e2-4c2d-4e7a-9c1a-2f3e4d5b6a7c</example>
-    /// </summary>
-    [Required]
-    public Guid ServiceControleId { get; init; }
-
-    /// <summary>
     /// Optional replacement ServiceId.
     /// <example>e1b2c3d4-e5f6-7890-ab12-cd34ef56gh78</example>
     /// </summary>

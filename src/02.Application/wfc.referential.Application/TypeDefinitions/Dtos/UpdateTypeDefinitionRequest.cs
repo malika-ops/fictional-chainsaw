@@ -3,12 +3,6 @@
 public record UpdateTypeDefinitionRequest
 {
     /// <summary>
-    /// L'identifiant unique du type de définition à mettre à jour.
-    /// </summary>
-    /// <example>6a472a58-5d05-4a1b-8b7f-58516dd614c3</example>
-    public Guid TypeDefinitionId { get; init; }
-
-    /// <summary>
     /// Le nouveau libellé du type de paramètre.
     /// </summary>
     /// <example>Type Compte Support</example>

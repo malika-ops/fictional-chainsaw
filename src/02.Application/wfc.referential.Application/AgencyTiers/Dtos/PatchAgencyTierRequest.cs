@@ -4,9 +4,6 @@ namespace wfc.referential.Application.AgencyTiers.Dtos;
 
 public record PatchAgencyTierRequest
 {
-    /// <summary>AgencyTier ID (route).</summary>
-    [Required] public Guid AgencyTierId { get; init; }
-
     /// <summary>Optional new AgencyId.</summary>
     public Guid? AgencyId { get; init; }
 

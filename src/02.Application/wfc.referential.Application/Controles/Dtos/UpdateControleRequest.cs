@@ -4,9 +4,6 @@ namespace wfc.referential.Application.Controles.Dtos;
 
 public record UpdateControleRequest
 {
-    /// <summary>ID of the Controle to update (route).</summary>
-    [Required] public Guid ControleId { get; init; }
-
     /// <summary>Unique code of the Controle.</summary>
     [Required] public string Code { get; init; } = string.Empty;
 

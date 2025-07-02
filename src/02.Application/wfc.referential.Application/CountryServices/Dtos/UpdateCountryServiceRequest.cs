@@ -2,9 +2,6 @@
 
 public record UpdateCountryServiceRequest
 {
-    /// <summary>Country Service association ID (from route).</summary>
-    public Guid CountryServiceId { get; init; }
-
     /// <summary>Country ID for the association.</summary>
     public Guid CountryId { get; init; }
 

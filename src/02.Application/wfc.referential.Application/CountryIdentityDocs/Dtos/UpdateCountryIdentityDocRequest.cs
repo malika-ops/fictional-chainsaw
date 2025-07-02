@@ -2,9 +2,6 @@
 
 public record UpdateCountryIdentityDocRequest
 {
-    /// <summary>Country Identity Document association ID (from route).</summary>
-    public Guid CountryIdentityDocId { get; init; }
-
     /// <summary>Country ID for the association.</summary>
     public Guid CountryId { get; init; }
 

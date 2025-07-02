@@ -3,12 +3,6 @@
 public record UpdateSupportAccountRequest
 {
     /// <summary>
-    /// The ID of the Support Account to update.
-    /// </summary>
-    /// <example>9d805d81-8g38-7d4e-1e0h-81849gg947f7</example>
-    public Guid SupportAccountId { get; init; }
-
-    /// <summary>
     /// A unique code identifier for the Support Account.
     /// </summary>
     /// <example>SUPAC001</example>

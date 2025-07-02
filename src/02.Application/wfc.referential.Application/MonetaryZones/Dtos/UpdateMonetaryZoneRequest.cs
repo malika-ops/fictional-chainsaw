@@ -5,14 +5,6 @@ namespace wfc.referential.Application.MonetaryZones.Dtos;
 public record UpdateMonetaryZoneRequest
 {
     /// <summary>
-    /// The ID of the MonetaryZone to update.
-    /// must be unique.
-    /// </summary>
-    ///<example>United States Dollar</example>
-    [Required]
-    public Guid MonetaryZoneId { get; init; }
-
-    /// <summary>
     /// A short code for the MonetaryZone.  
     /// must be unique.
     /// </summary>

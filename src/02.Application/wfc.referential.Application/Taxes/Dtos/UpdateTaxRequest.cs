@@ -1,12 +1,6 @@
 ﻿namespace wfc.referential.Application.Taxes.Dtos;
 public record UpdateTaxRequest
 {
-    /// <summary>
-    /// The string representation of the Tax's GUID (route param).
-    /// </summary>
-    /// <example>f3dcd2c0-a96e-4b18-8f67-4fd1f03dfabc</example>
-    public Guid TaxId { get; init; }
-
     /// <summary>Tax Code.</summary>
     /// <example>TX002</example>
     public string Code { get; init; } = string.Empty;

@@ -3,12 +3,6 @@
 public record UpdateParamTypeRequest
 {
     /// <summary>
-    /// L'identifiant unique du paramètre à mettre à jour.
-    /// </summary>
-    /// <example>6a472a58-5d05-4a1b-8b7f-58516dd614c3</example>
-    public Guid ParamTypeId { get; init; }
-
-    /// <summary>
     /// La nouvelle valeur du paramètre.
     /// </summary>
     /// <example>Individuel</example>

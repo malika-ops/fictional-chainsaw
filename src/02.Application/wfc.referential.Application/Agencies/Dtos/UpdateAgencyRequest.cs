@@ -4,10 +4,6 @@ namespace wfc.referential.Application.Agencies.Dtos;
 
 public record UpdateAgencyRequest
 {
-
-    /// <summary>Agency GUID (from route).</summary>
-    [Required] public Guid AgencyId { get; init; }
-
     /// <summary>Agency code – exactly 6 digits.</summary>
     [Required] public string Code { get; init; } = string.Empty;
 

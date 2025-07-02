@@ -4,16 +4,21 @@ namespace wfc.referential.Application.Agencies.Dtos;
 
 public record PatchAgencyRequest
 {
-    /// <summary>Agency GUID (route).</summary>
-    [Required] public Guid AgencyId { get; init; }
-
-    /// <summary>6-digit agency code (must stay unique).</summary>
+    /// <summary>
+    /// If provided, updates the code. If omitted, code remains unchanged.
+    /// </summary>
+    /// <example>AGN01</example>
     public string? Code { get; init; }
 
-    /// <summary>Display name.</summary>              
+    /// <summary>
+    /// If provided, updates the name. If omitted, name remains unchanged.
+    /// </summary>
+    /// <example>AGN_NAME</example>             
     public string? Name { get; init; }
+
     /// <summary>Short abbreviation.</summary>        
     public string? Abbreviation { get; init; }
+
     /// <summary>Primary address line.</summary>      
     public string? Address1 { get; init; }
     public string? Address2 { get; init; }

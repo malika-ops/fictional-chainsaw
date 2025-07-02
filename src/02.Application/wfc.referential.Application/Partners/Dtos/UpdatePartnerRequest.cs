@@ -3,12 +3,6 @@
 public record UpdatePartnerRequest
 {
     /// <summary>
-    /// The ID of the Partner to update.
-    /// </summary>
-    /// <example>9d805d81-8g38-7d4e-1e0h-81849gg947f8</example>
-    public Guid PartnerId { get; init; }
-
-    /// <summary>
     /// A unique code identifier for the Partner.
     /// </summary>
     /// <example>PTN001</example>

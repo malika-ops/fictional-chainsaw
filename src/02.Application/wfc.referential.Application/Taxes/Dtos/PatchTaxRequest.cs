@@ -2,12 +2,6 @@
 
 public record PatchTaxRequest
 {
-    /// <summary>
-    /// The string representation of the Tax's GUID (route param).
-    /// </summary>
-    /// <example>9c99aefb-dadc-44f0-9b2e-8f1d3aabc123</example>
-    public Guid TaxId { get; init; }
-
     /// <summary>If provided, updates the tax code. If omitted, the code remains unchanged.</summary>
     public string? Code { get; init; }
 
