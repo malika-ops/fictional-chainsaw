@@ -7,6 +7,7 @@ using wfc.referential.Application.TaxRuleDetails.Commands.PatchTaxRuleDetail;
 using wfc.referential.Application.TaxRuleDetails.Commands.UpdateTaxRuleDetail;
 using wfc.referential.Application.TaxRuleDetails.Dtos;
 using wfc.referential.Application.TaxRuleDetails.Queries.GetFiltredTaxeRuleDetails;
+using wfc.referential.Application.TaxRuleDetails.Queries.GetTaxRuleDetailById;
 
 namespace wfc.referential.API.Endpoints;
 
@@ -29,9 +30,17 @@ public static class TaxRuleDetailEndpoints
             .WithName("GetFiltredTaxRuleDetails")
             .WithSummary("Get paginated list of tax rule details")
             .WithDescription("Returns a paginated list of tax rule details. Supports optional filtering by rule ID, tax ID, status, and other rule configuration parameters.")
-            .Produces<PagedResult<GetFiltredTaxRuleDetailsResponse>>(200)
+            .Produces<PagedResult<GetTaxRuleDetailsResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{taxRuleDetailId:guid}", GetTaxRuleDetailById)
+            .WithName("GetTaxRuleDetailById")
+            .WithSummary("Get a TaxRuleDetail by GUID")
+            .WithDescription("Retrieves the TaxRuleDetail identified by taxRuleDetailId.")
+            .Produces<GetTaxRuleDetailsResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{taxRuleDetailId:guid}", UpdateTaxRuleDetail)
             .WithName("UpdateTaxRuleDetail")
@@ -56,6 +65,15 @@ public static class TaxRuleDetailEndpoints
             .Produces<bool>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(404);
+    }
+
+    internal static async Task<IResult> GetTaxRuleDetailById(
+        Guid taxRuleDetailId,
+        IMediator mediator)
+    {
+        var query = new GetTaxRuleDetailByIdQuery { TaxRuleDetailId = taxRuleDetailId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreateTaxRuleDetail(

@@ -13,7 +13,7 @@ public class ParamTypeMappings
             .NewConfig()
             .MapWith(src => src.Value);
 
-        TypeAdapterConfig<ParamType, GetFiltredParamTypesResponse>
+        TypeAdapterConfig<ParamType, ParamTypesResponse>
             .NewConfig()
             .Map(d => d.ParamTypeId, s => s.Id.Value);
 

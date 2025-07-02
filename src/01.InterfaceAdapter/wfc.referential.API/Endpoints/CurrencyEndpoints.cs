@@ -6,6 +6,7 @@ using wfc.referential.Application.Currencies.Commands.DeleteCurrency;
 using wfc.referential.Application.Currencies.Commands.PatchCurrency;
 using wfc.referential.Application.Currencies.Commands.UpdateCurrency;
 using wfc.referential.Application.Currencies.Dtos;
+using wfc.referential.Application.Currencies.Queries.GetCurrencyById;
 using wfc.referential.Application.Currencies.Queries.GetFiltredCurrencies;
 
 namespace wfc.referential.API.Endpoints;
@@ -32,6 +33,14 @@ public static class CurrencyEndpoints
             .Produces<PagedResult<GetCurrenciesResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{currencyId:guid}", GetCurrencyById)
+            .WithName("GetCurrencyById")
+            .WithSummary("Get a Currency by GUID")
+            .WithDescription("Retrieves the Currency identified by currencyId.")
+            .Produces<GetCurrenciesResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{currencyId:guid}", UpdateCurrency)
             .WithName("UpdateCurrency")
@@ -75,6 +84,15 @@ public static class CurrencyEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredCurrenciesQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetCurrencyById(
+        Guid currencyId,
+        IMediator mediator)
+    {
+        var query = new GetCurrencyByIdQuery { CurrencyId = currencyId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

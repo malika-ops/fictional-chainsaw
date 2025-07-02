@@ -6,6 +6,7 @@ using wfc.referential.Application.PartnerCountries.Commands.DeletePartnerCountry
 using wfc.referential.Application.PartnerCountries.Commands.UpdatePartnerCountry;
 using wfc.referential.Application.PartnerCountries.Dtos;
 using wfc.referential.Application.PartnerCountries.Queries.GetFiltredPartnerCountries;
+using wfc.referential.Application.PartnerCountries.Queries.GetPartnerCountryById;
 
 namespace wfc.referential.API.Endpoints;
 
@@ -33,6 +34,14 @@ public static class PartnerCountryEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
 
+        group.MapGet("/{partnerCountryId:guid}", GetPartnerCountryById)
+            .WithName("GetPartnerCountryById")
+            .WithSummary("Get a PartnerCountry by GUID")
+            .WithDescription("Retrieves the PartnerCountry identified by partnerCountryId.")
+            .Produces<PartnerCountryResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
+
         group.MapPut("/{partnerCountryId:guid}", UpdatePartnerCountry)
             .WithName("UpdatePartnerCountry")
             .WithSummary("Update an existing Partner–Country link")
@@ -47,7 +56,17 @@ public static class PartnerCountryEndpoints
             .WithSummary("Soft-delete a Partner–Country mapping")
             .WithDescription("Sets IsEnabled = false on the specified PartnerCountry.")
             .Produces<bool>(200)
-            .ProducesValidationProblem(400);
+            .ProducesValidationProblem(400)
+            .Produces(404);
+    }
+
+    internal static async Task<IResult> GetPartnerCountryById(
+        Guid partnerCountryId,
+        IMediator mediator)
+    {
+        var query = new GetPartnerCountryByIdQuery { PartnerCountryId = partnerCountryId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreatePartnerCountry(

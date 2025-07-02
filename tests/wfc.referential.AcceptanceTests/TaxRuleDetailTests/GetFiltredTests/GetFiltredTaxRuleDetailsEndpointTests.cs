@@ -109,10 +109,10 @@ public class GetFiltredTaxRuleDetailsEndpointTests : IClassFixture<WebApplicatio
                             It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new PagedResult<TaxRuleDetail>( new List<TaxRuleDetail> { filteredTaxRuleDetail },1,1,10 ));
 
-        _cacheMock.Setup(c => c.GetAsync<PagedResult<GetFiltredTaxRuleDetailsResponse>>(
+        _cacheMock.Setup(c => c.GetAsync<PagedResult<GetTaxRuleDetailsResponse>>(
                                 It.IsAny<string>(),
                                 It.IsAny<CancellationToken>()))
-                  .ReturnsAsync((PagedResult<GetFiltredTaxRuleDetailsResponse>)null);
+                  .ReturnsAsync((PagedResult<GetTaxRuleDetailsResponse>)null);
 
         _cacheMock.Setup(c => c.SetAsync(
                                 It.IsAny<string>(),

@@ -12,7 +12,7 @@ public class TypeDefinitionMappings
             .NewConfig()
             .MapWith(src => src.Value);
 
-        TypeAdapterConfig<TypeDefinition, GetFiltredTypeDefinitionsResponse>
+        TypeAdapterConfig<TypeDefinition, GetTypeDefinitionsResponse>
             .NewConfig()
             .Map(d => d.TypeDefinitionId, s => s.Id.Value);
     }

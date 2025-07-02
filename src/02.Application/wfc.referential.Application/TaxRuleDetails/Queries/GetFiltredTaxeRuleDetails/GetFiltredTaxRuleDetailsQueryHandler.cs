@@ -7,10 +7,10 @@ using wfc.referential.Application.TaxRuleDetails.Queries.GetFiltredTaxeRuleDetai
 
 namespace wfc.referential.Application.TaxRuleDetails.Queries.GetFiltredTaxRuleDetails;
 
-public class GetFiltredTaxRuleDetailsQueryHandler(ITaxRuleDetailRepository _taxRuleDetailsRepository) : IQueryHandler<GetFiltredTaxRuleDetailsQuery, PagedResult<GetFiltredTaxRuleDetailsResponse>>
+public class GetFiltredTaxRuleDetailsQueryHandler(ITaxRuleDetailRepository _taxRuleDetailsRepository) : IQueryHandler<GetFiltredTaxRuleDetailsQuery, PagedResult<GetTaxRuleDetailsResponse>>
 {
 
-    public async Task<PagedResult<GetFiltredTaxRuleDetailsResponse>> Handle(
+    public async Task<PagedResult<GetTaxRuleDetailsResponse>> Handle(
         GetFiltredTaxRuleDetailsQuery request,
         CancellationToken cancellationToken)
     {
@@ -21,8 +21,8 @@ public class GetFiltredTaxRuleDetailsQueryHandler(ITaxRuleDetailRepository _taxR
            request.PageSize,
            cancellationToken);
 
-        return new PagedResult<GetFiltredTaxRuleDetailsResponse>(
-            paged.Items.Adapt<List<GetFiltredTaxRuleDetailsResponse>>(),
+        return new PagedResult<GetTaxRuleDetailsResponse>(
+            paged.Items.Adapt<List<GetTaxRuleDetailsResponse>>(),
             paged.TotalCount,
             paged.PageNumber,
             paged.PageSize);

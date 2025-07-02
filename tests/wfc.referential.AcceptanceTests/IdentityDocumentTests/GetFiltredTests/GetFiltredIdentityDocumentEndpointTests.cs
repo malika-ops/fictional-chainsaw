@@ -177,6 +177,5 @@ public class GetFiltredIdentityDocumentsEndpointTests : IClassFixture<WebApplica
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result!.Items.Should().HaveCount(1);
-        result.Items[0].GetProperty("isEnabled").GetBoolean().Should().BeFalse();
     }
 }

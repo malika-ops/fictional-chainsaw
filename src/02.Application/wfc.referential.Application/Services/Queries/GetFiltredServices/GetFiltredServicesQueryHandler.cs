@@ -8,17 +8,17 @@ using wfc.referential.Application.Services.Dtos;
 namespace wfc.referential.Application.Services.Queries.GetFiltredServices;
 
 public class GetFiltredServicesQueryHandler(IServiceRepository serviceRepository, ICacheService cacheService)
-    : IQueryHandler<GetFiltredServicesQuery, PagedResult<GetFiltredServicesResponse>>
+    : IQueryHandler<GetFiltredServicesQuery, PagedResult<GetServicesResponse>>
 {
-    public async Task<PagedResult<GetFiltredServicesResponse>> Handle(GetFiltredServicesQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<GetServicesResponse>> Handle(GetFiltredServicesQuery request, CancellationToken cancellationToken)
     {
-        var cached = await cacheService.GetAsync<PagedResult<GetFiltredServicesResponse>>(request.CacheKey, cancellationToken);
+        var cached = await cacheService.GetAsync<PagedResult<GetServicesResponse>>(request.CacheKey, cancellationToken);
         if (cached is not null)
             return cached;
 
         var services = await serviceRepository.GetPagedByCriteriaAsync(request, request.PageNumber,request.PageSize, cancellationToken);
-        var result = new PagedResult<GetFiltredServicesResponse>(
-            services.Items.Adapt<List<GetFiltredServicesResponse>>(),
+        var result = new PagedResult<GetServicesResponse>(
+            services.Items.Adapt<List<GetServicesResponse>>(),
             services.TotalCount, request.PageNumber, request.PageSize);
 
         return result;

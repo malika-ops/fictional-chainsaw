@@ -81,7 +81,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act
         var response = await _client.GetAsync($"/api/paramtypes?PageNumber=1&PageSize=10&typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -113,7 +113,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act
         var response = await _client.GetAsync($"/api/paramtypes?Value=Value1&typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -140,7 +140,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act
         var response = await _client.GetAsync($"/api/paramtypes?IsEnabled=false&typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -169,7 +169,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act
         var response = await _client.GetAsync($"/api/paramtypes?typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -198,7 +198,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act
         var response = await _client.GetAsync($"/api/paramtypes?PageNumber=2&PageSize=10&typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -231,7 +231,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act
         var response = await _client.GetAsync($"/api/paramtypes?typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -260,7 +260,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act
         var response = await _client.GetAsync($"/api/paramtypes?Value=NONEXISTENT&typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -291,7 +291,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act - Search with multiple criteria
         var response = await _client.GetAsync($"/api/paramtypes?Value=TestValue&IsEnabled=true&typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -325,7 +325,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act
         var response = await _client.GetAsync($"/api/paramtypes?{filterType}={filterValue}&typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -354,7 +354,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         // Act
         var response = await _client.GetAsync($"/api/paramtypes?typeDefinitionId={typeDefinitionId.Value}");
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<GetFiltredParamTypesResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ParamTypesResponse>>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

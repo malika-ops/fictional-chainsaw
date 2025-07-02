@@ -8,6 +8,7 @@ using wfc.referential.Application.SupportAccounts.Commands.UpdateSupportAccount;
 using wfc.referential.Application.SupportAccounts.Commands.UpdateBalance;
 using wfc.referential.Application.SupportAccounts.Dtos;
 using wfc.referential.Application.SupportAccounts.Queries.GetFiltredSupportAccounts;
+using wfc.referential.Application.SupportAccounts.Queries.GetSupportAccountById;
 
 namespace wfc.referential.API.Endpoints;
 
@@ -34,6 +35,14 @@ public static class SupportAccountEndpoints
             .Produces<PagedResult<GetSupportAccountsResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{supportAccountId:guid}", GetSupportAccountById)
+            .WithName("GetSupportAccountById")
+            .WithSummary("Get a SupportAccount by GUID")
+            .WithDescription("Retrieves the SupportAccount identified by supportAccountId.")
+            .Produces<GetSupportAccountsResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{supportAccountId:guid}", UpdateSupportAccount)
             .WithName("UpdateSupportAccount")
@@ -86,6 +95,15 @@ public static class SupportAccountEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredSupportAccountsQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetSupportAccountById(
+        Guid supportAccountId,
+        IMediator mediator)
+    {
+        var query = new GetSupportAccountByIdQuery { SupportAccountId = supportAccountId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

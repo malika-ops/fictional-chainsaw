@@ -6,6 +6,7 @@ using wfc.referential.Application.Countries.Commands.DeleteCountry;
 using wfc.referential.Application.Countries.Commands.PatchCountry;
 using wfc.referential.Application.Countries.Commands.UpdateCountry;
 using wfc.referential.Application.Countries.Dtos;
+using wfc.referential.Application.Countries.Queries.GetCountryById;
 using wfc.referential.Application.Countries.Queries.GetFiltredCounties;
 
 namespace wfc.referential.API.Endpoints;
@@ -33,6 +34,14 @@ public static class CountryEndpoints
             .Produces<PagedResult<GetCountriesResponce>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{countryId:guid}", GetCountryById)
+            .WithName("GetCountryById")
+            .WithSummary("Get a Country by GUID")
+            .WithDescription("Retrieves the Country identified by countryId.")
+            .Produces<GetCountriesResponce>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{countryId:guid}", UpdateCountry)
             .WithName("UpdateCountry")
@@ -76,6 +85,15 @@ public static class CountryEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredCountriesQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetCountryById(
+        Guid countryId,
+        IMediator mediator)
+    {
+        var query = new GetCountryByIdQuery { CountryId = countryId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

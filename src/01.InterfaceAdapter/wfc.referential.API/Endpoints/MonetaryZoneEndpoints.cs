@@ -6,6 +6,7 @@ using wfc.referential.Application.MonetaryZones.Commands.DeleteMonetaryZone;
 using wfc.referential.Application.MonetaryZones.Commands.PatchMonetaryZone;
 using wfc.referential.Application.MonetaryZones.Commands.UpdateMonetaryZone;
 using wfc.referential.Application.MonetaryZones.Dtos;
+using wfc.referential.Application.MonetaryZones.Queries.GetMonetaryZoneById;
 using wfc.referential.Application.MonetaryZones.Queries.GetFiltredMonetaryZones;
 
 namespace wfc.referential.API.Features;
@@ -33,6 +34,14 @@ public static class MonetaryZoneEndpoints
             .Produces<PagedResult<MonetaryZoneResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{monetaryZoneId:guid}", GetMonetaryZoneById)
+            .WithName("GetMonetaryZoneById")
+            .WithSummary("Get a MonetaryZone by GUID")
+            .WithDescription("Retrieves the MonetaryZone identified by monetaryZoneId.")
+            .Produces<MonetaryZoneResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{monetaryZoneId:guid}", UpdateMonetaryZone)
             .WithName("UpdateMonetaryZone")
@@ -76,6 +85,15 @@ public static class MonetaryZoneEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredMonetaryZonesQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetMonetaryZoneById(
+        Guid monetaryZoneId,
+        IMediator mediator)
+    {
+        var query = new GetMonetaryZoneByIdQuery { MonetaryZoneId = monetaryZoneId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

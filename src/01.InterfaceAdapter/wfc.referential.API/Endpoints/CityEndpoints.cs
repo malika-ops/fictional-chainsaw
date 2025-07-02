@@ -6,6 +6,7 @@ using wfc.referential.Application.Cities.Commands.DeleteCity;
 using wfc.referential.Application.Cities.Commands.PatchCity;
 using wfc.referential.Application.Cities.Commands.UpdateCity;
 using wfc.referential.Application.Cities.Dtos;
+using wfc.referential.Application.Cities.Queries.GetCityById;
 using wfc.referential.Application.Cities.Queries.GetFiltredCities;
 
 namespace wfc.referential.API.Endpoints;
@@ -32,6 +33,14 @@ public static class CityEndpoints
             .Produces<PagedResult<GetCitiyResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{cityId:guid}", GetCityById)
+            .WithName("GetCityById")
+            .WithSummary("Get a City by GUID")
+            .WithDescription("Retrieves the City identified by cityId.")
+            .Produces<GetCitiyResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{cityId:guid}", UpdateCity)
             .WithName("UpdateCity")
@@ -72,6 +81,15 @@ public static class CityEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredCitiesQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetCityById(
+        Guid cityId,
+        IMediator mediator)
+    {
+        var query = new GetCityByIdQuery { CityId = cityId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

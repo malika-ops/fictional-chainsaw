@@ -6,7 +6,7 @@ using wfc.referential.Domain.TaxRuleDetailAggregate;
 
 namespace wfc.referential.Application.TaxRuleDetails.Queries.GetFiltredTaxeRuleDetails;
 
-public record GetFiltredTaxRuleDetailsQuery : IQuery<PagedResult<GetFiltredTaxRuleDetailsResponse>>, ICacheableQuery
+public record GetFiltredTaxRuleDetailsQuery : IQuery<PagedResult<GetTaxRuleDetailsResponse>>, ICacheableQuery
 {
     public Guid? CorridorId { get; init; }
     public Guid? TaxId { get; init; }

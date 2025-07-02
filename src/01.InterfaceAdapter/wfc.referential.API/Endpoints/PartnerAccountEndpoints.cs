@@ -8,6 +8,7 @@ using wfc.referential.Application.PartnerAccounts.Commands.UpdatePartnerAccount;
 using wfc.referential.Application.PartnerAccounts.Commands.UpdateBalance;
 using wfc.referential.Application.PartnerAccounts.Dtos;
 using wfc.referential.Application.PartnerAccounts.Queries.GetFiltredPartnerAccounts;
+using wfc.referential.Application.PartnerAccounts.Queries.GetPartnerAccountById;
 
 namespace wfc.referential.API.Endpoints;
 
@@ -34,6 +35,14 @@ public static class PartnerAccountEndpoints
             .Produces<PagedResult<PartnerAccountResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{partnerAccountId:guid}", GetPartnerAccountById)
+            .WithName("GetPartnerAccountById")
+            .WithSummary("Get a PartnerAccount by GUID")
+            .WithDescription("Retrieves the PartnerAccount identified by partnerAccountId.")
+            .Produces<PartnerAccountResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{partnerAccountId:guid}", UpdatePartnerAccount)
             .WithName("UpdatePartnerAccount")
@@ -86,6 +95,15 @@ public static class PartnerAccountEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredPartnerAccountsQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetPartnerAccountById(
+        Guid partnerAccountId,
+        IMediator mediator)
+    {
+        var query = new GetPartnerAccountByIdQuery { PartnerAccountId = partnerAccountId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

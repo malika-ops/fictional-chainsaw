@@ -11,7 +11,7 @@ public class TaxRuleDetailMappings
 {
     public static void Register()
     {
-        TypeAdapterConfig<TaxRuleDetail, GetFiltredTaxRuleDetailsResponse>
+        TypeAdapterConfig<TaxRuleDetail, GetTaxRuleDetailsResponse>
             .NewConfig()
             .Map(dest => dest.TaxRuleDetailsId, src => src.Id.Value);
 

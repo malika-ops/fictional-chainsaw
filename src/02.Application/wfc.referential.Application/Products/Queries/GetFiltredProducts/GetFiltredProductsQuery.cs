@@ -6,7 +6,7 @@ using wfc.referential.Domain.ProductAggregate;
 
 namespace wfc.referential.Application.Products.Queries.GetFiltredProducts;
 
-public record GetFiltredProductsQuery : IQuery<PagedResult<GetFiltredProductsResponse>>, ICacheableQuery
+public record GetFiltredProductsQuery : IQuery<PagedResult<GetProdcutsResponse>>, ICacheableQuery
 {
     
     public int PageNumber { get; set; }

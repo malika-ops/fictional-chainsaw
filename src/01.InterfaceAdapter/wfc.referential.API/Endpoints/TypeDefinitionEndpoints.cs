@@ -6,6 +6,7 @@ using wfc.referential.Application.TypeDefinitions.Commands.DeleteTypeDefinition;
 using wfc.referential.Application.TypeDefinitions.Commands.PatchTypeDefinition;
 using wfc.referential.Application.TypeDefinitions.Commands.UpdateTypeDefinition;
 using wfc.referential.Application.TypeDefinitions.Dtos;
+using wfc.referential.Application.TypeDefinitions.Queries.GetTypeDefinitionById;
 using wfc.referential.Application.TypeDefinitions.Queries.GetFiltredTypeDefinitions;
 
 namespace wfc.referential.API.Endpoints;
@@ -30,9 +31,17 @@ public static class TypeDefinitionEndpoints
             .WithName("GetFiltredTypeDefinitions")
             .WithSummary("Get paginated list of TypeDefinitions")
             .WithDescription("Returns a paginated list of TypeDefinitions. Supports optional filtering by Libelle and description.")
-            .Produces<PagedResult<GetFiltredTypeDefinitionsResponse>>(200)
+            .Produces<PagedResult<GetTypeDefinitionsResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{typeDefinitionId:guid}", GetTypeDefinitionById)
+            .WithName("GetTypeDefinitionById")
+            .WithSummary("Get a TypeDefinition by GUID")
+            .WithDescription("Retrieves the TypeDefinition identified by typeDefinitionId.")
+            .Produces<GetTypeDefinitionsResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{typeDefinitionId:guid}", UpdateTypeDefinition)
             .WithName("UpdateTypeDefinition")
@@ -61,6 +70,15 @@ public static class TypeDefinitionEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(404)
             .ProducesProblem(409);
+    }
+
+    internal static async Task<IResult> GetTypeDefinitionById(
+        Guid typeDefinitionId,
+        IMediator mediator)
+    {
+        var query = new GetTypeDefinitionByIdQuery { TypeDefinitionId = typeDefinitionId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreateTypeDefinition(

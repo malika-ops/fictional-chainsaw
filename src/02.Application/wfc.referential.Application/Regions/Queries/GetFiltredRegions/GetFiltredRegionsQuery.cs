@@ -7,7 +7,7 @@ using wfc.referential.Domain.RegionAggregate;
 
 namespace wfc.referential.Application.RegionManagement.Queries.GetFiltredRegions;
 
-public record GetFiltredRegionsQuery : IQuery<PagedResult<GetFiltredRegionsResponse>>, ICacheableQuery
+public record GetFiltredRegionsQuery : IQuery<PagedResult<GetRegionsResponse>>, ICacheableQuery
 {
     
     public int PageNumber { get; set; }

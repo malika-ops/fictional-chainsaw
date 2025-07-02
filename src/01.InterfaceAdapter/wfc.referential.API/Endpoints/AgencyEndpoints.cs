@@ -6,6 +6,7 @@ using wfc.referential.Application.Agencies.Commands.DeleteAgency;
 using wfc.referential.Application.Agencies.Commands.PatchAgency;
 using wfc.referential.Application.Agencies.Commands.UpdateAgency;
 using wfc.referential.Application.Agencies.Dtos;
+using wfc.referential.Application.Agencies.Queries.GetAgencyById;
 using wfc.referential.Application.Agencies.Queries.GetFiltredAgencies;
 
 namespace wfc.referential.API.Endpoints;
@@ -34,13 +35,13 @@ public static class AgencyEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
 
-        //group.MapGet("/{id:guid}", GetAgencyById)
-        //    .WithName("GetAgencyById")
-        //    .WithSummary("Get agency by ID")
-        //    .WithDescription("Retrieves a specific agency by its unique identifier")
-        //    .Produces<AgencyDto>(200)
-        //    .Produces(404)
-        //    .ProducesValidationProblem(400);
+        group.MapGet("/{agencyId:guid}", GetAgencyById)
+            .WithName("GetAgencyById")
+            .WithSummary("Get an Agency by GUID")
+            .WithDescription("Retrieves the Agency identified by agencyId.")
+            .Produces<GetAgenciesResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{agencyId:guid}", UpdateAgency)
             .WithName("UpdateAgency")
@@ -86,14 +87,14 @@ public static class AgencyEndpoints
         return Results.Ok(result);
     }
 
-    //internal static async Task<IResult> GetAgencyById(
-    //    Guid id,
-    //    IMediator mediator)
-    //{
-    //    var query = new GetAgencyByIdQuery { Id = id };
-    //    var result = await mediator.Send(query);
-    //    return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound();
-    //}
+    internal static async Task<IResult> GetAgencyById(
+        Guid agencyId,
+        IMediator mediator)
+    {
+        var query = new GetAgencyByIdQuery { AgencyId = agencyId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
 
     internal static async Task<IResult> UpdateAgency(
         Guid agencyId,

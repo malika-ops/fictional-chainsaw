@@ -6,6 +6,7 @@ using wfc.referential.Application.Partners.Commands.DeletePartner;
 using wfc.referential.Application.Partners.Commands.PatchPartner;
 using wfc.referential.Application.Partners.Commands.UpdatePartner;
 using wfc.referential.Application.Partners.Dtos;
+using wfc.referential.Application.Partners.Queries.GetPartnerById;
 using wfc.referential.Application.Partners.Queries.GetFiltredPartners;
 
 namespace wfc.referential.API.Features;
@@ -33,6 +34,14 @@ public static class PartnerEndpoints
             .Produces<PagedResult<GetPartnersResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{partnerId:guid}", GetPartnerById)
+            .WithName("GetPartnerById")
+            .WithSummary("Get a Partner by GUID")
+            .WithDescription("Retrieves the Partner identified by partnerId.")
+            .Produces<GetPartnersResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{partnerId:guid}", UpdatePartner)
             .WithName("UpdatePartner")
@@ -77,6 +86,15 @@ public static class PartnerEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredPartnersQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetPartnerById(
+        Guid partnerId,
+        IMediator mediator)
+    {
+        var query = new GetPartnerByIdQuery { PartnerId = partnerId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

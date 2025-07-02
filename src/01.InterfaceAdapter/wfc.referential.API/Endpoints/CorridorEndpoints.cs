@@ -6,6 +6,7 @@ using wfc.referential.Application.Corridors.Commands.DeleteCorridor;
 using wfc.referential.Application.Corridors.Commands.PatchCorridor;
 using wfc.referential.Application.Corridors.Commands.UpdateCorridor;
 using wfc.referential.Application.Corridors.Dtos;
+using wfc.referential.Application.Corridors.Queries.GetCorridorById;
 using wfc.referential.Application.Corridors.Queries.GetFiltredCorridors;
 
 namespace wfc.referential.API.Endpoints;
@@ -33,6 +34,14 @@ public static class CorridorEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
 
+        group.MapGet("/{corridorId:guid}", GetCorridorById)
+            .WithName("GetCorridorById")
+            .WithSummary("Get a Corridor by GUID")
+            .WithDescription("Retrieves the Corridor identified by corridorId.")
+            .Produces<GetCorridorResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
+
         group.MapPut("/{corridorId:guid}", UpdateCorridor)
             .WithName("UpdateCorridor")
             .WithSummary("Fully update a Corridor's properties")
@@ -56,6 +65,15 @@ public static class CorridorEndpoints
             .Produces<bool>(200)
             .ProducesValidationProblem(400)
             .Produces(404);
+    }
+
+    internal static async Task<IResult> GetCorridorById(
+        Guid corridorId,
+        IMediator mediator)
+    {
+        var query = new GetCorridorByIdQuery { CorridorId = corridorId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreateCorridor(

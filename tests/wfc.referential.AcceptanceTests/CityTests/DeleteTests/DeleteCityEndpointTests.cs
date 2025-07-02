@@ -1,19 +1,21 @@
-﻿using System.Linq.Expressions;
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
+﻿using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using wfc.referential.Application.Constants;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
+using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.RegionAggregate;
+using wfc.referential.Domain.SectorAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CityTests.DeleteTests;
@@ -23,7 +25,10 @@ public class DeleteCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
     private readonly HttpClient _client;
     private readonly Mock<ICityRepository> _repoMock = new();
     private readonly Mock<IAgencyRepository> _repoAgencyMock = new();
+    private readonly Mock<ISectorRepository> _sectorRepositoryMock = new();
+    private readonly Mock<ICorridorRepository> _corridorRepositoryMock = new();
     private readonly Mock<ICacheService> _cacheMock = new();
+
     public DeleteCityEndpointTests(WebApplicationFactory<Program> factory)
     {
         // Clone the factory and customize the host
@@ -36,18 +41,21 @@ public class DeleteCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
                 // 🧹 Remove concrete registrations that hit the DB / Redis
                 services.RemoveAll<ICityRepository>();
                 services.RemoveAll<IAgencyRepository>();
+                services.RemoveAll<ISectorRepository>();
+                services.RemoveAll<ICorridorRepository>();
                 services.RemoveAll<ICacheService>();
 
                 // 🔌 Plug mocks back in
                 services.AddSingleton(_repoMock.Object);
                 services.AddSingleton(_repoAgencyMock.Object);
+                services.AddSingleton(_sectorRepositoryMock.Object);
+                services.AddSingleton(_corridorRepositoryMock.Object);
                 services.AddSingleton(_cacheMock.Object);
             });
         });
 
         _client = customisedFactory.CreateClient();
     }
-
 
     [Fact(DisplayName = "DELETE /api/cities/{id} returns 404 when city does not exist")]
     public async Task Delete_ShouldReturn404_WhenCityDoesNotExist()
@@ -65,7 +73,6 @@ public class DeleteCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
         // Et on ne doit pas appeler Patch ni Cache
         _repoMock.Verify(r => r.Update(It.IsAny<City>()), Times.Never);
-
     }
 
     [Fact(DisplayName = "DELETE /api/cities/{id} returns 400 when city is already assigned to an agency")]
@@ -81,31 +88,31 @@ public class DeleteCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         _repoAgencyMock
             .Setup(c => c.GetByConditionAsync(It.IsAny<Expression<Func<Agency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Agency> {Agency.Create(
-            id: AgencyId.Of(Guid.NewGuid()),
-            code: "112233",
-            name: "Existing",
-            abbreviation: "EXI",
-            address1: "addr",
-            address2: null,
-            phone: "000",
-            fax: "",
-            accountingSheetName: "sheet",
-            accountingAccountNumber: "acc",
-            postalCode: "10000",
-            latitude: null,
-            longitude: null,
-            cashTransporter: null,
-            expenseFundAccountingSheet: null,
-            expenseFundAccountNumber: null,
-            madAccount: null,
-            fundingThreshold: null,
-            cityId: CityId.Of(Guid.NewGuid()),
-            sectorId: null,
-            agencyTypeId: null,
-            tokenUsageStatusId: null,
-            fundingTypeId: null,
-            partnerId: null,
-            supportAccountId: null)});
+                id: AgencyId.Of(Guid.NewGuid()),
+                code: "112233",
+                name: "Existing",
+                abbreviation: "EXI",
+                address1: "addr",
+                address2: null,
+                phone: "000",
+                fax: "",
+                accountingSheetName: "sheet",
+                accountingAccountNumber: "acc",
+                postalCode: "10000",
+                latitude: null,
+                longitude: null,
+                cashTransporter: null,
+                expenseFundAccountingSheet: null,
+                expenseFundAccountNumber: null,
+                madAccount: null,
+                fundingThreshold: null,
+                cityId: CityId.Of(Guid.NewGuid()),
+                sectorId: null,
+                agencyTypeId: null,
+                tokenUsageStatusId: null,
+                fundingTypeId: null,
+                partnerId: null,
+                supportAccountId: null)});
 
         var response = await _client.DeleteAsync($"/api/cities/{cityId}");
         var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
@@ -133,7 +140,18 @@ public class DeleteCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<CityId>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(city);
 
+        _repoAgencyMock.Setup(r => r.GetByConditionAsync(It.IsAny<Expression<Func<Agency, bool>>>(), It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(new List<Agency>());
+
+        _sectorRepositoryMock.Setup(r => r.GetByConditionAsync(It.IsAny<Expression<Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
+                             .ReturnsAsync(new List<Sector>());
+
+        _corridorRepositoryMock.Setup(r => r.GetByConditionAsync(It.IsAny<Expression<Func<Corridor, bool>>>(), It.IsAny<CancellationToken>()))
+                               .ReturnsAsync(new List<Corridor>());
+
         _repoMock.Setup(r => r.Update(It.IsAny<City>()));
+        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()));
+
         // Act
         var response = await _client.DeleteAsync($"/api/cities/{cityId}");
 
@@ -141,9 +159,7 @@ public class DeleteCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         _repoMock.Verify(r => r.Update(It.Is<City>(c => c.IsEnabled == false)), Times.Once);
-
-
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _cacheMock.Verify(c => c.RemoveByPrefixAsync(CacheKeys.City.Prefix, It.IsAny<CancellationToken>()), Times.Once);
     }
-
 }

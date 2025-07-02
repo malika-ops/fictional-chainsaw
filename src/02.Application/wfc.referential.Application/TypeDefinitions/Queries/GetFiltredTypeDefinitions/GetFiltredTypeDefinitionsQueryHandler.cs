@@ -7,7 +7,7 @@ using wfc.referential.Application.TypeDefinitions.Dtos;
 
 namespace wfc.referential.Application.TypeDefinitions.Queries.GetFiltredTypeDefinitions;
 
-public class GetFiltredTypeDefinitionsQueryHandler : IQueryHandler<GetFiltredTypeDefinitionsQuery, PagedResult<GetFiltredTypeDefinitionsResponse>>
+public class GetFiltredTypeDefinitionsQueryHandler : IQueryHandler<GetFiltredTypeDefinitionsQuery, PagedResult<GetTypeDefinitionsResponse>>
 {
     private readonly ITypeDefinitionRepository _repo;
     private readonly ICacheService _cacheService;
@@ -18,7 +18,7 @@ public class GetFiltredTypeDefinitionsQueryHandler : IQueryHandler<GetFiltredTyp
         _cacheService = cacheService;
     }
 
-    public async Task<PagedResult<GetFiltredTypeDefinitionsResponse>> Handle(GetFiltredTypeDefinitionsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<GetTypeDefinitionsResponse>> Handle(GetFiltredTypeDefinitionsQuery request, CancellationToken cancellationToken)
     {
         var paged = await _repo.GetPagedByCriteriaAsync(
             request,
@@ -26,8 +26,8 @@ public class GetFiltredTypeDefinitionsQueryHandler : IQueryHandler<GetFiltredTyp
             request.PageSize,
             cancellationToken);
 
-        return new PagedResult<GetFiltredTypeDefinitionsResponse>(
-            paged.Items.Adapt<List<GetFiltredTypeDefinitionsResponse>>(),
+        return new PagedResult<GetTypeDefinitionsResponse>(
+            paged.Items.Adapt<List<GetTypeDefinitionsResponse>>(),
             paged.TotalCount,
             paged.PageNumber,
             paged.PageSize);

@@ -6,11 +6,11 @@ using static BuildingBlocks.Core.Behaviors.Handlers.GlobalExceptionHandler;
 
 namespace wfc.referential.API;
 
-public static class DependencyInjection 
+public static class DependencyInjection
 {
     public static IHostApplicationBuilder AddApiServices(this IHostApplicationBuilder builder, IConfiguration configuration)
     {
-     
+
         builder.Services.AddSingleton<Encryption>();
 
         var redisConnection = configuration.GetConnectionString("Redis");
@@ -38,7 +38,7 @@ public static class DependencyInjection
 
     public static WebApplication UseApiServices(this WebApplication app)
     {
-        app.UseExceptionHandler(opt => { });                                                                                                                  
+        app.UseExceptionHandler(opt => { });
 
         return app;
     }
@@ -52,11 +52,12 @@ public static class DependencyInjection
         app.MapAffiliateEndpoints();
         app.MapBankEndpoints();
         app.MapContractEndpoints();
+        app.MapContractDetailsEndpoints();
         app.MapCountryIdentityDocEndpoints();
-        app.MapIdentityDocumentEndpoints(); 
+        app.MapIdentityDocumentEndpoints();
         app.MapServiceEndpoints();
         app.MapParamTypeEndpoints();
-        app.MapPartnerAccountEndpoints();   
+        app.MapPartnerAccountEndpoints();
         app.MapPartnerCountryEndpoints();
         app.MapPartnerEndpoints();
         app.MapCountryServiceEndpoints();
@@ -72,6 +73,8 @@ public static class DependencyInjection
         app.MapPricingEndpoints();
         app.MapProductEndpoints();
         app.MapTypeDefinitionEndpoints();
+        app.MapControleEndpoints();
+        app.MapServiceControleEndpoints();
 
         return app;
     }

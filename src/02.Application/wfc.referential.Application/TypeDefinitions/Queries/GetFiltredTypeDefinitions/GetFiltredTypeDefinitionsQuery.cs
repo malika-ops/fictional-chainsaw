@@ -5,7 +5,7 @@ using wfc.referential.Domain.TypeDefinitionAggregate;
 
 namespace wfc.referential.Application.TypeDefinitions.Queries.GetFiltredTypeDefinitions;
 
-public record GetFiltredTypeDefinitionsQuery : IQuery<PagedResult<GetFiltredTypeDefinitionsResponse>>
+public record GetFiltredTypeDefinitionsQuery : IQuery<PagedResult<GetTypeDefinitionsResponse>>
 {
     public int PageNumber { get; init; } = 1;
     public int PageSize { get; init; } = 10;

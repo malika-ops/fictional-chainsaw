@@ -5,12 +5,12 @@ using wfc.referential.Domain.TypeDefinitionAggregate;
 
 namespace wfc.referential.Application.ParamTypes.Queries.GetFiltredParamTypes;
 
-public record GetFiltredParamTypesQuery : IQuery<PagedResult<GetFiltredParamTypesResponse>>
+public record GetFiltredParamTypesQuery : IQuery<PagedResult<ParamTypesResponse>>
 {
     public int PageNumber { get; init; } = 1;
     public int PageSize { get; init; } = 10;
     public string? Value { get; init; }
-    public TypeDefinitionId TypeDefinitionId { get; init; }
+    public Guid? TypeDefinitionId { get; init; }
     public bool? IsEnabled { get; init; }
 
     public string CacheKey => $"{nameof(TypeDefinition)}_page{PageNumber}_size{PageSize}_value{Value}_status{IsEnabled}";

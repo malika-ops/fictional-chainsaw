@@ -6,6 +6,7 @@ using wfc.referential.Application.Tiers.Commands.DeleteTier;
 using wfc.referential.Application.Tiers.Commands.PatchTier;
 using wfc.referential.Application.Tiers.Commands.UpdateTier;
 using wfc.referential.Application.Tiers.Dtos;
+using wfc.referential.Application.Tiers.Queries.GetTierById;
 using wfc.referential.Application.Tiers.Queries.GetFiltredTiers;
 
 namespace wfc.referential.API.Endpoints;
@@ -34,6 +35,14 @@ public static class TierEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
 
+        group.MapGet("/{tierId:guid}", GetTierById)
+            .WithName("GetTierById")
+            .WithSummary("Get a Tier by GUID")
+            .WithDescription("Retrieves the Tier identified by tierId.")
+            .Produces<TierResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
+
         group.MapPut("/{tierId:guid}", UpdateTier)
             .WithName("UpdateTier")
             .WithSummary("Update an existing Tier")
@@ -58,6 +67,15 @@ public static class TierEndpoints
             .WithDescription("Soft-deletes (disables) the Tier identified by tierId.")
             .Produces<bool>(200)
             .ProducesValidationProblem(400);
+    }
+
+    internal static async Task<IResult> GetTierById(
+        Guid tierId,
+        IMediator mediator)
+    {
+        var query = new GetTierByIdQuery { TierId = tierId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreateTier(

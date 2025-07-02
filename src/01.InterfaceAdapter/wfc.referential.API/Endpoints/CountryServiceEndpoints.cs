@@ -6,6 +6,7 @@ using wfc.referential.Application.CountryServices.Commands.DeleteCountryService;
 using wfc.referential.Application.CountryServices.Commands.PatchCountryService;
 using wfc.referential.Application.CountryServices.Commands.UpdateCountryService;
 using wfc.referential.Application.CountryServices.Dtos;
+using wfc.referential.Application.CountryServices.Queries.GetCountryServiceById;
 using wfc.referential.Application.CountryServices.Queries.GetFiltredCountryServices;
 
 namespace wfc.referential.API.Endpoints;
@@ -34,6 +35,14 @@ public static class CountryServiceEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
 
+        group.MapGet("/{countryServiceId:guid}", GetCountryServiceById)
+            .WithName("GetCountryServiceById")
+            .WithSummary("Get a CountryService by GUID")
+            .WithDescription("Retrieves the CountryService identified by countryServiceId.")
+            .Produces<GetCountryServicesResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
+
         group.MapPut("/{countryServiceId:guid}", UpdateCountryService)
             .WithName("UpdateCountryService")
             .WithSummary("Update an existing Country-Service association")
@@ -60,6 +69,15 @@ public static class CountryServiceEndpoints
             .Produces<bool>(200)
             .ProducesValidationProblem(400)
             .Produces(404);
+    }
+
+    internal static async Task<IResult> GetCountryServiceById(
+        Guid countryServiceId,
+        IMediator mediator)
+    {
+        var query = new GetCountryServiceByIdQuery { CountryServiceId = countryServiceId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreateCountryService(

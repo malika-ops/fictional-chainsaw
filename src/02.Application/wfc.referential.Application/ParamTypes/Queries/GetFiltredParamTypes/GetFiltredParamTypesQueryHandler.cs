@@ -7,7 +7,7 @@ using wfc.referential.Application.ParamTypes.Dtos;
 
 namespace wfc.referential.Application.ParamTypes.Queries.GetFiltredParamTypes;
 
-public class GetFiltredParamTypesQueryHandler : IQueryHandler<GetFiltredParamTypesQuery, PagedResult<GetFiltredParamTypesResponse>>
+public class GetFiltredParamTypesQueryHandler : IQueryHandler<GetFiltredParamTypesQuery, PagedResult<ParamTypesResponse>>
 {
     private readonly IParamTypeRepository _paramTypeRepository;
     private readonly CacheService _cacheService;
@@ -18,13 +18,13 @@ public class GetFiltredParamTypesQueryHandler : IQueryHandler<GetFiltredParamTyp
         _cacheService = cacheService;
     }
 
-    public async Task<PagedResult<GetFiltredParamTypesResponse>> Handle(GetFiltredParamTypesQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<ParamTypesResponse>> Handle(GetFiltredParamTypesQuery request, CancellationToken cancellationToken)
     {
         var paramtypes = await _paramTypeRepository
             .GetPagedByCriteriaAsync(request, request.PageNumber, request.PageSize, cancellationToken);
 
-        return new PagedResult<GetFiltredParamTypesResponse>(
-            paramtypes.Items.Adapt<List<GetFiltredParamTypesResponse>>(),
+        return new PagedResult<ParamTypesResponse>(
+            paramtypes.Items.Adapt<List<ParamTypesResponse>>(),
             paramtypes.TotalCount,
             request.PageNumber,
             request.PageSize);

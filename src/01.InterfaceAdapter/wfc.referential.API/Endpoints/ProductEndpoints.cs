@@ -6,6 +6,7 @@ using wfc.referential.Application.Products.Commands.DeleteProduct;
 using wfc.referential.Application.Products.Commands.PatchProduct;
 using wfc.referential.Application.Products.Commands.UpdateProduct;
 using wfc.referential.Application.Products.Dtos;
+using wfc.referential.Application.Products.Queries.GetProductById;
 using wfc.referential.Application.Products.Queries.GetFiltredProducts;
 
 namespace wfc.referential.API.Endpoints;
@@ -29,9 +30,17 @@ public static class ProductEndpoints
             .WithName("GetFiltredProducts")
             .WithSummary("Get paginated list of Products")
             .WithDescription("Returns a paginated list of products. Supports optional filtering by code, name, status, and countryId.")
-            .Produces<PagedResult<GetFiltredProductsResponse>>(200)
+            .Produces<PagedResult<GetProdcutsResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{productId:guid}", GetProductById)
+            .WithName("GetProductById")
+            .WithSummary("Get a Product by GUID")
+            .WithDescription("Retrieves the Product identified by productId.")
+            .Produces<GetProdcutsResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{productId:guid}", UpdateProduct)
             .WithName("UpdateProduct")
@@ -72,6 +81,15 @@ public static class ProductEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredProductsQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetProductById(
+        Guid productId,
+        IMediator mediator)
+    {
+        var query = new GetProductByIdQuery { ProductId = productId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

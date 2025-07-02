@@ -6,6 +6,7 @@ using wfc.referential.Application.AgencyTiers.Commands.DeleteAgencyTier;
 using wfc.referential.Application.AgencyTiers.Commands.PatchAgencyTier;
 using wfc.referential.Application.AgencyTiers.Commands.UpdateAgencyTier;
 using wfc.referential.Application.AgencyTiers.Dtos;
+using wfc.referential.Application.AgencyTiers.Queries.GetAgencyTierById;
 using wfc.referential.Application.AgencyTiers.Queries.GetFiltredAgencyTiers;
 
 namespace wfc.referential.API.Endpoints;
@@ -33,6 +34,14 @@ public static class AgencyTierEndpoints
             .Produces<PagedResult<AgencyTierResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{agencyTierId:guid}", GetAgencyTierById)
+            .WithName("GetAgencyTierById")
+            .WithSummary("Get an AgencyTier by GUID")
+            .WithDescription("Retrieves the AgencyTier identified by agencyTierId.")
+            .Produces<AgencyTierResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{agencyTierId:guid}", UpdateAgencyTier)
             .WithName("UpdateAgencyTier")
@@ -74,6 +83,15 @@ public static class AgencyTierEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredAgencyTiersQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetAgencyTierById(
+        Guid agencyTierId,
+        IMediator mediator)
+    {
+        var query = new GetAgencyTierByIdQuery { AgencyTierId = agencyTierId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

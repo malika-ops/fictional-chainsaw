@@ -10,7 +10,7 @@ using wfc.referential.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// Add services to the container.
 builder.AddServiceDefaults("ReferentialApi");
 builder.Services.AddAuthorization();
 
@@ -58,13 +58,15 @@ app.UseAuthorization();
 // Map Minimal API endpoints 
 app.MapEndpoints();
 
+if (app.Environment.IsDevelopment())
+{
     app.UseSwagger(); // Add this for Minimal APIs
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "WFC Referential API v1");
         c.RoutePrefix = "swagger";
-   });
-
+    });
+}
 
 app.UseApiServices();
 app.Run();
@@ -90,18 +92,18 @@ public class XmlCommentsForAsParametersOperationFilter : IOperationFilter
         if (operation.Parameters == null || _navigator == null)
             return;
 
-        // Trouver dans la mÃ©thode si un paramÃ¨tre est un DTO avec [AsParameters]
+        // Trouver dans la méthode si un paramètre est un DTO avec [AsParameters]
         foreach (var parameterInfo in context.MethodInfo.GetParameters())
         {
             var paramType = parameterInfo.ParameterType;
 
-            // VÃ©rifier que le paramÃ¨tre est un "record" ou class avec propriÃ©tÃ©s
+            // Vérifier que le paramètre est un "record" ou class avec propriétés
             if (!paramType.IsClass && !paramType.IsValueType)
                 continue;
 
             foreach (var openApiParam in operation.Parameters)
             {
-                // Chercher la propriÃ©tÃ© qui correspond au paramÃ¨tre query
+                // Chercher la propriété qui correspond au paramètre query
                 var property = paramType.GetProperties()
                     .FirstOrDefault(p => string.Equals(p.Name, openApiParam.Name, StringComparison.OrdinalIgnoreCase));
 

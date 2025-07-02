@@ -6,6 +6,7 @@ using wfc.referential.Application.ParamTypes.Commands.DeleteParamType;
 using wfc.referential.Application.ParamTypes.Commands.PatchParamType;
 using wfc.referential.Application.ParamTypes.Commands.UpdateParamType;
 using wfc.referential.Application.ParamTypes.Dtos;
+using wfc.referential.Application.ParamTypes.Queries.GetParamTypeById;
 using wfc.referential.Application.ParamTypes.Queries.GetFiltredParamTypes;
 
 namespace wfc.referential.API.Features;
@@ -30,9 +31,17 @@ public static class ParamTypeEndpoints
             .WithName("GetFiltredParamTypes")
             .WithSummary("Get paginated list of ParamTypes")
             .WithDescription("Returns a paginated list of ParamTypes. Filters supported: value, typeDefinitionId, status.")
-            .Produces<PagedResult<GetFiltredParamTypesResponse>>(200)
+            .Produces<PagedResult<ParamTypesResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{paramTypeId:guid}", GetParamTypeById)
+            .WithName("GetParamTypeById")
+            .WithSummary("Get a ParamType by GUID")
+            .WithDescription("Retrieves the ParamType identified by paramTypeId.")
+            .Produces<ParamTypesResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{paramTypeId:guid}", UpdateParamType)
             .WithName("UpdateParamType")
@@ -77,6 +86,15 @@ public static class ParamTypeEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredParamTypesQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetParamTypeById(
+        Guid paramTypeId,
+        IMediator mediator)
+    {
+        var query = new GetParamTypeByIdQuery { ParamTypeId = paramTypeId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

@@ -1,13 +1,14 @@
 ﻿using BuildingBlocks.Core.Pagination;
 using Mapster;
 using MediatR;
+using wfc.referential.Application.RegionManagement.Dtos;
+using wfc.referential.Application.RegionManagement.Queries.GetFiltredRegions;
 using wfc.referential.Application.Regions.Commands.CreateRegion;
 using wfc.referential.Application.Regions.Commands.DeleteRegion;
 using wfc.referential.Application.Regions.Commands.PatchRegion;
 using wfc.referential.Application.Regions.Commands.UpdateRegion;
 using wfc.referential.Application.Regions.Dtos;
-using wfc.referential.Application.RegionManagement.Dtos;
-using wfc.referential.Application.RegionManagement.Queries.GetFiltredRegions;
+using wfc.referential.Application.Regions.Queries.GetRegionById;
 
 namespace wfc.referential.API.Endpoints;
 
@@ -29,10 +30,18 @@ public static class RegionEndpoints
         group.MapGet("/", GetFiltredRegions)
             .WithName("GetFiltredRegions")
             .WithSummary("Get paginated list of regions")
-            .WithDescription("Returns a paginated list of regions. Supports optional filtering by code, name, status, and countryId.")
-            .Produces<PagedResult<GetFiltredRegionsResponse>>(200)
+            .WithDescription("Returns a paginated list of regions.")
+            .Produces<PagedResult<GetRegionsResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{regionId:guid}", GetRegionById)
+            .WithName("GetRegionById")
+            .WithSummary("Get a Region by GUID")
+            .WithDescription("Retrieves the Region identified by regionId.")
+            .Produces<GetRegionsResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{regionId:guid}", UpdateRegion)
             .WithName("UpdateRegion")
@@ -57,6 +66,15 @@ public static class RegionEndpoints
             .Produces<bool>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(404);
+    }
+
+    internal static async Task<IResult> GetRegionById(
+        Guid regionId,
+        IMediator mediator)
+    {
+        var query = new GetRegionByIdQuery { RegionId = regionId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreateRegion(

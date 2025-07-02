@@ -7,6 +7,7 @@ using wfc.referential.Application.Pricings.Commands.PatchPricing;
 using wfc.referential.Application.Pricings.Commands.UpdatePricing;
 using wfc.referential.Application.Pricings.Dtos;
 using wfc.referential.Application.Pricings.Queries.GetFiltredPricings;
+using wfc.referential.Application.Pricings.Queries.GetPricingById;
 
 namespace wfc.referential.API.Endpoints;
 
@@ -34,6 +35,14 @@ public static class PricingEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
 
+        group.MapGet("/{pricingId:guid}", GetPricingById)
+            .WithName("GetPricingById")
+            .WithSummary("Get a Pricing by GUID")
+            .WithDescription("Retrieves the Pricing identified by pricingId.")
+            .Produces<PricingResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
+
         group.MapPut("/{pricingId:guid}", UpdatePricing)
             .WithName("UpdatePricing")
             .WithSummary("Update an existing Pricing line")
@@ -59,6 +68,15 @@ public static class PricingEndpoints
             .Produces<bool>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(404);
+    }
+
+    internal static async Task<IResult> GetPricingById(
+        Guid pricingId,
+        IMediator mediator)
+    {
+        var query = new GetPricingByIdQuery { PricingId = pricingId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreatePricing(

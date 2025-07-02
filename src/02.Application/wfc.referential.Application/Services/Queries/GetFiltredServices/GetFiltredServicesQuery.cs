@@ -6,7 +6,7 @@ using wfc.referential.Domain.ServiceAggregate;
 
 namespace wfc.referential.Application.Services.Queries.GetFiltredServices;
 
-public record GetFiltredServicesQuery : IQuery<PagedResult<GetFiltredServicesResponse>>, ICacheableQuery
+public record GetFiltredServicesQuery : IQuery<PagedResult<GetServicesResponse>>, ICacheableQuery
 {
     public int PageNumber { get; set; }
     public int PageSize { get; set; }

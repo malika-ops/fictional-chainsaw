@@ -151,18 +151,19 @@ public class GetFiltredCitiiesEndpointTests : IClassFixture<WebApplicationFactor
     {
         // Arrange
         var cachedResult = new PagedResult<GetCitiyResponse>(
-            new List<GetCitiyResponse>
-            {
-            new(
-                CityId: Guid.NewGuid(),
-                Code: "NYC",
-                Name: "New York City",
-                TimeZone: "UTC",
-                Abbreviation: "NYC",
-                RegionId: Guid.NewGuid(),
-                IsEnabled: true,
-                Sectors: new List<SectorResponse>())
-            },
+            [
+                new GetCitiyResponse
+                {
+                    CityId = Guid.NewGuid(),
+                    Code = "NYC",
+                    Name = "New York City",
+                    TimeZone = "UTC",
+                    Abbreviation = "NYC",
+                    RegionId = Guid.NewGuid(),
+                    IsEnabled = true,
+                    Sectors = []
+                }
+            ],
             totalCount: 1,
             pageNumber: 1,
             pageSize: 10);

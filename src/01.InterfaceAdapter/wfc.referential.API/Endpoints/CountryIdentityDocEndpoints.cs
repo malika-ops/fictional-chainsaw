@@ -6,6 +6,7 @@ using wfc.referential.Application.CountryIdentityDocs.Commands.DeleteCountryIden
 using wfc.referential.Application.CountryIdentityDocs.Commands.PatchCountryIdentityDoc;
 using wfc.referential.Application.CountryIdentityDocs.Commands.UpdateCountryIdentityDoc;
 using wfc.referential.Application.CountryIdentityDocs.Dtos;
+using wfc.referential.Application.CountryIdentityDocs.Queries.GetCountryIdentityDocById;
 using wfc.referential.Application.CountryIdentityDocs.Queries.GetFiltredCountryIdentityDocs;
 
 namespace wfc.referential.API.Endpoints;
@@ -33,6 +34,14 @@ public static class CountryIdentityDocEndpoints
             .Produces<PagedResult<GetCountryIdentityDocsResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{countryIdentityDocId:guid}", GetCountryIdentityDocById)
+            .WithName("GetCountryIdentityDocById")
+            .WithSummary("Get a CountryIdentityDoc by GUID")
+            .WithDescription("Retrieves the CountryIdentityDoc identified by countryIdentityDocId.")
+            .Produces<GetCountryIdentityDocsResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{countryIdentityDocId:guid}", UpdateCountryIdentityDoc)
             .WithName("UpdateCountryIdentityDoc")
@@ -76,6 +85,15 @@ public static class CountryIdentityDocEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredCountryIdentityDocsQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetCountryIdentityDocById(
+        Guid countryIdentityDocId,
+        IMediator mediator)
+    {
+        var query = new GetCountryIdentityDocByIdQuery { CountryIdentityDocId = countryIdentityDocId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

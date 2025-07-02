@@ -20,5 +20,5 @@ public record GetFiltredParamTypesRequest : FilterRequest
 
     /// <summary>Filtre obligatoire par ID de type de définition.</summary>
     /// <example>50ed04f5-d16b-49c6-af46-b3ea7dfb8cb1</example>
-    public Guid TypeDefinitionId { get; init; }
+    public Guid? TypeDefinitionId { get; init; }
 }

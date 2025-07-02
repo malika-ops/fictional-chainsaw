@@ -16,7 +16,7 @@ public class RegionMappings
     {
 
 
-        TypeAdapterConfig<Region, GetFiltredRegionsResponse>
+        TypeAdapterConfig<Region, GetRegionsResponse>
             .NewConfig()
             .Map(dest => dest.CountryId, src => src.CountryId.Value)
             .Map(dest => dest.RegionId, src => src.Id.Value);

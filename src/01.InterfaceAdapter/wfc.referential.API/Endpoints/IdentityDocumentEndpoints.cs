@@ -6,6 +6,7 @@ using wfc.referential.Application.IdentityDocuments.Commands.DeleteIdentityDocum
 using wfc.referential.Application.IdentityDocuments.Commands.PatchIdentityDocument;
 using wfc.referential.Application.IdentityDocuments.Commands.UpdateIdentityDocument;
 using wfc.referential.Application.IdentityDocuments.Dtos;
+using wfc.referential.Application.IdentityDocuments.Queries.GetIdentityDocumentById;
 using wfc.referential.Application.IdentityDocuments.Queries.GetFiltredIdentityDocuments;
 
 namespace wfc.referential.API.Features;
@@ -33,6 +34,14 @@ public static class IdentityDocumentEndpoints
             .Produces<PagedResult<GetIdentityDocumentsResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{identityDocumentId:guid}", GetIdentityDocumentById)
+            .WithName("GetIdentityDocumentById")
+            .WithSummary("Get an IdentityDocument by GUID")
+            .WithDescription("Retrieves the IdentityDocument identified by identityDocumentId.")
+            .Produces<GetIdentityDocumentsResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{identityDocumentId:guid}", UpdateIdentityDocument)
             .WithName("UpdateIdentityDocument")
@@ -76,6 +85,15 @@ public static class IdentityDocumentEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredIdentityDocumentsQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetIdentityDocumentById(
+        Guid identityDocumentId,
+        IMediator mediator)
+    {
+        var query = new GetIdentityDocumentByIdQuery { IdentityDocumentId = identityDocumentId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

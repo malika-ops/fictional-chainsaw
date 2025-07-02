@@ -6,6 +6,7 @@ using wfc.referential.Application.Sectors.Commands.DeleteSector;
 using wfc.referential.Application.Sectors.Commands.PatchSector;
 using wfc.referential.Application.Sectors.Commands.UpdateSector;
 using wfc.referential.Application.Sectors.Dtos;
+using wfc.referential.Application.Sectors.Queries.GetSectorById;
 using wfc.referential.Application.Sectors.Queries.GetFiltredSectors;
 
 namespace wfc.referential.API.Endpoints;
@@ -33,6 +34,14 @@ public static class SectorEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
 
+        group.MapGet("/{sectorId:guid}", GetSectorById)
+            .WithName("GetSectorById")
+            .WithSummary("Get a Sector by GUID")
+            .WithDescription("Retrieves the Sector identified by sectorId.")
+            .Produces<SectorResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
+
         group.MapPut("/{sectorId:guid}", UpdateSector)
             .WithName("UpdateSector")
             .WithSummary("Update an existing Sector")
@@ -57,6 +66,15 @@ public static class SectorEndpoints
             .WithDescription("Soft-deletes the sector identified by sectorId.")
             .Produces<bool>(200)
             .ProducesValidationProblem(400);
+    }
+
+    internal static async Task<IResult> GetSectorById(
+        Guid sectorId,
+        IMediator mediator)
+    {
+        var query = new GetSectorByIdQuery { SectorId = sectorId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreateSector(

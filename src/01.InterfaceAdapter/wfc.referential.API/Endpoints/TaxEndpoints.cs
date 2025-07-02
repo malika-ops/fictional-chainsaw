@@ -6,6 +6,7 @@ using wfc.referential.Application.Taxes.Commands.DeleteTax;
 using wfc.referential.Application.Taxes.Commands.PatchTax;
 using wfc.referential.Application.Taxes.Commands.UpdateTax;
 using wfc.referential.Application.Taxes.Dtos;
+using wfc.referential.Application.Taxes.Queries.GetTaxById;
 using wfc.referential.Application.Taxes.Queries.GetFiltredTaxes;
 
 namespace wfc.referential.API.Endpoints;
@@ -33,6 +34,14 @@ public static class TaxEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
 
+        group.MapGet("/{taxId:guid}", GetTaxById)
+            .WithName("GetTaxById")
+            .WithSummary("Get a Tax by GUID")
+            .WithDescription("Retrieves the Tax identified by taxId.")
+            .Produces<GetTaxesResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
+
         group.MapPut("/{taxId:guid}", UpdateTax)
             .WithName("UpdateTax")
             .WithSummary("Fully update a Tax's properties")
@@ -56,6 +65,15 @@ public static class TaxEndpoints
             .Produces<bool>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(404);
+    }
+
+    internal static async Task<IResult> GetTaxById(
+        Guid taxId,
+        IMediator mediator)
+    {
+        var query = new GetTaxByIdQuery { TaxId = taxId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 
     internal static async Task<IResult> CreateTax(

@@ -77,11 +77,11 @@ public static class DependencyInjection
         }
         builder.Services.AddScoped(typeof(IRepositoryBase<,>), typeof(BaseRepository<,>));
 
-        builder.Services.AddScoped<ICurrentUserContext,CurrentUserContext>();
+        builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
         builder.Services.AddHttpContextAccessor();
         //kafka
         builder.Services.Configure<KafkaProducerConfiguration>(configuration.GetSection("KafkaProducerConfiguration"));
-        builder.Services.AddSingleton<IProducerService,KafkaProducerService>();
+        builder.Services.AddSingleton<IProducerService, KafkaProducerService>();
 
         builder.Services.AddScoped<IMonetaryZoneRepository, MonetaryZoneRepository>();
         builder.Services.AddScoped<ICountryRepository, CountryRepository>();
@@ -112,6 +112,8 @@ public static class DependencyInjection
         builder.Services.AddScoped<ICountryServiceRepository, CountryServiceRepository>();
         builder.Services.AddScoped<IControleRepository, ControleRepository>();
         builder.Services.AddScoped<IContractRepository, ContractRepository>();
+        builder.Services.AddScoped<IContractDetailsRepository, ContractDetailsRepository>();
+        builder.Services.AddScoped<IServiceControleRepository, ServiceControleRepository>();
         return builder;
     }
 }

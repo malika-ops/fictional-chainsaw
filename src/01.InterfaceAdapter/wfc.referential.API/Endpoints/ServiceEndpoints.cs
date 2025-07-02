@@ -6,6 +6,7 @@ using wfc.referential.Application.Services.Commands.DeleteService;
 using wfc.referential.Application.Services.Commands.PatchService;
 using wfc.referential.Application.Services.Commands.UpdateService;
 using wfc.referential.Application.Services.Dtos;
+using wfc.referential.Application.Services.Queries.GetServiceById;
 using wfc.referential.Application.Services.Queries.GetFiltredServices;
 
 namespace wfc.referential.API.Endpoints;
@@ -29,9 +30,17 @@ public static class ServiceEndpoints
             .WithName("GetFiltredServices")
             .WithSummary("Get paginated list of Services")
             .WithDescription("Returns a paginated list of services. Supports optional filtering by code, name, and status.")
-            .Produces<PagedResult<GetFiltredServicesResponse>>(200)
+            .Produces<PagedResult<GetServicesResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{serviceId:guid}", GetServiceById)
+            .WithName("GetServiceById")
+            .WithSummary("Get a Service by GUID")
+            .WithDescription("Retrieves the Service identified by serviceId.")
+            .Produces<GetServicesResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{serviceId:guid}", UpdateService)
             .WithName("UpdateService")
@@ -72,6 +81,15 @@ public static class ServiceEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredServicesQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetServiceById(
+        Guid serviceId,
+        IMediator mediator)
+    {
+        var query = new GetServiceByIdQuery { ServiceId = serviceId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

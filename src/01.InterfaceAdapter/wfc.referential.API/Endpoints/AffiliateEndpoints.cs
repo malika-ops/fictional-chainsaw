@@ -6,6 +6,7 @@ using wfc.referential.Application.Affiliates.Commands.DeleteAffiliate;
 using wfc.referential.Application.Affiliates.Commands.PatchAffiliate;
 using wfc.referential.Application.Affiliates.Commands.UpdateAffiliate;
 using wfc.referential.Application.Affiliates.Dtos;
+using wfc.referential.Application.Affiliates.Queries.GetAffiliateById;
 using wfc.referential.Application.Affiliates.Queries.GetFiltredAffiliates;
 
 namespace wfc.referential.API.Endpoints;
@@ -34,13 +35,13 @@ public static class AffiliateEndpoints
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
 
-        //group.MapGet("/{id:guid}", GetAffiliateById)
-        //    .WithName("GetAffiliateById")
-        //    .WithSummary("Get affiliate by ID")
-        //    .WithDescription("Retrieves a specific affiliate by its unique identifier")
-        //    .Produces<AffiliateDto>(200)
-        //    .Produces(404)
-        //    .ProducesValidationProblem(400);
+        group.MapGet("/{affiliateId:guid}", GetAffiliateById)
+            .WithName("GetAffiliateById")
+            .WithSummary("Get an Affiliate by GUID")
+            .WithDescription("Retrieves the Affiliate identified by affiliateId.")
+            .Produces<GetAffiliatesResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{affiliateId:guid}", UpdateAffiliate)
             .WithName("UpdateAffiliate")
@@ -89,14 +90,14 @@ public static class AffiliateEndpoints
         return Results.Ok(result);
     }
 
-    //internal static async Task<IResult> GetAffiliateById(
-    //    Guid id,
-    //    IMediator mediator)
-    //{
-    //    var query = new GetAffiliateByIdQuery { Id = id };
-    //    var result = await mediator.Send(query);
-    //    return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound();
-    //}
+    internal static async Task<IResult> GetAffiliateById(
+        Guid affiliateId,
+        IMediator mediator)
+    {
+        var query = new GetAffiliateByIdQuery { AffiliateId = affiliateId };
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
 
     internal static async Task<IResult> UpdateAffiliate(
         Guid affiliateId,

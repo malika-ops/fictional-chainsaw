@@ -6,6 +6,7 @@ using wfc.referential.Application.Banks.Commands.DeleteBank;
 using wfc.referential.Application.Banks.Commands.PatchBank;
 using wfc.referential.Application.Banks.Commands.UpdateBank;
 using wfc.referential.Application.Banks.Dtos;
+using wfc.referential.Application.Banks.Queries.GetBankById;
 using wfc.referential.Application.Banks.Queries.GetFiltredBanks;
 
 namespace wfc.referential.API.Endpoints;
@@ -33,6 +34,14 @@ public static class BankEndpoints
             .Produces<PagedResult<GetBanksResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{bankId:guid}", GetBankById)
+            .WithName("GetBankById")
+            .WithSummary("Get a Bank by GUID")
+            .WithDescription("Retrieves the Bank identified by bankId.")
+            .Produces<GetBanksResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{bankId:guid}", UpdateBank)
             .WithName("UpdateBank")
@@ -77,6 +86,15 @@ public static class BankEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredBanksQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetBankById(
+        Guid bankId,
+        IMediator mediator)
+    {
+        var query = new GetBankByIdQuery { BankId = bankId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }

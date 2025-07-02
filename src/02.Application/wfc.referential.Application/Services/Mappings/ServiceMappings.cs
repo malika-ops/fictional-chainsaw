@@ -8,7 +8,7 @@ public class ServiceMappings
 {
     public static void Register()
     {
-        TypeAdapterConfig<Service, GetFiltredServicesResponse>.NewConfig()
+        TypeAdapterConfig<Service, GetServicesResponse>.NewConfig()
             .Map(dest => dest.ServiceId, src => src.Id!.Value)
             .Map(dest => dest.ProductId, src => src.ProductId.Value);
 

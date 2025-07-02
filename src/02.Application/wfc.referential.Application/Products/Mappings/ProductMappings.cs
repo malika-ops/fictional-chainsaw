@@ -14,7 +14,7 @@ public class ProductMappings
     public static void Register()
     {
 
-        TypeAdapterConfig<Product, GetFiltredProductsResponse>.NewConfig()
+        TypeAdapterConfig<Product, GetProdcutsResponse>.NewConfig()
             .Map(dest => dest.ProductId, src => src.Id!.Value);
 
         // Map from ProductId to nullable Guid

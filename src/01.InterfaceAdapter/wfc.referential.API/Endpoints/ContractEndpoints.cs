@@ -6,6 +6,7 @@ using wfc.referential.Application.Contracts.Commands.DeleteContract;
 using wfc.referential.Application.Contracts.Commands.PatchContract;
 using wfc.referential.Application.Contracts.Commands.UpdateContract;
 using wfc.referential.Application.Contracts.Dtos;
+using wfc.referential.Application.Contracts.Queries.GetContractById;
 using wfc.referential.Application.Contracts.Queries.GetFiltredContracts;
 
 namespace wfc.referential.API.Endpoints;
@@ -33,6 +34,14 @@ public static class ContractEndpoints
             .Produces<PagedResult<GetContractsResponse>>(200)
             .ProducesValidationProblem(400)
             .ProducesProblem(500);
+
+        group.MapGet("/{contractId:guid}", GetContractById)
+            .WithName("GetContractById")
+            .WithSummary("Get a Contract by GUID")
+            .WithDescription("Retrieves the Contract identified by contractId.")
+            .Produces<GetContractsResponse>(200)
+            .Produces(404)
+            .ProducesValidationProblem(400);
 
         group.MapPut("/{contractId:guid}", UpdateContract)
             .WithName("UpdateContract")
@@ -76,6 +85,15 @@ public static class ContractEndpoints
         IMediator mediator)
     {
         var query = request.Adapt<GetFiltredContractsQuery>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
+    }
+
+    internal static async Task<IResult> GetContractById(
+        Guid contractId,
+        IMediator mediator)
+    {
+        var query = new GetContractByIdQuery { ContractId = contractId };
         var result = await mediator.Send(query);
         return Results.Ok(result);
     }
