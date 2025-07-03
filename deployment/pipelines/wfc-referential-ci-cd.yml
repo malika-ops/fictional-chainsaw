@@ -170,6 +170,9 @@ stages:
                 kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/service.yml
                 kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/deployment.yml
                 #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/ingress.yml
+                # free space on the agent
+                docker rmi -f $(docker images -q)
+                docker system prune -a --volumes --force
           - task: DownloadBuildArtifacts@0
             displayName: 'Download file'
             inputs:
