@@ -75,7 +75,7 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Run Unit Tests'
-      timeoutInMinutes: 10  # Add timeout
+      #timeoutInMinutes: 10  # Add timeout
       inputs:
         command: 'test'
         projects: '**/*[Tt]ests.csproj'
