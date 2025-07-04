@@ -53,7 +53,6 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateBankRequest
         {
-            BankId = bankId,
             Code = "AWB_UPDATED",
             Name = "Updated Attijariwafa Bank",
             Abbreviation = "AWB-U",
@@ -90,7 +89,6 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateBankRequest
         {
-            BankId = bankId,
             Code = "BMCE", // Code already exists
             Name = "Updated Bank",
             Abbreviation = "UB",
@@ -116,7 +114,6 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateBankRequest
         {
-            BankId = bankId,
             Code = "TEST",
             Name = "Test Bank",
             Abbreviation = "TB",
@@ -147,7 +144,6 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateBankRequest
         {
-            BankId = bankId,
             Code = "UPDATED",
             Name = "Updated Name",
             Abbreviation = "UN",

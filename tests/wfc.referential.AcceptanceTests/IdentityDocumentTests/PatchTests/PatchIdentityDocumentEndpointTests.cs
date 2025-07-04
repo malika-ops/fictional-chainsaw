@@ -64,7 +64,6 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
 
         var patch = new PatchIdentityDocumentRequest
         {
-            IdentityDocumentId = docId,
             Code = "CIN-UPD",
             Name = "Carte Nationale Modifiée",
             Description = "Mise à jour",
@@ -96,7 +95,6 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
 
         var patch = new PatchIdentityDocumentRequest
         {
-            IdentityDocumentId = docId,
             Code = "X",
             Name = "Test"
         };
@@ -123,7 +121,6 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
 
         var patch = new PatchIdentityDocumentRequest
         {
-            IdentityDocumentId = docId,
             Code = "",  // Empty code should trigger validation error
             Name = "OK"
         };
@@ -162,7 +159,6 @@ public class PatchIdentityDocumentEndpointTests : IClassFixture<WebApplicationFa
 
         var patch = new PatchIdentityDocumentRequest
         {
-            IdentityDocumentId = docId,
             Code = "DUPLICATE",
             Name = "Updated Name"
         };

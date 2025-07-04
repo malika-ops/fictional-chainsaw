@@ -53,7 +53,6 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
 
         var patchRequest = new PatchBankRequest
         {
-            BankId = bankId,
             Name = "Updated Bank Name", // Only updating name
             // Other fields intentionally omitted
         };
@@ -92,7 +91,6 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
 
         var patchRequest = new PatchBankRequest
         {
-            BankId = bankId,
             Code = "BMCE", // Attempting to change to existing code
         };
 
@@ -120,7 +118,6 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
 
         var patchRequest = new PatchBankRequest
         {
-            BankId = bankId,
             Code = "AWB", // Same code as current (should be allowed)
             Name = "New Name" // Different name
         };
@@ -148,7 +145,6 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
 
         var patchRequest = new PatchBankRequest
         {
-            BankId = bankId,
             Name = "New Name"
         };
 
@@ -181,7 +177,6 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
 
         var patchRequest = new PatchBankRequest
         {
-            BankId = bankId,
             Code = code,
             Name = name,
             Abbreviation = abbreviation,

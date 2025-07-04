@@ -174,7 +174,6 @@ public class UpdateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         // Make sure the payload format matches exactly what the API expects
         var payload = new UpdateParamTypeRequest
         {
-            ParamTypeId = id,
             Value = "New Value",
             IsEnabled = true,
             TypeDefinitionId = typeDefinitionId
@@ -215,7 +214,6 @@ public class UpdateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
 
         var payload = new UpdateParamTypeRequest
         {
-            ParamTypeId = id,
             Value = "Test Value",
             IsEnabled = false,  // We want to disable it
             TypeDefinitionId = typeDefinitionId
@@ -257,7 +255,6 @@ public class UpdateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
 
         var payload = new UpdateParamTypeRequest
         {
-            ParamTypeId = id,
             Value = "Duplicate Value", // This value already exists
             IsEnabled = true,
             TypeDefinitionId = typeDefinitionId

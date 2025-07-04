@@ -53,7 +53,6 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
 
         var patchRequest = new PatchCurrencyRequest
         {
-            CurrencyId = currencyId,
             Name = "Updated US Dollar Name", // Only updating name
             // Other fields intentionally omitted
         };
@@ -92,7 +91,6 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
 
         var patchRequest = new PatchCurrencyRequest
         {
-            CurrencyId = currencyId,
             Code = "EUR", // Attempting to change to existing code
         };
 
@@ -120,7 +118,6 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
 
         var patchRequest = new PatchCurrencyRequest
         {
-            CurrencyId = currencyId,
             Code = "USD", // Same code as current (should be allowed)
             Name = "New Name" // Different name
         };
@@ -148,7 +145,6 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
 
         var patchRequest = new PatchCurrencyRequest
         {
-            CurrencyId = currencyId,
             Name = "New Name"
         };
 
@@ -183,7 +179,6 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
 
         var patchRequest = new PatchCurrencyRequest
         {
-            CurrencyId = currencyId,
             Code = code,
             Name = name,
             CodeAR = codeAR,

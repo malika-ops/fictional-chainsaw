@@ -53,7 +53,6 @@ public class UpdateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         var updateRequest = new UpdateCurrencyRequest
         {
-            CurrencyId = currencyId,
             Code = "USD_UPDATED",
             CodeAR = "دولار أمريكي محدث",
             CodeEN = "Updated US Dollar",
@@ -92,7 +91,6 @@ public class UpdateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         var updateRequest = new UpdateCurrencyRequest
         {
-            CurrencyId = currencyId,
             Code = "EUR", // Code already exists
             Name = "Updated Currency",
             CodeAR = "عملة محدثة",
@@ -126,7 +124,6 @@ public class UpdateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         var updateRequest = new UpdateCurrencyRequest
         {
-            CurrencyId = currencyId,
             Code = "TEST",
             Name = "Test Currency",
             CodeAR = "عملة اختبار",
@@ -154,7 +151,6 @@ public class UpdateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         var updateRequest = new UpdateCurrencyRequest
         {
-            CurrencyId = currencyId,
             Code = "TEST",
             Name = "Test Currency",
             CodeAR = "عملة اختبار",
@@ -187,7 +183,6 @@ public class UpdateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         var updateRequest = new UpdateCurrencyRequest
         {
-            CurrencyId = currencyId,
             Code = "UPDATED",
             Name = "Updated Name",
             CodeAR = "اسم محدث",

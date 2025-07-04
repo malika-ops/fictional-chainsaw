@@ -77,7 +77,6 @@ public class UpdateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
 
         var payload = new UpdateTypeDefinitionRequest
         {
-            TypeDefinitionId = id,
             Libelle = "New Libelle",
             Description = "New Description",
             IsEnabled = true
@@ -118,7 +117,6 @@ public class UpdateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
 
         var payload = new UpdateTypeDefinitionRequest
         {
-            TypeDefinitionId = id,
             Libelle = existingLibelle, // Already used
             Description = "New Description",
             IsEnabled = true
@@ -153,7 +151,6 @@ public class UpdateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
 
         var payload = new UpdateTypeDefinitionRequest
         {
-            TypeDefinitionId = id,
             Libelle = "Test Libelle",
             Description = "Test Description",
             IsEnabled = false  // We want to disable it
@@ -234,7 +231,6 @@ public class UpdateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
 
         var payload = new UpdateTypeDefinitionRequest
         {
-            TypeDefinitionId = id,
             Libelle = "New Libelle",
             Description = "New Description",
             IsEnabled = true

@@ -176,7 +176,6 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
         var payload = new UpdateCityRequest
         {
-            CityId = id,
             Code = "target",
             Name = "Name",
             Abbreviation = "NYC",

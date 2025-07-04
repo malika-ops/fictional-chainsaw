@@ -67,7 +67,6 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateSectorRequest
         {
-            SectorId = sectorId,
             Code = "SEC001_UPDATED",
             Name = "Updated Sector",
             CityId = newCityId,
@@ -105,7 +104,6 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateSectorRequest
         {
-            SectorId = sectorId,
             Code = "SEC002", // Code already exists
             Name = "Updated Sector",
             CityId = Guid.NewGuid(),
@@ -131,7 +129,6 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateSectorRequest
         {
-            SectorId = sectorId,
             Code = "SEC001",
             Name = "Test Sector",
             CityId = Guid.NewGuid(),
@@ -166,7 +163,6 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateSectorRequest
         {
-            SectorId = sectorId,
             Code = "SEC001_UPDATED",
             Name = "Updated Sector",
             CityId = nonExistentCityId,
@@ -200,7 +196,6 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateSectorRequest
         {
-            SectorId = sectorId,
             Code = code,
             Name = name,
             CityId = Guid.NewGuid(),
@@ -232,7 +227,6 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateSectorRequest
         {
-            SectorId = sectorId,
             Code = "SEC001",
             Name = "Test Sector",
             CityId = existingSector.CityId.Value,
@@ -256,7 +250,6 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateSectorRequest
         {
-            SectorId = bodySectorId, // Different from route
             Code = "SEC001",
             Name = "Test Sector",
             CityId = Guid.NewGuid(),
@@ -287,7 +280,6 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateSectorRequest
         {
-            SectorId = sectorId,
             Code = "SEC001", // Same code
             Name = "Updated Name", // Only name changes
             CityId = existingSector.CityId.Value,
@@ -318,7 +310,6 @@ public class UpdateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var updateRequest = new UpdateSectorRequest
         {
-            SectorId = sectorId,
             Code = "SEC-001_MODIFIÉ",
             Name = "Secteur Modifié avec Accents & Symboles (Zone 1)",
             CityId = existingSector.CityId.Value,

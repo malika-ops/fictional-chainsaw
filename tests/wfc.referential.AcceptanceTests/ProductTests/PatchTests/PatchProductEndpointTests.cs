@@ -51,7 +51,6 @@ public class PatchProductEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var productId = Guid.NewGuid();
         var patchRequest = new PatchProductRequest
         {
-            ProductId = productId,
             Code = "new-code",
             Name = "Updated Name",
             IsEnabled = true
@@ -93,7 +92,6 @@ public class PatchProductEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var productId = Guid.NewGuid();
         var patchRequest = new PatchProductRequest
         {
-            ProductId = productId,
             Code = "non-existing-code",
             Name = "Non-existing Product",
         };
@@ -115,7 +113,6 @@ public class PatchProductEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var productId = Guid.NewGuid();
         var patchRequest = new PatchProductRequest
         {
-            ProductId = productId,
             Code = "", // Assuming empty code is invalid
             Name = "Invalid Product",
         };

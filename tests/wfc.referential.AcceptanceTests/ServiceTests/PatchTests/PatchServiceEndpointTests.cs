@@ -48,7 +48,6 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var serviceId = Guid.NewGuid();
         var patchRequest = new PatchServiceRequest
         {
-            ServiceId = serviceId,
             Code = "SVC-NEW",
             Name = "New Service Name",
             IsEnabled = true
@@ -82,7 +81,6 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var serviceId = Guid.NewGuid();
         var patchRequest = new PatchServiceRequest
         {
-            ServiceId = serviceId,
             Code = "non-existing-code",
             Name = "Non-existing Service",
         };
@@ -101,7 +99,6 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var serviceId = Guid.NewGuid();
         var patchRequest = new PatchServiceRequest
         {
-            ServiceId = serviceId,
             Code = "", // Invalid code
             Name = "Invalid Service",
         };

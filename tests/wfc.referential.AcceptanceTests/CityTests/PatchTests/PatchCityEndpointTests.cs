@@ -52,7 +52,6 @@ public class PatchCityEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var cityId = CityId.Of(Guid.NewGuid());
         var patchRequest = new PatchCityRequest
         {
-            CityId = cityId.Value,
             Code = "new-code",
             Name = "Updated Name",
         };
@@ -84,7 +83,6 @@ public class PatchCityEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var cityId = Guid.NewGuid();
         var patchRequest = new PatchCityRequest
         {
-            CityId = cityId,
             Code = "non-existing-code",
             Name = "Non-existing Region",
         };
@@ -114,7 +112,6 @@ public class PatchCityEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var cityId = Guid.NewGuid();
         var patchRequest = new PatchCityRequest
         {
-            CityId = cityId,
             Code = "", // Champ vide invalide
             Name = "Invalid City"
         };

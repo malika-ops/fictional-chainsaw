@@ -91,7 +91,6 @@ public class PatchCountryIdentityDocEndpointTests : IClassFixture<WebApplication
 
         var payload = new PatchCountryIdentityDocRequest
         {
-            CountryIdentityDocId = id,
             CountryId = newCountryId,
             // IdentityDocumentId intentionally omitted - should not change
             // IsEnabled also omitted
@@ -123,7 +122,6 @@ public class PatchCountryIdentityDocEndpointTests : IClassFixture<WebApplication
 
         var payload = new PatchCountryIdentityDocRequest
         {
-            CountryIdentityDocId = id,
             IsEnabled = false
         };
 

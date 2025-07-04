@@ -87,7 +87,6 @@ public class PatchTaxEndpointTests : IClassFixture<WebApplicationFactory<Program
         var taxId = Guid.NewGuid();
         var patchRequest = new PatchTaxRequest
         {
-            TaxId = taxId,
             Code = "testAAB",
             CodeEn = "TestAABEN",
         };
@@ -109,7 +108,6 @@ public class PatchTaxEndpointTests : IClassFixture<WebApplicationFactory<Program
         var taxId = Guid.NewGuid();
         var patchRequest = new PatchTaxRequest
         {
-            TaxId = taxId,
             Code = "", // Assuming empty code is invalid
             CodeEn = "TestAABEN",
         };

@@ -143,7 +143,6 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         var payload = new UpdateRegionRequest
         {
-            RegionId = id,
             Code = "EU", // duplicate code
             Name = "Europe",
             IsEnabled = true,

@@ -57,7 +57,6 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var regionId = Guid.NewGuid();
         var patchRequest = new PatchRegionRequest
         {
-            RegionId = regionId,
             Code = "new-code",
             Name = "Updated Name",
             IsEnabled = true,
@@ -106,7 +105,6 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var regionId = Guid.NewGuid();
         var patchRequest = new PatchRegionRequest
         {
-            RegionId = regionId,
             Code = "non-existing-code",
             Name = "Non-existing Region",
         };
@@ -128,7 +126,6 @@ public class PatchRegionEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var regionId = Guid.NewGuid();
         var patchRequest = new PatchRegionRequest
         {
-            RegionId = regionId,
             Code = "", // Assuming empty code is invalid
             Name = "Invalid Region",
         };

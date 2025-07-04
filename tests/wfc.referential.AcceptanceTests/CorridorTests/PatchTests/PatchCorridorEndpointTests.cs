@@ -62,7 +62,6 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
 
             var patchRequest = new PatchCorridorRequest
             {
-                CorridorId = corridorId,
                 SourceCountryId = Guid.NewGuid(),
                 IsEnabled = false
             };
@@ -87,7 +86,6 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
 
             var patchRequest = new PatchCorridorRequest
             {
-                CorridorId = corridorId,
                 SourceCountryId = Guid.NewGuid()
             };
 
@@ -110,7 +108,6 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             // Invalid SourceCountryId (empty Guid)
             var patchRequest = new PatchCorridorRequest
             {
-                CorridorId = corridorId,
                 SourceCountryId = Guid.Empty
             };
 
