@@ -3,8 +3,6 @@ using System.Text.Json;
 using System.Xml.XPath;
 using BuildingBlocks.Core.CoreServices;
 using Microsoft.OpenApi.Models;
-using Serilog.Events;
-using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using wfc.referential.API;
 using wfc.referential.Application;
@@ -14,26 +12,26 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.AddServiceDefaults("ReferentialApi");
-Log.Logger = new LoggerConfiguration()
+//Log.Logger = new LoggerConfiguration()
 
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .WriteTo.File("/app/logs/app-.log",
+//    .MinimumLevel.Information()
+//    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+//    .Enrich.FromLogContext()
+//    .WriteTo.File("/app/logs/app-.log",
 
-        rollingInterval: RollingInterval.Day,
+//        rollingInterval: RollingInterval.Day,
 
-        retainedFileCountLimit: 30,
+//        retainedFileCountLimit: 30,
 
-        shared: true,
+//        shared: true,
 
-        flushToDiskInterval: TimeSpan.FromSeconds(1))
+//        flushToDiskInterval: TimeSpan.FromSeconds(1))
 
-    .CreateLogger();
+//    .CreateLogger();
 
 
 
-builder.Host.UseSerilog();
+//builder.Host.UseSerilog();
 builder.Services.AddAuthorization();
 
 
@@ -90,7 +88,7 @@ app.MapEndpoints();
 
 
 app.UseApiServices();
-app.Lifetime.ApplicationStopped.Register(Log.CloseAndFlush);
+//app.Lifetime.ApplicationStopped.Register(Log.CloseAndFlush);
 app.Run();
 
 public partial class Program { }
