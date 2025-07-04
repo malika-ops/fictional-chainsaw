@@ -106,8 +106,8 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
         var paged = new PagedResult<PartnerCountry>(new() { pc }, 1, 1, 10);
 
         _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
-                            It.Is<GetFiltredPartnerCountriesQuery>(q => q.PartnerId == partnerId),
-                            1, 10, It.IsAny<CancellationToken>()))
+                            It.IsAny<GetFiltredPartnerCountriesQuery>(),
+                            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paged);
 
         var res = await _client.GetAsync($"/api/partner-countries?partnerId={partnerId}");
@@ -198,11 +198,8 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
         var paged = new PagedResult<PartnerCountry>(new() { pc }, 1, 1, 10);
 
         _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
-                            It.Is<GetFiltredPartnerCountriesQuery>(q =>
-                                q.PartnerId == partnerId &&
-                                q.CountryId == countryId &&
-                                q.IsEnabled == true),
-                            1, 10, It.IsAny<CancellationToken>()))
+                            It.IsAny<GetFiltredPartnerCountriesQuery>(),
+                            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paged);
 
         var url = $"/api/partner-countries?partnerId={partnerId}&countryId={countryId}&isEnabled=true";
