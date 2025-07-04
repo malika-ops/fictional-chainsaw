@@ -71,14 +71,14 @@ stages:
         command: 'custom'
         custom: 'add'
         arguments: 'package coverlet.collector'
-        projects: '**/*[Tt]ests.csproj'
+        projects: '**/*UnitTests.csproj'
 
     - task: DotNetCoreCLI@2
       displayName: 'Run Unit Tests'
       #timeoutInMinutes: 10  # Add timeout
       inputs:
         command: 'test'
-        projects: '**/*[Tt]ests.csproj'
+        projects: '**/*UnitTests.csproj'
         arguments: '--configuration $(buildConfiguration) --logger "trx;LogFileName=testresults.trx" --collect:"XPlat Code Coverage"'
         publishTestResults: true
         failTaskOnFailedTests: true
