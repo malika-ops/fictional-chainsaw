@@ -18,7 +18,7 @@ using wfc.referential.Domain.TierAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests;
-
+//Base acceptance tests
 [Collection("WebApp Collection")]
 public abstract class BaseAcceptanceTests : IDisposable
 {
