@@ -48,6 +48,16 @@ stages:
 
     - task: NuGetAuthenticate@1
       displayName: 'NuGet Authenticate'
+      inputs:
+        forceReinstallCredentialProvider: true
+      env:
+        DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER: '0'
+        SSL_CERT_FILE: '/etc/ssl/certs/wafacash-MASSA-CA.crt'
+        SSL_CERT_DIR: '/etc/ssl/certs'
+        NODE_EXTRA_CA_CERTS: '/etc/ssl/certs/ca-certificates.crt'
+        REQUESTS_CA_BUNDLE: '/etc/ssl/certs/ca-certificates.crt'
+        CURL_CA_BUNDLE: '/etc/ssl/certs/ca-certificates.crt'
+        NODE_TLS_REJECT_UNAUTHORIZED: '0'
 
     - task: DotNetCoreCLI@2
       displayName: 'Restore solution'
@@ -75,10 +85,10 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Run Unit Tests'
-      #timeoutInMinutes: 10  # Add timeout
+      timeoutInMinutes: 10  # Add timeout
       inputs:
         command: 'test'
-        projects: '**/*[Tt]ests.csproj'
+        projects: '**/*UnitTests.csproj'  #'**/*[Tt]ests.csproj'
         arguments: '--configuration $(buildConfiguration) --logger "trx;LogFileName=testresults.trx" --collect:"XPlat Code Coverage"'
         publishTestResults: true
         failTaskOnFailedTests: true
