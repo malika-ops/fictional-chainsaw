@@ -1,45 +1,15 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.TierAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TierTests.GetByIdTests;
 
-public class GetTierByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetTierByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITierRepository> _repo = new();
-
-    public GetTierByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ITierRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Tier Make(Guid id, string code = "TIER-001", string? name = null, bool enabled = true)
     {
         var tier = Tier.Create(TierId.Of(id), code, name ?? $"Tier-{code}");
@@ -54,7 +24,7 @@ public class GetTierByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Tier?)null);
 
         var res = await _client.GetAsync($"/api/tiers/{id}");
@@ -66,7 +36,7 @@ public class GetTierByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _tierRepoMock.Verify(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/tiers/{id} → 404 when id is malformed")]
@@ -78,7 +48,7 @@ public class GetTierByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<TierId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _tierRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<TierId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/tiers/{id} → 200 for disabled Tier")]
@@ -87,7 +57,7 @@ public class GetTierByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var id = Guid.NewGuid();
         var entity = Make(id, "TIER-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/tiers/{id}");

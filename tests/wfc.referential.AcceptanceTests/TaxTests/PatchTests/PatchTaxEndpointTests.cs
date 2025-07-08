@@ -1,46 +1,17 @@
 ﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Taxes.Dtos;
 using wfc.referential.Domain.TaxAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TaxTests.PatchTests;
 
-public class PatchTaxEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchTaxEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITaxRepository> _repoMock = new();
     private const string BaseUrl = "api/taxes";
-
-    public PatchTaxEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ITaxRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = $"PATCH {BaseUrl}/id updates the Tax successfully")]
     public async Task PatchTax_ShouldReturnUpdatedTaxId_WhenTaxExists()
@@ -64,7 +35,7 @@ public class PatchTaxEndpointTests : IClassFixture<WebApplicationFactory<Program
             15
         );
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
+        _taxRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(tax);
 
         // Act
@@ -91,7 +62,7 @@ public class PatchTaxEndpointTests : IClassFixture<WebApplicationFactory<Program
             CodeEn = "TestAABEN",
         };
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
+        _taxRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Tax)null); 
 
         // Act

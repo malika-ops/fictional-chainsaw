@@ -1,45 +1,15 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.MonetaryZonesTests.GetByIdTests;
 
-public class GetMonetaryZoneByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetMonetaryZoneByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IMonetaryZoneRepository> _repo = new();
-
-    public GetMonetaryZoneByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IMonetaryZoneRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static MonetaryZone Make(Guid id, string code = "MONETARY-ZONE-001", string? name = null, bool enabled = true)
     {
         var monetaryZone = MonetaryZone.Create(
@@ -63,7 +33,7 @@ public class GetMonetaryZoneByIdEndpointTests : IClassFixture<WebApplicationFact
         var id = Guid.NewGuid();
         var entity = Make(id, "MONETARY-ZONE-123", "Euro Zone");
 
-        _repo.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
+        _monetaryZoneRepoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/monetaryzones/{id}");
@@ -75,7 +45,7 @@ public class GetMonetaryZoneByIdEndpointTests : IClassFixture<WebApplicationFact
         body.Name.Should().Be("Euro Zone");
         body.IsEnabled.Should().BeTrue();
 
-        _repo.Verify(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _monetaryZoneRepoMock.Verify(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/monetaryzones/{id} → 404 when MonetaryZone not found")]
@@ -83,7 +53,7 @@ public class GetMonetaryZoneByIdEndpointTests : IClassFixture<WebApplicationFact
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
+        _monetaryZoneRepoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((MonetaryZone?)null);
 
         var res = await _client.GetAsync($"/api/monetaryzones/{id}");
@@ -95,7 +65,7 @@ public class GetMonetaryZoneByIdEndpointTests : IClassFixture<WebApplicationFact
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _monetaryZoneRepoMock.Verify(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/monetaryzones/{id} → 404 when id is malformed")]
@@ -107,7 +77,7 @@ public class GetMonetaryZoneByIdEndpointTests : IClassFixture<WebApplicationFact
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<MonetaryZoneId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _monetaryZoneRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<MonetaryZoneId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/monetaryzones/{id} → 200 for disabled MonetaryZone")]
@@ -116,7 +86,7 @@ public class GetMonetaryZoneByIdEndpointTests : IClassFixture<WebApplicationFact
         var id = Guid.NewGuid();
         var entity = Make(id, "MONETARY-ZONE-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
+        _monetaryZoneRepoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/monetaryzones/{id}");

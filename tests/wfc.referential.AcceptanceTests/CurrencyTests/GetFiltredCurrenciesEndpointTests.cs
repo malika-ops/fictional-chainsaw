@@ -2,37 +2,15 @@
 using System.Net.Http.Json;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Currencies.Dtos;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CurrencyAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CurrencyTests.SearchTests;
 
-public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredCurrenciesAcceptanceTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICurrencyRepository> _repoMock = new();
-
-    public GetFiltredCurrenciesAcceptanceTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ICurrencyRepository>();
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "GET /api/currencies returns all currencies using search criteria")]
     public async Task GetFiltredCurrencies_Should_ReturnAllCurrencies_UsingSearchCriteria()
     {
@@ -46,7 +24,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
 
         var pagedResult = new PagedResult<Currency>(currencies, currencies.Count, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -77,7 +55,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
 
         var pagedResult = new PagedResult<Currency>(filteredCurrencies, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -104,7 +82,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
 
         var pagedResult = new PagedResult<Currency>(filteredCurrencies, 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -131,7 +109,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
 
         var pagedResult = new PagedResult<Currency>(activeCurrencies, 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -158,7 +136,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
 
         var pagedResult = new PagedResult<Currency>(currencies, 25, 2, 10); // Page 2 of 3 pages (25 total items)
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -181,7 +159,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
         // Arrange
         var emptyResult = new PagedResult<Currency>(new List<Currency>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(emptyResult);
 
@@ -207,7 +185,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
 
         var pagedResult = new PagedResult<Currency>(filteredCurrencies, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -241,7 +219,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
 
         var pagedResult = new PagedResult<Currency>(currencies, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -254,7 +232,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
         result.Should().NotBeNull();
         result.Items.Should().HaveCount(1);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -269,7 +247,7 @@ public class GetFiltredCurrenciesAcceptanceTests : IClassFixture<WebApplicationF
 
         var pagedResult = new PagedResult<Currency>(currencies, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _currencyRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 

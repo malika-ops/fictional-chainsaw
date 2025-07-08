@@ -16,32 +16,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CountryTests.GetByIdTests;
 
-public class GetCountryByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetCountryByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICountryRepository> _repo = new();
-
-    public GetCountryByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ICountryRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Country Make(Guid id, string code = "US", string? name = null, bool enabled = true)
     {
         var country = Country.Create(
@@ -74,7 +50,7 @@ public class GetCountryByIdEndpointTests : IClassFixture<WebApplicationFactory<P
         var id = Guid.NewGuid();
         var entity = Make(id, "US", "United States");
 
-        _repo.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/countries/{id}");
@@ -86,7 +62,7 @@ public class GetCountryByIdEndpointTests : IClassFixture<WebApplicationFactory<P
         body.Name.Should().Be("United States");
         body.IsEnabled.Should().BeTrue();
 
-        _repo.Verify(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _countryRepoMock.Verify(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/countries/{id} → 404 when Country not found")]
@@ -94,7 +70,7 @@ public class GetCountryByIdEndpointTests : IClassFixture<WebApplicationFactory<P
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Country?)null);
 
         var res = await _client.GetAsync($"/api/countries/{id}");
@@ -106,7 +82,7 @@ public class GetCountryByIdEndpointTests : IClassFixture<WebApplicationFactory<P
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _countryRepoMock.Verify(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/countries/{id} → 404 when id is malformed")]
@@ -118,7 +94,7 @@ public class GetCountryByIdEndpointTests : IClassFixture<WebApplicationFactory<P
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<CountryId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _countryRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<CountryId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/countries/{id} → 200 for disabled Country")]
@@ -127,7 +103,7 @@ public class GetCountryByIdEndpointTests : IClassFixture<WebApplicationFactory<P
         var id = Guid.NewGuid();
         var entity = Make(id, "XX", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/countries/{id}");

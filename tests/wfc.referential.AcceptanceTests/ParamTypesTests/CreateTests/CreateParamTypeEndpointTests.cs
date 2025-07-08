@@ -1,68 +1,28 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ParamTypesTests.CreateTests;
 
-public class CreateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateParamTypeEndpointTests : BaseAcceptanceTests
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IParamTypeRepository> _repoMock = new();
-    private readonly Mock<ITypeDefinitionRepository> _typeDefinitionRepoMock = new();
-
-    public CreateParamTypeEndpointTests(WebApplicationFactory<Program> factory)
+    public CreateParamTypeEndpointTests(TestWebApplicationFactory factory) : base(factory)
     {
-        var cacheMock = new Mock<ICacheService>();
+        // Setup duplicate check to return null by default (no duplicates)
+        _paramTypeRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ParamType, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ParamType?)null);
 
-        // Clone the factory and customize the host
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
+        // Set up typeDefinition mock to return valid entities
+        var typeDefinitionId = TypeDefinitionId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
 
-            builder.ConfigureServices(services =>
-            {
-                // Remove concrete registrations that hit the DB / Redis
-                services.RemoveAll<IParamTypeRepository>();
-                services.RemoveAll<ITypeDefinitionRepository>();
-                services.RemoveAll<ICacheService>();
+        _typeDefinitionRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<TypeDefinitionId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TypeDefinition.Create(typeDefinitionId, "TestType", "Test Type Definition"));
 
-                // Set up mock behavior (echoes entity back, as if EF saved it)
-                _repoMock
-                    .Setup(r => r.AddAsync(It.IsAny<ParamType>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((ParamType p, CancellationToken _) => p);
-
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                // Setup duplicate check to return null by default (no duplicates)
-                _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ParamType, bool>>>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((ParamType?)null);
-
-                // Set up typeDefinition mock to return valid entities
-                var typeDefinitionId = TypeDefinitionId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
-
-                _typeDefinitionRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<TypeDefinitionId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(TypeDefinition.Create(typeDefinitionId, "TestType", "Test Type Definition"));
-
-                // Plug mocks back in
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_typeDefinitionRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
     }
 
     [Fact(DisplayName = "POST /api/paramtypes returns 200 and Guid when request is valid")]
@@ -86,7 +46,7 @@ public class CreateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         returnedId.Should().NotBeEmpty();
 
         // Verify repository interaction
-        _repoMock.Verify(r =>
+        _paramTypeRepoMock.Verify(r =>
             r.AddAsync(It.Is<ParamType>(p =>
                     p.Value == payload.Value &&
                     p.IsEnabled == true), // Default value
@@ -115,7 +75,7 @@ public class CreateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         // The handler must NOT be reached
-        _repoMock.Verify(r =>
+        _paramTypeRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<ParamType>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "when validation fails, the command handler should not be executed");
@@ -145,7 +105,7 @@ public class CreateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         // Handler must NOT attempt to add the entity
-        _repoMock.Verify(r =>
+        _paramTypeRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<ParamType>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
@@ -161,7 +121,7 @@ public class CreateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
             "DuplicateValue");
 
         // Setup duplicate check to return existing ParamType
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ParamType, bool>>>(), It.IsAny<CancellationToken>()))
+        _paramTypeRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ParamType, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingParamType);
 
         var payload = new
@@ -177,7 +137,7 @@ public class CreateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         // Handler must NOT attempt to add the entity
-        _repoMock.Verify(r =>
+        _paramTypeRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<ParamType>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
@@ -202,7 +162,7 @@ public class CreateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         paramTypeId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<ParamType>(p =>
+        _paramTypeRepoMock.Verify(r => r.AddAsync(It.Is<ParamType>(p =>
             p.Id != null && p.Id.Value != Guid.Empty), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -224,7 +184,7 @@ public class CreateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<ParamType>(p =>
+        _paramTypeRepoMock.Verify(r => r.AddAsync(It.Is<ParamType>(p =>
             p.IsEnabled == true), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -246,6 +206,6 @@ public class CreateParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<ParamType>(), It.IsAny<CancellationToken>()), Times.Never);
+        _paramTypeRepoMock.Verify(r => r.AddAsync(It.IsAny<ParamType>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

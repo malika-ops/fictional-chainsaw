@@ -1,46 +1,17 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Pagination;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BuildingBlocks.Core.Pagination;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.Controles.Queries.GetFilteredControles;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.ControleAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ControleTests.GetFiltredTests;
 
-public class GetFiltredControlesEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredControlesEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IControleRepository> _repo = new();
-
-    public GetFiltredControlesEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IControleRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Controle Make(string code, string? name = null, bool enabled = true)
     {
         var c = Controle.Create(ControleId.Of(Guid.NewGuid()), code, name ?? $"Name-{code}");
@@ -61,7 +32,7 @@ public class GetFiltredControlesEndpointTests : IClassFixture<WebApplicationFact
         var page = new PagedResult<Controle>(
             new List<Controle> { item1, item2 }, totalCount: 5, pageNumber: 1, pageSize: 2);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _controleRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFilteredControlesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                         1, 2, It.IsAny<CancellationToken>()))
              .ReturnsAsync(page);
@@ -88,7 +59,7 @@ public class GetFiltredControlesEndpointTests : IClassFixture<WebApplicationFact
         const string code = "ABC";
         var entity = Make(code);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _controleRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFilteredControlesQuery>(q => q.Code == code),
                         1, 10, It.IsAny<CancellationToken>()))
              .ReturnsAsync(new PagedResult<Controle>(new() { entity }, 1, 1, 10));
@@ -107,7 +78,7 @@ public class GetFiltredControlesEndpointTests : IClassFixture<WebApplicationFact
         const string name = "Test";
         var entity = Make("T1", name);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _controleRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFilteredControlesQuery>(q => q.Name == name),
                         1, 10, It.IsAny<CancellationToken>()))
              .ReturnsAsync(new PagedResult<Controle>(new() { entity }, 1, 1, 10));
@@ -124,7 +95,7 @@ public class GetFiltredControlesEndpointTests : IClassFixture<WebApplicationFact
     {
         var disabled = Make("DIS", enabled: false);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _controleRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFilteredControlesQuery>(q => q.IsEnabled == false),
                         1, 10, It.IsAny<CancellationToken>()))
              .ReturnsAsync(new PagedResult<Controle>(new() { disabled }, 1, 1, 10));
@@ -142,7 +113,7 @@ public class GetFiltredControlesEndpointTests : IClassFixture<WebApplicationFact
         var list = new[] { Make("A"), Make("B"), Make("C") };
         var page = new PagedResult<Controle>(list.ToList(), 3, 1, 10);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _controleRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFilteredControlesQuery>(q => q.PageNumber == 1 && q.PageSize == 10 && q.IsEnabled == true),
                         1, 10, It.IsAny<CancellationToken>()))
              .ReturnsAsync(page);
@@ -165,7 +136,7 @@ public class GetFiltredControlesEndpointTests : IClassFixture<WebApplicationFact
         var entity = Make("MULTI", "MultiName");
         var page = new PagedResult<Controle>(new() { entity }, 1, 1, 10);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _controleRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFilteredControlesQuery>(q =>
                             q.Code == "MULTI" && q.Name == "MultiName" && q.IsEnabled == true),
                         1, 10, It.IsAny<CancellationToken>()))
@@ -182,7 +153,7 @@ public class GetFiltredControlesEndpointTests : IClassFixture<WebApplicationFact
     [Fact(DisplayName = "GET /api/controles returns empty list when no match")]
     public async Task Get_ShouldReturnEmpty_WhenNoMatch()
     {
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _controleRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFilteredControlesQuery>(q => q.Code == "NONE"),
                         1, 10, It.IsAny<CancellationToken>()))
              .ReturnsAsync(new PagedResult<Controle>(new(), 0, 1, 10));

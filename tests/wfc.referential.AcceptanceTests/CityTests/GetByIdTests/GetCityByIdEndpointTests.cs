@@ -1,46 +1,16 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.RegionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CityTests.GetByIdTests;
 
-public class GetCityByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetCityByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICityRepository> _repo = new();
-
-    public GetCityByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ICityRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static City Make(Guid id, string code = "CITY-001", string? name = null, bool enabled = true)
     {
         var city = City.Create(
@@ -65,7 +35,7 @@ public class GetCityByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(CityId.Of(id), It.IsAny<CancellationToken>()))
+        _cityRepoMock.Setup(r => r.GetByIdAsync(CityId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((City?)null);
 
         var res = await _client.GetAsync($"/api/cities/{id}");
@@ -77,7 +47,7 @@ public class GetCityByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(CityId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _cityRepoMock.Verify(r => r.GetByIdAsync(CityId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/cities/{id} → 404 when id is malformed")]
@@ -89,7 +59,7 @@ public class GetCityByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<CityId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _cityRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<CityId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/cities/{id} → 200 for disabled City")]
@@ -98,7 +68,7 @@ public class GetCityByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var id = Guid.NewGuid();
         var entity = Make(id, "CITY-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(CityId.Of(id), It.IsAny<CancellationToken>()))
+        _cityRepoMock.Setup(r => r.GetByIdAsync(CityId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/cities/{id}");

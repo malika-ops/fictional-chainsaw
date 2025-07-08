@@ -1,46 +1,15 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Currencies.Dtos;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CurrencyAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CurrencyTests.CreateTests;
 
-public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateCurrencyAcceptanceTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICurrencyRepository> _repoMock = new();
-
-    public CreateCurrencyAcceptanceTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ICurrencyRepository>();
-
-                _repoMock.Setup(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Currency c, CancellationToken _) => c);
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-                _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Currency)null);
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "POST /api/currencies creates currency with all required fields")]
     public async Task CreateCurrency_Should_CreateNewCurrency_WhenAllRequiredFieldsProvided()
     {
@@ -62,7 +31,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         currencyId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<Currency>(c =>
+        _currencyRepoMock.Verify(r => r.AddAsync(It.Is<Currency>(c =>
             c.Code == "USD" &&
             c.CodeAR == "دولار أمريكي" &&
             c.CodeEN == "US Dollar" &&
@@ -70,7 +39,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
             c.CodeIso == 840 &&
             c.IsEnabled == true), It.IsAny<CancellationToken>()), Times.Once);
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _currencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "POST /api/currencies returns 400 when Code is empty")]
@@ -91,7 +60,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/currencies returns 400 when duplicate Code is provided")]
@@ -102,7 +71,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
             CurrencyId.Of(Guid.NewGuid()),
             "EUR", "يورو", "Euro", "Euro", 978);
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCurrency);
 
         var duplicateRequest = new CreateCurrencyRequest
@@ -119,7 +88,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/currencies returns 400 when duplicate CodeIso is provided")]
@@ -130,7 +99,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
             CurrencyId.Of(Guid.NewGuid()),
             "EUR", "يورو", "Euro", "Euro", 978);
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCurrency);
 
         var duplicateRequest = new CreateCurrencyRequest
@@ -147,7 +116,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/currencies auto-generates currency ID")]
@@ -171,7 +140,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         currencyId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<Currency>(c =>
+        _currencyRepoMock.Verify(r => r.AddAsync(It.Is<Currency>(c =>
             c.Id != null && c.Id.Value != Guid.Empty), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -194,7 +163,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<Currency>(c =>
+        _currencyRepoMock.Verify(r => r.AddAsync(It.Is<Currency>(c =>
             c.IsEnabled == true), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -216,7 +185,7 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory(DisplayName = "POST /api/currencies validates all required fields")]
@@ -242,6 +211,6 @@ public class CreateCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.AddAsync(It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

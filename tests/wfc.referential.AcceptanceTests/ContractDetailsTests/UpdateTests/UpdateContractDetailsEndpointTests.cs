@@ -1,13 +1,7 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ContractAggregate;
 using wfc.referential.Domain.ContractDetailsAggregate;
 using wfc.referential.Domain.CorridorAggregate;
@@ -18,47 +12,17 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ContractDetailsTests.UpdateTests;
 
-public class UpdateContractDetailsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateContractDetailsEndpointTests : BaseAcceptanceTests
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IContractDetailsRepository> _contractDetailsRepoMock = new();
-    private readonly Mock<IContractRepository> _contractRepoMock = new();
-    private readonly Mock<IPricingRepository> _pricingRepoMock = new();
-
-    public UpdateContractDetailsEndpointTests(WebApplicationFactory<Program> factory)
+    public UpdateContractDetailsEndpointTests(TestWebApplicationFactory factory) : base(factory)
     {
-        var cacheMock = new Mock<ICacheService>();
+        _contractRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<ContractId>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((ContractId id, CancellationToken _) => CreateMockContract(id.Value));
 
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IContractDetailsRepository>();
-                services.RemoveAll<IContractRepository>();
-                services.RemoveAll<IPricingRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _contractDetailsRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                _contractRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<ContractId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((ContractId id, CancellationToken _) => CreateMockContract(id.Value));
-
-                _pricingRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<PricingId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((PricingId id, CancellationToken _) => CreateMockPricing(id.Value));
-
-                services.AddSingleton(_contractDetailsRepoMock.Object);
-                services.AddSingleton(_contractRepoMock.Object);
-                services.AddSingleton(_pricingRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
+        _pricingRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<PricingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PricingId id, CancellationToken _) => CreateMockPricing(id.Value));
     }
-
+    
     [Fact(DisplayName = "PUT /api/contractdetails/{id} returns 200 when update succeeds with all fields")]
     public async Task Put_ShouldReturn200_WhenUpdateIsSuccessful()
     {

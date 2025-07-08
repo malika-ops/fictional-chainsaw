@@ -2,16 +2,10 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Cities.Dtos;
 using wfc.referential.Application.Constants;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.RegionAggregate;
@@ -20,42 +14,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CityTests.CreateTests;
 
-public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateCityEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICityRepository> _repoCityMock = new();
-    private readonly Mock<IRegionRepository> _repoRegionMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
-
-    public CreateCityEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        // clone the factory and customise the host
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                // 🧹 Remove concrete registrations that hit the DB / Redis
-                services.RemoveAll<ICityRepository>();
-                services.RemoveAll<IRegionRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // 🪄  Set up mock behaviour (echoes entity back, as if EF saved it)
-                _repoCityMock
-                    .Setup(r => r.AddAsync(It.IsAny<City>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((City r, CancellationToken _) => r);
-
-                // 🔌 Plug mocks back in
-                services.AddSingleton(_repoCityMock.Object);
-                services.AddSingleton(_repoRegionMock.Object);
-                services.AddSingleton(_cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "POST /api/cities returns 200 and Guid (fixture version)")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
     {
@@ -70,11 +30,11 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             TimeZone= "America/New_York"
         };
         var region = Region.Create(RegionId.Of(regionId), "RegionCode", "RegionName", CountryId.Of(Guid.NewGuid()));
-        _repoCityMock
+        _cityRepoMock
              .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync((City)null);
 
-        _repoRegionMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+        _regionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(region);
         // Act
         var response = await _client.PostAsJsonAsync("/api/cities", payload);
@@ -85,7 +45,7 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         returnedId.Should().NotBeEmpty();
 
         // verify repository interaction using *FluentAssertions on Moq invocations
-        _repoCityMock.Verify(r =>
+        _cityRepoMock.Verify(r =>
             r.AddAsync(It.Is<City>(r =>
                     r.Code == payload.CityCode &&
                     r.Name == payload.CityName),
@@ -126,7 +86,7 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             .Should().Be("Code is required");
 
         // the handler must NOT be reached
-        _repoCityMock.Verify(r =>
+        _cityRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<City>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "when validation fails, the command handler should not be executed");
@@ -164,7 +124,7 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
               .Should().Be("Code is required");
 
         // handler must NOT run on validation failure
-        _repoCityMock.Verify(r =>
+        _cityRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<City>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
@@ -178,7 +138,7 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         // Tell the repo mock that the code already exists
         var city = City.Create(CityId.Of(Guid.NewGuid()), "", "", "", RegionId.Of(Guid.NewGuid()), "");
 
-        _repoCityMock
+        _cityRepoMock
             .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(city);
 
@@ -205,7 +165,7 @@ public class CreateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         error.Should().Be($"{nameof(City)} with code : {duplicateCode} already exist");
 
         // Handler must NOT attempt to add the entity
-        _repoCityMock.Verify(r =>
+        _cityRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<City>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "no insertion should happen when the code is already taken");

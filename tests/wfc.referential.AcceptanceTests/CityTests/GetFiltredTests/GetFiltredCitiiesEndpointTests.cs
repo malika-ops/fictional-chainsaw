@@ -1,47 +1,19 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Cities.Dtos;
 using wfc.referential.Application.Cities.Queries.GetFiltredCities;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Application.Sectors.Dtos;
-using wfc.referential.Domain.CityAggregate; 
+using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.RegionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CityTests.GetFiltredTests;
 
-public class GetFiltredCitiiesEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredCitiiesEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICityRepository> _repoMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
-    public GetFiltredCitiiesEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ICityRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     // Helper to build dummy regions quickly
     private static City DummyCity(string code, string name) =>
@@ -60,7 +32,7 @@ public class GetFiltredCitiiesEndpointTests : IClassFixture<WebApplicationFactor
             DummyCity("PAR", "Paris"), DummyCity("TYO", "Tokyo"), DummyCity("TOR", "Toronto")};
 
         // repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _cityRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCitiesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1,
                             2,
@@ -79,7 +51,7 @@ public class GetFiltredCitiiesEndpointTests : IClassFixture<WebApplicationFactor
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _cityRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredCitiesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                 1,2,
                                 It.IsAny<CancellationToken>()),
@@ -94,7 +66,7 @@ public class GetFiltredCitiiesEndpointTests : IClassFixture<WebApplicationFactor
         // Arrange
         var nyc = DummyCity("NYC", "US Dollar");
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _cityRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<GetFiltredCitiesQuery>(),
                             It.IsAny<int>(), It.IsAny<int>(),
                             It.IsAny<CancellationToken>()))
@@ -120,7 +92,7 @@ public class GetFiltredCitiiesEndpointTests : IClassFixture<WebApplicationFactor
                             DummyCity("LDN", "London"),
                             DummyCity("PAR", "Paris")};
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _cityRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCitiesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                             1,10,
                             It.IsAny<CancellationToken>()))
@@ -139,7 +111,7 @@ public class GetFiltredCitiiesEndpointTests : IClassFixture<WebApplicationFactor
         dto.Items.Should().HaveCount(3);
 
         // repository must have been called with default paging values
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _cityRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredCitiesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                                 1,10,
                                 It.IsAny<CancellationToken>()),
@@ -180,6 +152,6 @@ public class GetFiltredCitiiesEndpointTests : IClassFixture<WebApplicationFactor
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(It.IsAny<GetFiltredCitiesQuery>(),1, 10, It.IsAny<CancellationToken>()), Times.Never);
+        _cityRepoMock.Verify(r => r.GetPagedByCriteriaAsync(It.IsAny<GetFiltredCitiesQuery>(),1, 10, It.IsAny<CancellationToken>()), Times.Never);
     }
 }

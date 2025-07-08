@@ -1,46 +1,15 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ControleAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ControleTests.GetByIdTests;
 
-public class GetControleByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetControleByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IControleRepository> _repo = new();
-
-    public GetControleByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IControleRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
-
     private static Controle Make(Guid id, string code = "CODE-1", string? name = null, bool enabled = true)
     {
         var c = Controle.Create(ControleId.Of(id), code, name ?? $"Name-{code}");
@@ -57,7 +26,7 @@ public class GetControleByIdEndpointTests : IClassFixture<WebApplicationFactory<
         var id = Guid.NewGuid();
         var entity = Make(id, "CTL-123", "Identity-Check");
 
-        _repo.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/controles/{id}");
@@ -69,7 +38,7 @@ public class GetControleByIdEndpointTests : IClassFixture<WebApplicationFactory<
         body.Name.Should().Be("Identity-Check");
         body.IsEnabled.Should().BeTrue();
 
-        _repo.Verify(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _controleRepoMock.Verify(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/controles/{id} → 404 when Controle not found")]
@@ -77,7 +46,7 @@ public class GetControleByIdEndpointTests : IClassFixture<WebApplicationFactory<
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Controle?)null);
 
         var res = await _client.GetAsync($"/api/controles/{id}");
@@ -89,7 +58,7 @@ public class GetControleByIdEndpointTests : IClassFixture<WebApplicationFactory<
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _controleRepoMock.Verify(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/controles/{id} → 404 when id is malformed")]
@@ -101,7 +70,7 @@ public class GetControleByIdEndpointTests : IClassFixture<WebApplicationFactory<
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<ControleId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<ControleId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/controles/{id} → 200 for disabled Controle")]
@@ -110,7 +79,7 @@ public class GetControleByIdEndpointTests : IClassFixture<WebApplicationFactory<
         var id = Guid.NewGuid();
         var entity = Make(id, "CTL-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/controles/{id}");

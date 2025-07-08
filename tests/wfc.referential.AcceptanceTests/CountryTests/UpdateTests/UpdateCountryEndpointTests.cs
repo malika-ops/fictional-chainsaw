@@ -1,58 +1,18 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using AutoFixture;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using Xunit;
 
-using System.Runtime.Serialization;
-using wfc.referential.Domain.CurrencyAggregate;
-
 namespace wfc.referential.AcceptanceTests.CountryTests.UpdateTests;
 
-public class UpdateCountryEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateCountryEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-
-    private readonly Mock<ICountryRepository> _countryRepo = new();
-    private readonly Mock<ICurrencyRepository> _currencyRepo = new();
-    private readonly Mock<IMonetaryZoneRepository> _zoneRepo = new();
-
-    public UpdateCountryEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ICountryRepository>();
-                s.RemoveAll<ICurrencyRepository>();
-                s.RemoveAll<IMonetaryZoneRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _countryRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                            .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_countryRepo.Object);
-                s.AddSingleton(_currencyRepo.Object);
-                s.AddSingleton(_zoneRepo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Country MakeCountry(Guid id, string code = "AAA", bool enabled = true)
     {
         var mzId = MonetaryZoneId.Of(Guid.NewGuid());
@@ -99,7 +59,7 @@ public class UpdateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _countryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _countryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/countries/{id} → 409 when Code duplicate")]
@@ -111,17 +71,17 @@ public class UpdateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var target = MakeCountry(idTarget, code: "OLD");
         var existing = MakeCountry(idExisting, code: "DUPL");
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(idTarget), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(idTarget), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(target);
-        _countryRepo.Setup(r => r.GetOneByConditionAsync(
+        _countryRepoMock.Setup(r => r.GetOneByConditionAsync(
                                It.IsAny<System.Linq.Expressions.Expression<Func<Country, bool>>>(),
                                It.IsAny<CancellationToken>()))
                     .ReturnsAsync(existing);
 
-        _currencyRepo.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Currency)) as Currency);
-        _zoneRepo.Setup(r => r.GetByIdAsync(It.IsAny<MonetaryZoneId>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(MonetaryZone)) as MonetaryZone);
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(_fixture.Create<Currency>());
+        _monetaryZoneRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<MonetaryZoneId>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(_fixture.Create<MonetaryZone>());
 
         var payload = new
         {
@@ -139,7 +99,7 @@ public class UpdateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         var res = await _client.PutAsJsonAsync($"/api/countries/{idTarget}", payload);
         res.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _countryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _countryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/countries/{id} → 404 when Currency missing")]
@@ -150,17 +110,17 @@ public class UpdateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var mz = Guid.NewGuid();
         var cty = MakeCountry(id);
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(cty);
-        _countryRepo.Setup(r => r.GetOneByConditionAsync(It.IsAny<
+        _countryRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                System.Linq.Expressions.Expression<Func<Country, bool>>>(),
                                It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Country?)null);
 
-        _currencyRepo.Setup(r => r.GetByIdAsync(CurrencyId.Of(cur), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(CurrencyId.Of(cur), It.IsAny<CancellationToken>()))
                      .ReturnsAsync((Currency?)null);          
-        _zoneRepo.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(mz), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(MonetaryZone)) as MonetaryZone);
+        _monetaryZoneRepoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(mz), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(_fixture.Create<MonetaryZone>());
 
         var payload = new
         {
@@ -179,7 +139,7 @@ public class UpdateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var res = await _client.PutAsJsonAsync($"/api/countries/{id}", payload);
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _countryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _countryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/countries/{id} → 404 when MonetaryZone missing")]
@@ -190,16 +150,16 @@ public class UpdateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var mz = Guid.NewGuid();
         var cty = MakeCountry(id);
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(cty);
-        _countryRepo.Setup(r => r.GetOneByConditionAsync(It.IsAny<
+        _countryRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                System.Linq.Expressions.Expression<Func<Country, bool>>>(),
                                It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Country?)null);
 
-        _currencyRepo.Setup(r => r.GetByIdAsync(CurrencyId.Of(cur), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Currency)) as Currency);
-        _zoneRepo.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(mz), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(CurrencyId.Of(cur), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(_fixture.Create<Currency>());
+        _monetaryZoneRepoMock.Setup(r => r.GetByIdAsync(MonetaryZoneId.Of(mz), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((MonetaryZone?)null);
 
         var payload = new
@@ -218,7 +178,7 @@ public class UpdateCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         var res = await _client.PutAsJsonAsync($"/api/countries/{id}", payload);
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _countryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _countryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/countries/{id} → 400 when CountryId empty")]

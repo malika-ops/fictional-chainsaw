@@ -1,46 +1,16 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.Countries;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AffiliatesTests.GetByIdTests;
 
-public class GetAffiliateByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetAffiliateByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAffiliateRepository> _repo = new();
-
-    public GetAffiliateByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IAffiliateRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Affiliate Make(Guid id, string code = "AFF001", string? name = null, bool enabled = true)
     {
         var affiliate = Affiliate.Create(
@@ -69,7 +39,7 @@ public class GetAffiliateByIdEndpointTests : IClassFixture<WebApplicationFactory
         var id = Guid.NewGuid();
         var entity = Make(id, "AFF001", "Wafacash");
 
-        _repo.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/affiliates/{id}");
@@ -81,7 +51,7 @@ public class GetAffiliateByIdEndpointTests : IClassFixture<WebApplicationFactory
         body.Name.Should().Be("Wafacash");
         body.IsEnabled.Should().BeTrue();
 
-        _repo.Verify(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _affiliateRepoMock.Verify(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/affiliates/{id} → 404 when Affiliate not found")]
@@ -89,7 +59,7 @@ public class GetAffiliateByIdEndpointTests : IClassFixture<WebApplicationFactory
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Affiliate?)null);
 
         var res = await _client.GetAsync($"/api/affiliates/{id}");
@@ -101,7 +71,7 @@ public class GetAffiliateByIdEndpointTests : IClassFixture<WebApplicationFactory
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _affiliateRepoMock.Verify(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/affiliates/{id} → 404 when id is malformed")]
@@ -113,7 +83,7 @@ public class GetAffiliateByIdEndpointTests : IClassFixture<WebApplicationFactory
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<AffiliateId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<AffiliateId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/affiliates/{id} → 200 for disabled Affiliate")]
@@ -122,7 +92,7 @@ public class GetAffiliateByIdEndpointTests : IClassFixture<WebApplicationFactory
         var id = Guid.NewGuid();
         var entity = Make(id, "AFF-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/affiliates/{id}");

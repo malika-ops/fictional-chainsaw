@@ -1,14 +1,7 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
@@ -17,80 +10,80 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.CreateTests;
 
-public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreatePartnerAccountEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPartnerAccountRepository> _repoMock = new();
-    private readonly Mock<IBankRepository> _bankRepoMock = new();
-    private readonly Mock<IParamTypeRepository> _paramTypeRepoMock = new();
+    //    private readonly HttpClient _client;
+    //    private readonly Mock<IPartnerAccountRepository> _partnerAccountRepoMock = new();
+    //    private readonly Mock<IBankRepository> _bankRepoMock = new();
+    //    private readonly Mock<IParamTypeRepository> _paramTypeRepoMock = new();
 
-    public CreatePartnerAccountEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
+    //    public CreatePartnerAccountEndpointTests(WebApplicationFactory<Program> factory)
+    //    {
+    //        var cacheMock = new Mock<ICacheService>();
 
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IPartnerAccountRepository>();
-                services.RemoveAll<IBankRepository>();
-                services.RemoveAll<IParamTypeRepository>();
-                services.RemoveAll<ICacheService>();
+    //        var customizedFactory = factory.WithWebHostBuilder(builder =>
+    //        {
+    //            builder.UseEnvironment("Testing");
+    //            builder.ConfigureServices(services =>
+    //            {
+    //                services.RemoveAll<IPartnerAccountRepository>();
+    //                services.RemoveAll<IBankRepository>();
+    //                services.RemoveAll<IParamTypeRepository>();
+    //                services.RemoveAll<ICacheService>();
 
-                // Updated to use BaseRepository methods
-                _repoMock.Setup(r => r.AddAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((PartnerAccount p, CancellationToken _) => p);
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+    //                // Updated to use BaseRepository methods
+    //                _partnerAccountRepoMock.Setup(r => r.AddAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()))
+    //                    .ReturnsAsync((PartnerAccount p, CancellationToken _) => p);
+    //                _partnerAccountRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+    //                    .Returns(Task.CompletedTask);
 
-                // Set up bank mock to return valid entities
-                var bankId = BankId.Of(Guid.Parse("11111111-1111-1111-1111-111111111111"));
-                _bankRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<BankId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(Bank.Create(bankId, "AWB", "Attijariwafa Bank", "AWB"));
+    //                // Set up bank mock to return valid entities
+    //                var bankId = BankId.Of(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+    //                _bankRepoMock
+    //                    .Setup(r => r.GetByIdAsync(It.IsAny<BankId>(), It.IsAny<CancellationToken>()))
+    //                    .ReturnsAsync(Bank.Create(bankId, "AWB", "Attijariwafa Bank", "AWB"));
 
-                // Set up param type mock to return valid account types
-                var activityTypeId = ParamTypeId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
-                var commissionTypeId = ParamTypeId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
+    //                // Set up param type mock to return valid account types
+    //                var activityTypeId = ParamTypeId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
+    //                var commissionTypeId = ParamTypeId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
 
-                // Create valid TypeDefinitionId instances instead of passing null
-                var activityTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
-                var commissionTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("55555555-5555-5555-5555-555555555555"));
+    //                // Create valid TypeDefinitionId instances instead of passing null
+    //                var activityTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
+    //                var commissionTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("55555555-5555-5555-5555-555555555555"));
 
-                var activityType = ParamType.Create(activityTypeId, activityTypeDefinitionId, "Activity");
-                var commissionType = ParamType.Create(commissionTypeId, commissionTypeDefinitionId, "Commission");
+    //                var activityType = ParamType.Create(activityTypeId, activityTypeDefinitionId, "Activity");
+    //                var commissionType = ParamType.Create(commissionTypeId, commissionTypeDefinitionId, "Commission");
 
-                _paramTypeRepoMock
-                    .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == activityTypeId.Value), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(activityType);
+    //                _paramTypeRepoMock
+    //                    .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == activityTypeId.Value), It.IsAny<CancellationToken>()))
+    //                    .ReturnsAsync(activityType);
 
-                _paramTypeRepoMock
-                    .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == commissionTypeId.Value), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(commissionType);
+    //                _paramTypeRepoMock
+    //                    .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == commissionTypeId.Value), It.IsAny<CancellationToken>()))
+    //                    .ReturnsAsync(commissionType);
 
-                // Set up the mock to return null for duplicate checks initially
-                _repoMock
-                    .Setup(r => r.GetOneByConditionAsync(
-                        It.IsAny<System.Linq.Expressions.Expression<System.Func<PartnerAccount, bool>>>(),
-                        It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((PartnerAccount?)null);
+    //                // Set up the mock to return null for duplicate checks initially
+    //                _partnerAccountRepoMock
+    //                    .Setup(r => r.GetOneByConditionAsync(
+    //                        It.IsAny<System.Linq.Expressions.Expression<System.Func<PartnerAccount, bool>>>(),
+    //                        It.IsAny<CancellationToken>()))
+    //                    .ReturnsAsync((PartnerAccount?)null);
 
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_bankRepoMock.Object);
-                services.AddSingleton(_paramTypeRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
+    //                services.AddSingleton(_partnerAccountRepoMock.Object);
+    //                services.AddSingleton(_bankRepoMock.Object);
+    //                services.AddSingleton(_paramTypeRepoMock.Object);
+    //                services.AddSingleton(cacheMock.Object);
+    //            });
+    //        });
 
-        _client = customizedFactory.CreateClient();
-    }
+    //        _client = customizedFactory.CreateClient();
+    //    }
 
     [Fact(DisplayName = "POST /api/partner-accounts returns 200 and Guid when request is valid")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
     {
         // Arrange
-        var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var id = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         var payload = new
@@ -101,9 +94,40 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
             BusinessName = "Wafa Cash Services",
             ShortName = "WCS",
             AccountBalance = 50000.00m,
-            BankId = bankId,
+            BankId = id,
             AccountTypeId = accountTypeId
         };
+
+        // Set up bank mock to return valid entities
+        var bankId = BankId.Of(id);
+        _bankRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<BankId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Bank.Create(bankId, "AWB", "Attijariwafa Bank", "AWB"));
+
+        // Set up param type mock to return valid account types
+        var activityTypeId = ParamTypeId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
+        var commissionTypeId = ParamTypeId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
+
+        // Create valid TypeDefinitionId instances instead of passing null
+        var activityTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
+        var commissionTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("55555555-5555-5555-5555-555555555555"));
+
+        var activityType = ParamType.Create(activityTypeId, activityTypeDefinitionId, "Activity");
+        var commissionType = ParamType.Create(commissionTypeId, commissionTypeDefinitionId, "Commission");
+
+        _paramTypeRepoMock
+            .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == activityTypeId.Value), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(activityType);
+
+        _paramTypeRepoMock
+            .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == commissionTypeId.Value), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(commissionType);
+
+        // Set up the mock to return null for duplicate checks initially
+        _partnerAccountRepoMock
+            .Setup(r => r.GetOneByConditionAsync(
+                It.IsAny<System.Linq.Expressions.Expression<System.Func<PartnerAccount, bool>>>(),
+                It.IsAny<CancellationToken>()));
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/partner-accounts", payload);
@@ -113,21 +137,21 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         returnedId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r =>
+        _partnerAccountRepoMock.Verify(r =>
             r.AddAsync(It.Is<PartnerAccount>(p =>
                     p.AccountNumber == payload.AccountNumber &&
                     p.RIB == payload.RIB &&
                     p.BusinessName == payload.BusinessName &&
                     p.ShortName == payload.ShortName &&
                     p.AccountBalance == payload.AccountBalance &&
-                    p.Bank.Id.Value == bankId &&
+                    p.Bank.Id.Value == id &&
                     p.AccountTypeId.Value == accountTypeId),
                     It.IsAny<CancellationToken>()
             ),
             Times.Once
         );
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "POST /api/partner-accounts returns 409 when AccountNumber already exists")]
@@ -156,7 +180,7 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
             existingAccountType
         );
 
-        _repoMock
+        _partnerAccountRepoMock
             .Setup(r => r.GetOneByConditionAsync(
                 It.IsAny<System.Linq.Expressions.Expression<System.Func<PartnerAccount, bool>>>(),
                 It.IsAny<CancellationToken>()))
@@ -180,7 +204,7 @@ public class CreatePartnerAccountEndpointTests : IClassFixture<WebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        _repoMock.Verify(r =>
+        _partnerAccountRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<PartnerAccount>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }

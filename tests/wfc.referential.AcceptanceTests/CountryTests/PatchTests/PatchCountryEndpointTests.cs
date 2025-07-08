@@ -1,57 +1,19 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text;
-using wfc.referential.Application.Interfaces;
+using System.Text.Json;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using Xunit;
-using System.Linq.Expressions;
 
 namespace wfc.referential.AcceptanceTests.CountryTests.PatchTests;
 
-public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchCountryEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly Mock<ICountryRepository> _countryRepo = new();
-    private readonly Mock<ICurrencyRepository> _currencyRepo = new();
-    private readonly Mock<IMonetaryZoneRepository> _zoneRepo = new();
-    private readonly HttpClient _client;
-
-    public PatchCountryEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ICountryRepository>();
-                s.RemoveAll<ICurrencyRepository>();
-                s.RemoveAll<IMonetaryZoneRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _countryRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                            .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_countryRepo.Object);
-                s.AddSingleton(_currencyRepo.Object);
-                s.AddSingleton(_zoneRepo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Country MakeCountry(Guid id, string code = "AAA", bool isEnabled = true)
     {
         var mzId = MonetaryZoneId.Of(Guid.NewGuid());
@@ -106,10 +68,10 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var id = Guid.NewGuid();
         var country = MakeCountry(id);
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(country);
 
-        _countryRepo.Setup(r => r.GetOneByConditionAsync(
+        _countryRepoMock.Setup(r => r.GetOneByConditionAsync(
                                It.IsAny<Expression<Func<Country, bool>>>(),
                                It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Country?)null);     
@@ -131,7 +93,7 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         country.Name.Should().Be("New-Name");
         country.IsEnabled.Should().BeFalse();
-        _countryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _countryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/countries/{id} returns 200 when patching only Code")]
@@ -140,9 +102,9 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var id = Guid.NewGuid();
         var orig = MakeCountry(id, code: "OLD");
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(orig);
-        _countryRepo.Setup(r => r.GetOneByConditionAsync(
+        _countryRepoMock.Setup(r => r.GetOneByConditionAsync(
                                It.IsAny<Expression<Func<Country, bool>>>(),
                                It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Country?)null);      
@@ -156,7 +118,7 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
         ok.Should().BeTrue();
 
         orig.Code.Should().Be("NEW");
-        _countryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _countryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
 
@@ -165,7 +127,7 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
     {
         var id = Guid.NewGuid();
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Country?)null);
 
         var payload = new { CountryId = id, Name = "Nope" };
@@ -173,7 +135,7 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var resp = await PatchJsonAsync(_client, $"/api/countries/{id}", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _countryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _countryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/countries/{id} returns 409 when Code already exists")]
@@ -185,10 +147,10 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var target = MakeCountry(idTarget, code: "OLD");
         var existing = MakeCountry(idExisting, code: "DUPL");
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(idTarget), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(idTarget), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(target);
 
-        _countryRepo.Setup(r => r.GetOneByConditionAsync(
+        _countryRepoMock.Setup(r => r.GetOneByConditionAsync(
                                It.IsAny<Expression<Func<Country, bool>>>(),
                                It.IsAny<CancellationToken>()))
                     .ReturnsAsync(existing);     
@@ -203,7 +165,7 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
                 .GetProperty("message").GetString()
            .Should().Be("Country with code DUPL already exists.");
 
-        _countryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _countryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/countries/{id} returns 404 when CurrencyId not found")]
@@ -213,12 +175,12 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var cId = Guid.NewGuid();
         var orig = MakeCountry(id);
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(orig);
-        _countryRepo.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Country, bool>>>(), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Country, bool>>>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Country?)null);
 
-        _currencyRepo.Setup(r => r.GetByIdAsync(CurrencyId.Of(cId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(CurrencyId.Of(cId), It.IsAny<CancellationToken>()))
                      .ReturnsAsync((Currency?)null);  
 
         var payload = new { CountryId = id, CurrencyId = cId };
@@ -226,7 +188,7 @@ public class PatchCountryEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var resp = await PatchJsonAsync(_client, $"/api/countries/{id}", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _countryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _countryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
 

@@ -1,14 +1,8 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.ServiceAggregate;
 using wfc.referential.Domain.TaxAggregate;
@@ -17,31 +11,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TaxRuleDetailTests.GetByIdTests;
 
-public class GetTaxRuleDetailByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetTaxRuleDetailByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITaxRuleDetailRepository> _repo = new();
-
-    public GetTaxRuleDetailByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ITaxRuleDetailRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
 
     private static TaxRuleDetail Make(Guid id, ApplicationRule appliedOn = ApplicationRule.Fees, bool enabled = true)
     {
@@ -78,7 +49,7 @@ public class GetTaxRuleDetailByIdEndpointTests : IClassFixture<WebApplicationFac
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()))
+        _taxRuleDetailsRepoMock.Setup(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((TaxRuleDetail?)null);
 
         var res = await _client.GetAsync($"/api/tax-rule-details/{id}");
@@ -90,7 +61,7 @@ public class GetTaxRuleDetailByIdEndpointTests : IClassFixture<WebApplicationFac
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _taxRuleDetailsRepoMock.Verify(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/tax-rule-details/{id} → 404 when id is malformed")]
@@ -102,7 +73,7 @@ public class GetTaxRuleDetailByIdEndpointTests : IClassFixture<WebApplicationFac
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _taxRuleDetailsRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/tax-rule-details/{id} → 200 for disabled TaxRuleDetail")]
@@ -111,7 +82,7 @@ public class GetTaxRuleDetailByIdEndpointTests : IClassFixture<WebApplicationFac
         var id = Guid.NewGuid();
         var entity = Make(id, ApplicationRule.Fees, enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()))
+        _taxRuleDetailsRepoMock.Setup(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/tax-rule-details/{id}");
@@ -128,7 +99,7 @@ public class GetTaxRuleDetailByIdEndpointTests : IClassFixture<WebApplicationFac
         var id = Guid.NewGuid();
         var entity = Make(id, ApplicationRule.Fees);
 
-        _repo.Setup(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()))
+        _taxRuleDetailsRepoMock.Setup(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/tax-rule-details/{id}");
@@ -145,7 +116,7 @@ public class GetTaxRuleDetailByIdEndpointTests : IClassFixture<WebApplicationFac
         var id = Guid.NewGuid();
         var entity = Make(id, ApplicationRule.Amount);
 
-        _repo.Setup(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()))
+        _taxRuleDetailsRepoMock.Setup(r => r.GetByIdAsync(TaxRuleDetailsId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/tax-rule-details/{id}");

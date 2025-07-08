@@ -1,14 +1,8 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Sectors.Queries.GetFiltredSectors;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
@@ -18,32 +12,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.SectorsTests.GetFiltredTests;
 
-public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredSectorsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ISectorRepository> _repoMock = new();
-
-    public GetFiltredSectorsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ISectorRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     // Helper to build dummy sectors quickly - Fixed with abbreviation parameter
     private static Sector CreateTestSector(string code, string name, bool isEnabled = true)
     {
@@ -88,7 +58,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
         };
 
         // Repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredSectorsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1, 2, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new BuildingBlocks.Core.Pagination.PagedResult<Sector>(
@@ -106,7 +76,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredSectorsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                 1, 2, It.IsAny<CancellationToken>()),
                          Times.Once);
@@ -118,7 +88,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
         // Arrange
         var sector = CreateTestSector("SECTOR1", "First Sector");
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredSectorsQuery>(q => q.Code == "SECTOR1"),
                             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new BuildingBlocks.Core.Pagination.PagedResult<Sector>(
@@ -133,7 +103,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("code").GetString().Should().Be("SECTOR1");
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredSectorsQuery>(q => q.Code == "SECTOR1"),
                                 It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                          Times.Once);
@@ -150,7 +120,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
             CreateTestSector("SECTOR3", "Third Sector")
         };
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredSectorsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                             1, 10, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new BuildingBlocks.Core.Pagination.PagedResult<Sector>(
@@ -168,7 +138,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
         dto.Items.Should().HaveCount(3);
 
         // Repository must have been called with default paging values
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredSectorsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                                 1, 10, It.IsAny<CancellationToken>()),
                          Times.Once);
@@ -180,7 +150,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
         // Arrange
         var sector = CreateTestSector("SECTOR1", "First Sector", false); // Disabled
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredSectorsQuery>(q => q.IsEnabled == false),
                             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new BuildingBlocks.Core.Pagination.PagedResult<Sector>(
@@ -195,7 +165,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("isEnabled").GetBoolean().Should().BeFalse();
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredSectorsQuery>(q => q.IsEnabled == false),
                                 It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                          Times.Once);
@@ -210,7 +180,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
             CreateTestSector("SECTOR2", "Test Sector Beta")
         };
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredSectorsQuery>(q => q.Name == "Test"),
                             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new BuildingBlocks.Core.Pagination.PagedResult<Sector>(
@@ -237,7 +207,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
             CreateTestSector("SECTOR2", "City Sector 2")
         };
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredSectorsQuery>(q => q.CityId == cityId),
                             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new BuildingBlocks.Core.Pagination.PagedResult<Sector>(
@@ -256,7 +226,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
     public async Task Get_ShouldReturnEmptyResult_WhenNoSectorsMatchFilters()
     {
         // Arrange
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredSectorsQuery>(q => q.Code == "NONEXISTENT"),
                             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new BuildingBlocks.Core.Pagination.PagedResult<Sector>(
@@ -280,7 +250,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
         var cityId = Guid.NewGuid();
         var sector = CreateTestSector("ACTIVE_CODE", "Active Sector");
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredSectorsQuery>(q =>
                                 q.Code == "ACTIVE_CODE" &&
                                 q.Name == "Active" &&
@@ -312,7 +282,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
             .Select(i => CreateTestSector($"SECTOR{i:000}", $"Sector {i}"))
             .ToList();
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredSectorsQuery>(q => q.PageSize == pageSize),
                             It.IsAny<int>(), pageSize, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new BuildingBlocks.Core.Pagination.PagedResult<Sector>(
@@ -336,7 +306,7 @@ public class GetFiltredSectorsEndpointTests : IClassFixture<WebApplicationFactor
             .Select(i => CreateTestSector($"SECTOR{i:000}", $"Sector {i}"))
             .ToList();
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _sectorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<GetFiltredSectorsQuery>(),
                             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new BuildingBlocks.Core.Pagination.PagedResult<Sector>(

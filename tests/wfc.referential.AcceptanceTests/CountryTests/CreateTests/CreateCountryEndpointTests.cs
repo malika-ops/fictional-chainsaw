@@ -1,15 +1,9 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using AutoFixture;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
@@ -17,54 +11,23 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CountryTests.CreateTests;
 
-public class CreateCountryEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateCountryEndpointTests : BaseAcceptanceTests
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICountryRepository> _countryRepoMock = new();
-    private readonly Mock<ICurrencyRepository> _currencyRepoMock = new();
-    private readonly Mock<IMonetaryZoneRepository> _monetaryZoneRepoMock = new();
 
-    public CreateCountryEndpointTests(WebApplicationFactory<Program> factory)
+    public CreateCountryEndpointTests(TestWebApplicationFactory factory) : base(factory)
     {
-        var cacheMock = new Mock<ICacheService>();
+        var dummyCurrency = _fixture.Create<Currency>();
+        var dummyMonetaryZone = _fixture.Create<MonetaryZone>();
 
-        var customised = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ICountryRepository>();
-                s.RemoveAll<ICurrencyRepository>();
-                s.RemoveAll<IMonetaryZoneRepository>();
-                s.RemoveAll<ICacheService>();
+        _currencyRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyCurrency);
 
-                _countryRepoMock.Setup(r => r.AddAsync(It.IsAny<Country>(), It.IsAny<CancellationToken>()))
-                                .ReturnsAsync((Country c, CancellationToken _) => c);
-
-                _countryRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                                .Returns(Task.CompletedTask);
-
-                var dummyCurrency = FormatterServices.GetUninitializedObject(typeof(Currency)) as Currency;
-                var dummyMonetaryZone = FormatterServices.GetUninitializedObject(typeof(MonetaryZone)) as MonetaryZone;
-
-                _currencyRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<CurrencyId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(dummyCurrency);
-
-                _monetaryZoneRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<MonetaryZoneId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(dummyMonetaryZone);
-
-                s.AddSingleton(_countryRepoMock.Object);
-                s.AddSingleton(_currencyRepoMock.Object);
-                s.AddSingleton(_monetaryZoneRepoMock.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customised.CreateClient();
+        _monetaryZoneRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<MonetaryZoneId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyMonetaryZone);
     }
-
+   
 
     private static object ValidPayload(Guid? currencyId = null, Guid? zoneId = null, string? code = null)
     {

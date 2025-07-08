@@ -1,47 +1,17 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.AgencyTierAggregate;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AgencyAggregate;
+using wfc.referential.Domain.AgencyTierAggregate;
 using wfc.referential.Domain.TierAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTierTests.GetByIdTests;
 
-public class GetAgencyTierByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetAgencyTierByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyTierRepository> _repo = new();
-
-    public GetAgencyTierByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IAgencyTierRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static AgencyTier Make(Guid id, string code = "AGENCY-TIER-001", string? name = null, bool enabled = true)
     {
         var agencyTier = AgencyTier.Create(
@@ -65,7 +35,7 @@ public class GetAgencyTierByIdEndpointTests : IClassFixture<WebApplicationFactor
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyTierRepoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((AgencyTier?)null);
 
         var res = await _client.GetAsync($"/api/agencytiers/{id}");
@@ -77,7 +47,7 @@ public class GetAgencyTierByIdEndpointTests : IClassFixture<WebApplicationFactor
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _agencyTierRepoMock.Verify(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/agencytiers/{id} → 404 when id is malformed")]
@@ -89,7 +59,7 @@ public class GetAgencyTierByIdEndpointTests : IClassFixture<WebApplicationFactor
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<AgencyTierId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _agencyTierRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<AgencyTierId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/agencytiers/{id} → 200 for disabled AgencyTier")]
@@ -98,7 +68,7 @@ public class GetAgencyTierByIdEndpointTests : IClassFixture<WebApplicationFactor
         var id = Guid.NewGuid();
         var entity = Make(id, "AGENCY-TIER-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyTierRepoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/agencytiers/{id}");

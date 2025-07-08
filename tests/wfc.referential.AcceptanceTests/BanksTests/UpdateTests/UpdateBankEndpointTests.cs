@@ -1,42 +1,15 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Banks.Dtos;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.BanksTests.UpdateTests;
 
-public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateBankAcceptanceTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IBankRepository> _repoMock = new();
-
-    public UpdateBankAcceptanceTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IBankRepository>();
-
-                _repoMock.Setup(r => r.Update(It.IsAny<Bank>()));
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "PUT /api/banks/{id} modifies bank data")]
     public async Task UpdateBank_Should_ModifyAllBankFields_WhenValidDataProvided()
     {
@@ -46,9 +19,9 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
             BankId.Of(bankId),
             "AWB", "Attijariwafa Bank", "AWB");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingBank);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Bank)null);
 
         var updateRequest = new UpdateBankRequest
@@ -67,9 +40,9 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _bankRepoMock.Verify(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()), Times.Once);
+        _bankRepoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Once);
+        _bankRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PUT /api/banks/{id} validates Code uniqueness before update")]
@@ -82,9 +55,9 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
         var targetBank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
         var conflictingBank = Bank.Create(BankId.Of(existingBankId), "BMCE", "Banque Marocaine du Commerce Extérieur", "BMCE");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(targetBank);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(conflictingBank);
 
         var updateRequest = new UpdateBankRequest
@@ -100,7 +73,7 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
+        _bankRepoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/banks/{id} returns 400 when bank not found")]
@@ -109,7 +82,7 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
         // Arrange
         var bankId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Bank)null);
 
         var updateRequest = new UpdateBankRequest
@@ -125,7 +98,7 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
+        _bankRepoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/banks/{id} verifies value after update")]
@@ -137,9 +110,9 @@ public class UpdateBankAcceptanceTests : IClassFixture<WebApplicationFactory<Pro
             BankId.Of(bankId),
             "AWB", "Attijariwafa Bank", "AWB");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(bank);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Bank)null);
 
         var updateRequest = new UpdateBankRequest

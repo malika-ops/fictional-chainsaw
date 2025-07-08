@@ -1,40 +1,15 @@
-﻿using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.IdentityDocumentAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.IdentityDocumentTests.UpdateTests;
 
-public class UpdateIdentityDocumentEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateIdentityDocumentEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IIdentityDocumentRepository> _repoMock = new();
-
-    public UpdateIdentityDocumentEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IIdentityDocumentRepository>();
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static IdentityDocument Dummy(Guid id, string code, string name) =>
         IdentityDocument.Create(IdentityDocumentId.Of(id), code, name, "desc");
 
@@ -45,19 +20,19 @@ public class UpdateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         var identityDocumentId = IdentityDocumentId.Of(id);
         var original = Dummy(id, "CIN", "Carte Nationale");
 
-        _repoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
+        _identityDocumentRepoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(original);
 
         // No duplicate code exists
-        _repoMock.Setup(r => r.GetOneByConditionAsync(
+        _identityDocumentRepoMock.Setup(r => r.GetOneByConditionAsync(
                 It.IsAny<System.Linq.Expressions.Expression<System.Func<IdentityDocument, bool>>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((IdentityDocument?)null);
 
         // Setup Update method (void method)
-        _repoMock.Setup(r => r.Update(It.IsAny<IdentityDocument>()));
+        _identityDocumentRepoMock.Setup(r => r.Update(It.IsAny<IdentityDocument>()));
 
-        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        _identityDocumentRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(1));
 
         var payload = new
@@ -79,8 +54,8 @@ public class UpdateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         original.Description.Should().Be(payload.Description);
         original.IsEnabled.Should().Be(payload.IsEnabled);
 
-        _repoMock.Verify(r => r.Update(original), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _identityDocumentRepoMock.Verify(r => r.Update(original), Times.Once);
+        _identityDocumentRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PUT /api/identitydocuments/{id} returns 400 if name missing")]
@@ -108,7 +83,7 @@ public class UpdateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         var id = Guid.NewGuid(); // Use a valid GUID, not Empty
         var identityDocumentId = IdentityDocumentId.Of(id);
 
-        _repoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
+        _identityDocumentRepoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
                  .ReturnsAsync((IdentityDocument?)null);
 
         var payload = new
@@ -133,10 +108,10 @@ public class UpdateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
 
         var duplicateDoc = Dummy(Guid.NewGuid(), "DUPLICATE", "Duplicate Doc");
 
-        _repoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
+        _identityDocumentRepoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(original);
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(
+        _identityDocumentRepoMock.Setup(r => r.GetOneByConditionAsync(
                 It.IsAny<System.Linq.Expressions.Expression<System.Func<IdentityDocument, bool>>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(duplicateDoc);

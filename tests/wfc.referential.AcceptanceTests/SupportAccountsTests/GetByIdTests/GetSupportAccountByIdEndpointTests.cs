@@ -1,45 +1,15 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.SupportAccountsTests.GetByIdTests;
 
-public class GetSupportAccountByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetSupportAccountByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ISupportAccountRepository> _repo = new();
-
-    public GetSupportAccountByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ISupportAccountRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static SupportAccount Make(Guid id, string code = "SUPPORT-ACCOUNT-001", string? name = null, bool enabled = true)
     {
         var supportAccount = SupportAccount.Create(
@@ -65,7 +35,7 @@ public class GetSupportAccountByIdEndpointTests : IClassFixture<WebApplicationFa
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
+        _supportAccountRepoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((SupportAccount?)null);
 
         var res = await _client.GetAsync($"/api/support-accounts/{id}");
@@ -77,7 +47,7 @@ public class GetSupportAccountByIdEndpointTests : IClassFixture<WebApplicationFa
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _supportAccountRepoMock.Verify(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/support-accounts/{id} → 404 when id is malformed")]
@@ -89,7 +59,7 @@ public class GetSupportAccountByIdEndpointTests : IClassFixture<WebApplicationFa
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<SupportAccountId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _supportAccountRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<SupportAccountId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/support-accounts/{id} → 200 for disabled SupportAccount")]
@@ -98,7 +68,7 @@ public class GetSupportAccountByIdEndpointTests : IClassFixture<WebApplicationFa
         var id = Guid.NewGuid();
         var entity = Make(id, "SUPPORT-ACCOUNT-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
+        _supportAccountRepoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/support-accounts/{id}");

@@ -1,17 +1,11 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AffiliateAggregate;
-using wfc.referential.Domain.CorridorAggregate;            
+using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
 using wfc.referential.Domain.CountryServiceAggregate;
@@ -22,51 +16,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CountryTests.DeleteTests;
 
-public class DeleteCountryEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteCountryEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-
-    private readonly Mock<ICountryRepository> _countryRepoMock = new();
-    private readonly Mock<IPartnerCountryRepository> _partnerRepoMock = new();
-    private readonly Mock<ICorridorRepository> _corridorRepoMock = new();
-    private readonly Mock<ICountryIdentityDocRepository> _idDocRepoMock = new();
-    private readonly Mock<ICountryServiceRepository> _serviceRepoMock = new();
-    private readonly Mock<IAffiliateRepository> _affiliateRepoMock = new();
-
-    private readonly HttpClient _client;
-
-    public DeleteCountryEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ICountryRepository>();
-                services.RemoveAll<IPartnerCountryRepository>();
-                services.RemoveAll<ICorridorRepository>();
-                services.RemoveAll<ICountryIdentityDocRepository>();
-                services.RemoveAll<ICountryServiceRepository>();
-                services.RemoveAll<IAffiliateRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _countryRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                                .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_countryRepoMock.Object);
-                services.AddSingleton(_partnerRepoMock.Object);
-                services.AddSingleton(_corridorRepoMock.Object);
-                services.AddSingleton(_idDocRepoMock.Object);
-                services.AddSingleton(_serviceRepoMock.Object);
-                services.AddSingleton(_affiliateRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
 
     private static Country MakeCountry(Guid id)
     {
@@ -105,7 +56,7 @@ public class DeleteCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
                         It.IsAny<System.Linq.Expressions.Expression<Func<Country, object>>[]>()))
             .ReturnsAsync(country);
 
-        _partnerRepoMock.Setup(r =>
+        _partnerCountryRepoMock.Setup(r =>
         r.GetOneByConditionAsync(
             It.IsAny<Expression<Func<PartnerCountry, bool>>>(),
             It.IsAny<CancellationToken>()))
@@ -117,13 +68,13 @@ public class DeleteCountryEndpointTests : IClassFixture<WebApplicationFactory<Pr
                     It.IsAny<CancellationToken>()))
             .ReturnsAsync((Corridor?)null);
 
-        _idDocRepoMock.Setup(r =>
+        _countryIdentityDocRepoMock.Setup(r =>
                 r.GetOneByConditionAsync(
                     It.IsAny<Expression<Func<CountryIdentityDoc, bool>>>(),
                     It.IsAny<CancellationToken>()))
             .ReturnsAsync((CountryIdentityDoc?)null);
 
-        _serviceRepoMock.Setup(r =>
+        _countryServiceRepoMock.Setup(r =>
                 r.GetOneByConditionAsync(
                     It.IsAny<Expression<Func<CountryService, bool>>>(),
                     It.IsAny<CancellationToken>()))

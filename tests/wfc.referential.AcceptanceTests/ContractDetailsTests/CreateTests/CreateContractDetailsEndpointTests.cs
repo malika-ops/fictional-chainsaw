@@ -1,13 +1,7 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ContractAggregate;
 using wfc.referential.Domain.ContractDetailsAggregate;
 using wfc.referential.Domain.CorridorAggregate;
@@ -18,54 +12,26 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ContractDetailsTests.CreateTests;
 
-public class CreateContractDetailsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateContractDetailsEndpointTests : BaseAcceptanceTests
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IContractDetailsRepository> _contractDetailsRepoMock = new();
-    private readonly Mock<IContractRepository> _contractRepoMock = new();
-    private readonly Mock<IPricingRepository> _pricingRepoMock = new();
-
-    public CreateContractDetailsEndpointTests(WebApplicationFactory<Program> factory)
+    public CreateContractDetailsEndpointTests(TestWebApplicationFactory factory) : base(factory)
     {
-        var cacheMock = new Mock<ICacheService>();
+        // Setup ContractDetails Repository
+        _contractDetailsRepoMock.Setup(r => r.AddAsync(It.IsAny<ContractDetails>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ContractDetails cd, CancellationToken _) => cd);
+        _contractDetailsRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _contractDetailsRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ContractDetails, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ContractDetails>());
 
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
+        // Setup Contract Repository
+        _contractRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<ContractId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ContractId id, CancellationToken _) => CreateMockContract(id.Value));
 
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IContractDetailsRepository>();
-                services.RemoveAll<IContractRepository>();
-                services.RemoveAll<IPricingRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // Setup ContractDetails Repository
-                _contractDetailsRepoMock.Setup(r => r.AddAsync(It.IsAny<ContractDetails>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((ContractDetails cd, CancellationToken _) => cd);
-                _contractDetailsRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-                _contractDetailsRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<ContractDetails, bool>>>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new List<ContractDetails>());
-
-                // Setup Contract Repository
-                _contractRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<ContractId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((ContractId id, CancellationToken _) => CreateMockContract(id.Value));
-
-                // Setup Pricing Repository
-                _pricingRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<PricingId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((PricingId id, CancellationToken _) => CreateMockPricing(id.Value));
-
-                services.AddSingleton(_contractDetailsRepoMock.Object);
-                services.AddSingleton(_contractRepoMock.Object);
-                services.AddSingleton(_pricingRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
+        // Setup Pricing Repository
+        _pricingRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<PricingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PricingId id, CancellationToken _) => CreateMockPricing(id.Value));
     }
-
     [Fact(DisplayName = "POST /api/contractdetails returns 200 and Guid when all required fields are provided")]
     public async Task Post_ShouldReturn200_AndId_WhenAllRequiredFieldsAreProvided()
     {
@@ -85,13 +51,6 @@ public class CreateContractDetailsEndpointTests : IClassFixture<WebApplicationFa
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/contractdetails", payload);
-
-        // Debug output if test fails
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Error response: {errorContent}");
-        }
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

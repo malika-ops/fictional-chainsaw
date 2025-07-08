@@ -1,15 +1,9 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using AutoFixture;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.PricingAggregate;
@@ -18,67 +12,31 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PricingTests.CreateTests;
 
-public class CreatePricingEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreatePricingEndpointTests : BaseAcceptanceTests
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPricingRepository> _pricingRepoMock = new();
-    private readonly Mock<IServiceRepository> _serviceRepoMock = new();
-    private readonly Mock<ICorridorRepository> _corridorRepoMock = new();
-    private readonly Mock<IAffiliateRepository> _affiliateRepoMock = new();
-
-    public CreatePricingEndpointTests(WebApplicationFactory<Program> factory)
+    public CreatePricingEndpointTests(TestWebApplicationFactory factory) : base(factory)
     {
-        var cacheMock = new Mock<ICacheService>();
+        _pricingRepoMock
+            .Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Pricing, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Pricing?)null);
 
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
 
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IPricingRepository>();
-                services.RemoveAll<IServiceRepository>();
-                services.RemoveAll<ICorridorRepository>();
-                services.RemoveAll<IAffiliateRepository>();
-                services.RemoveAll<ICacheService>();
+        var dummyService = _fixture.Create<Service>();
+        var dummyCorridor = _fixture.Create<Corridor>();
+        var dummyAffiliate = _fixture.Create<Affiliate>();
 
-                _pricingRepoMock
-                    .Setup(r => r.AddAsync(It.IsAny<Pricing>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Pricing p, CancellationToken _) => p);
+        _serviceRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<ServiceId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyService);
 
-                _pricingRepoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+        _corridorRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<CorridorId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyCorridor);
 
-                _pricingRepoMock
-                    .Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Pricing, bool>>>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Pricing?)null);
+        _affiliateRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<AffiliateId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyAffiliate);
 
-                var dummyService = FormatterServices.GetUninitializedObject(typeof(Service)) as Service;
-                var dummyCorridor = FormatterServices.GetUninitializedObject(typeof(Corridor)) as Corridor;
-                var dummyAffiliate = FormatterServices.GetUninitializedObject(typeof(Affiliate)) as Affiliate;
-
-                _serviceRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<ServiceId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(dummyService);
-
-                _corridorRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<CorridorId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(dummyCorridor);
-
-                _affiliateRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<AffiliateId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(dummyAffiliate);
-
-                services.AddSingleton(_pricingRepoMock.Object);
-                services.AddSingleton(_serviceRepoMock.Object);
-                services.AddSingleton(_corridorRepoMock.Object);
-                services.AddSingleton(_affiliateRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
     }
 
     [Fact(DisplayName = "POST /api/pricings → 200 + Guid on valid request with FixedAmount")]

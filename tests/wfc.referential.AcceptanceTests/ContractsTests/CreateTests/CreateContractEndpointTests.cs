@@ -1,58 +1,29 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.ContractAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ContractsTests.CreateTests;
 
-public class CreateContractEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateContractEndpointTests : BaseAcceptanceTests
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IContractRepository> _contractRepoMock = new();
-    private readonly Mock<IPartnerRepository> _partnerRepoMock = new();
-
-    public CreateContractEndpointTests(WebApplicationFactory<Program> factory)
+    public CreateContractEndpointTests(TestWebApplicationFactory factory) : base(factory)
     {
-        var cacheMock = new Mock<ICacheService>();
+        // Setup Contract Repository
+        _contractRepoMock.Setup(r => r.AddAsync(It.IsAny<Contract>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Contract c, CancellationToken _) => c);
+        _contractRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _contractRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Contract, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Contract>());
 
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
+        // Setup Partner Repository
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<PartnerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PartnerId id, CancellationToken _) => CreateMockPartner(id.Value));
 
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IContractRepository>();
-                services.RemoveAll<IPartnerRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // Setup Contract Repository
-                _contractRepoMock.Setup(r => r.AddAsync(It.IsAny<Contract>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Contract c, CancellationToken _) => c);
-                _contractRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-                _contractRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Contract, bool>>>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new List<Contract>());
-
-                // Setup Partner Repository
-                _partnerRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<PartnerId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((PartnerId id, CancellationToken _) => CreateMockPartner(id.Value));
-
-                services.AddSingleton(_contractRepoMock.Object);
-                services.AddSingleton(_partnerRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
     }
 
     [Fact(DisplayName = "POST /api/contracts returns 200 and Guid when all required fields are provided")]
@@ -76,12 +47,6 @@ public class CreateContractEndpointTests : IClassFixture<WebApplicationFactory<P
         // Act
         var response = await _client.PostAsJsonAsync("/api/contracts", payload);
 
-        // Debug output if test fails
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Error response: {errorContent}");
-        }
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

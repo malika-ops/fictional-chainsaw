@@ -1,17 +1,11 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ControleAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.ServiceAggregate;
@@ -20,45 +14,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ServiceControleTests.PatchTests;
 
-public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchServiceControleEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-
-    private readonly Mock<IServiceControleRepository> _linkRepo = new();
-    private readonly Mock<IServiceRepository> _svcRepo = new();
-    private readonly Mock<IControleRepository> _ctlRepo = new();
-    private readonly Mock<IParamTypeRepository> _chnRepo = new();
-
-    public PatchServiceControleEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IServiceControleRepository>();
-                s.RemoveAll<IServiceRepository>();
-                s.RemoveAll<IControleRepository>();
-                s.RemoveAll<IParamTypeRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _linkRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_linkRepo.Object);
-                s.AddSingleton(_svcRepo.Object);
-                s.AddSingleton(_ctlRepo.Object);
-                s.AddSingleton(_chnRepo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
-
     private static ServiceControle Make(Guid id, Guid svc, Guid ctl,
                                         Guid chn, int exec = 0, bool en = true)
     {
@@ -96,7 +53,7 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
         var chn = Guid.NewGuid();
 
         var link = Make(id, svc, ctl, chn, exec: 1);
-        _linkRepo.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id), It.IsAny<CancellationToken>()))
+        _serviceControlRepoMock.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(link);
 
         var payload = new { ServiceControleId = id, ExecOrder = 9 };
@@ -108,7 +65,7 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
         ok.Should().BeTrue();
         link.ExecOrder.Should().Be(9);
         link.IsEnabled.Should().BeTrue();
-        _linkRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _serviceControlRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH → 200 when disabling link")]
@@ -120,7 +77,7 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
         var chn = Guid.NewGuid();
 
         var link = Make(id, svc, ctl, chn, exec: 0, en: true);
-        _linkRepo.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id), It.IsAny<CancellationToken>()))
+        _serviceControlRepoMock.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(link);
 
         var payload = new { ServiceControleId = id, IsEnabled = false };
@@ -142,11 +99,11 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
         var chn = Guid.NewGuid();
 
         var link = Make(id, svc, ctl, chn);
-        _linkRepo.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id), It.IsAny<CancellationToken>()))
+        _serviceControlRepoMock.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(link);
 
         // uniqueness check returns same entity
-        _linkRepo.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<ServiceControle, bool>>>(),
+        _serviceControlRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<ServiceControle, bool>>>(),
                                                       It.IsAny<CancellationToken>()))
                  .ReturnsAsync(link);
 
@@ -169,7 +126,7 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
         var res = await PatchJsonAsync(_client, $"/api/serviceControles/{Guid.Empty}", payload);
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _linkRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _serviceControlRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH → 400 when ExecOrder negative")]
@@ -183,7 +140,7 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
 
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _linkRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _serviceControlRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -191,13 +148,13 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
     public async Task Patch_ShouldReturn404_WhenLinkMissing()
     {
         var id = Guid.NewGuid();
-        _linkRepo.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id), It.IsAny<CancellationToken>()))
+        _serviceControlRepoMock.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((ServiceControle?)null);
 
         var res = await PatchJsonAsync(_client, $"/api/serviceControles/{id}", new { ServiceControleId = id });
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _linkRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _serviceControlRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -213,17 +170,17 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
         var target = Make(id1, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         var duplicate = Make(id2, svc2, ctl2, chn2);
 
-        _linkRepo.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id1), It.IsAny<CancellationToken>()))
+        _serviceControlRepoMock.Setup(r => r.GetByIdAsync(ServiceControleId.Of(id1), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(target);
 
-        _svcRepo.Setup(r => r.GetByIdAsync(ServiceId.Of(svc2), It.IsAny<CancellationToken>()))
+        _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of(svc2), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Service)) as Service);
-        _ctlRepo.Setup(r => r.GetByIdAsync(ControleId.Of(ctl2), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(ctl2), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Controle)) as Controle);
-        _chnRepo.Setup(r => r.GetByIdAsync(ParamTypeId.Of(chn2), It.IsAny<CancellationToken>()))
+        _paramTypeRepoMock.Setup(r => r.GetByIdAsync(ParamTypeId.Of(chn2), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(ParamType)) as ParamType);
 
-        _linkRepo.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<ServiceControle, bool>>>(),
+        _serviceControlRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<ServiceControle, bool>>>(),
                                                       It.IsAny<CancellationToken>()))
                  .ReturnsAsync(duplicate);
 
@@ -232,7 +189,7 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
         var res = await PatchJsonAsync(_client, $"/api/serviceControles/{id1}", payload);
         res.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        _linkRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _serviceControlRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -245,6 +202,6 @@ public class PatchServiceControleEndpointTests : IClassFixture<WebApplicationFac
         var res = await PatchJsonAsync(_client, $"/api/serviceControles/{bad}", payload);
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _linkRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _serviceControlRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

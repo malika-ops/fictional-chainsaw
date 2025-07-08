@@ -3,40 +3,15 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.CountryIdentityDocs.Queries.GetFiltredCountryIdentityDocs;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CountryIdentityDocTests.GetFiltredTests;
 
-public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredCountryIdentityDocsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICountryIdentityDocRepository> _repoMock = new();
-
-    public GetFiltredCountryIdentityDocsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ICountryIdentityDocRepository>();
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static CountryIdentityDoc CreateTestCountryIdentityDoc(Guid countryId, Guid docId, bool isEnabled = true)
     {
         return CountryIdentityDoc.Create(
@@ -70,7 +45,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
             pageSize: 2
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                         1, 2,
                         It.IsAny<CancellationToken>()))
@@ -89,7 +64,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1, 2,
                             It.IsAny<CancellationToken>()),
@@ -114,7 +89,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                         1, 10,
                         It.IsAny<CancellationToken>()))
@@ -131,7 +106,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
         dto.PageSize.Should().Be(10);
         dto.Items.Should().HaveCount(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                             1, 10,
                             It.IsAny<CancellationToken>()),
@@ -153,7 +128,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.CountryId == countryId),
                         1, 10,
                         It.IsAny<CancellationToken>()))
@@ -168,7 +143,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("countryId").GetGuid().Should().Be(countryId);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.CountryId == countryId),
                             1, 10,
                             It.IsAny<CancellationToken>()),
@@ -190,7 +165,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.IdentityDocumentId == docId),
                         1, 10,
                         It.IsAny<CancellationToken>()))
@@ -205,7 +180,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("identityDocumentId").GetGuid().Should().Be(docId);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.IdentityDocumentId == docId),
                             1, 10,
                             It.IsAny<CancellationToken>()),
@@ -228,7 +203,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.IsEnabled == false),
                         1, 10,
                         It.IsAny<CancellationToken>()))
@@ -243,7 +218,7 @@ public class GetFiltredCountryIdentityDocsEndpointTests : IClassFixture<WebAppli
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("isEnabled").GetBoolean().Should().BeFalse();
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _countryIdentityDocRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountryIdentityDocsQuery>(q => q.IsEnabled == false),
                             1, 10,
                             It.IsAny<CancellationToken>()),

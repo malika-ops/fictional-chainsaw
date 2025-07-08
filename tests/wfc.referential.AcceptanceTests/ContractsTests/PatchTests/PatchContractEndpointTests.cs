@@ -1,52 +1,20 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.ContractAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ContractsTests.PatchTests;
 
-public class PatchContractEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchContractEndpointTests : BaseAcceptanceTests
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IContractRepository> _contractRepoMock = new();
-    private readonly Mock<IPartnerRepository> _partnerRepoMock = new();
 
-    public PatchContractEndpointTests(WebApplicationFactory<Program> factory)
+    public PatchContractEndpointTests(TestWebApplicationFactory factory) : base(factory)
     {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IContractRepository>();
-                services.RemoveAll<IPartnerRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _contractRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                _partnerRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<PartnerId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((PartnerId id, CancellationToken _) => CreateMockPartner(id.Value));
-
-                services.AddSingleton(_contractRepoMock.Object);
-                services.AddSingleton(_partnerRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<PartnerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PartnerId id, CancellationToken _) => CreateMockPartner(id.Value));
     }
 
     [Fact(DisplayName = "PATCH /api/contracts/{id} returns 200 and patches only the provided fields")]

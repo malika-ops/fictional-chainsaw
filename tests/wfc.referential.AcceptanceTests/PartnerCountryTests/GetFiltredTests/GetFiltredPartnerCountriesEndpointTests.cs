@@ -1,49 +1,19 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.PartnerCountries.Queries.GetFiltredPartnerCountries;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.PartnerCountryAggregate;
 using Xunit;
 
-using BuildingBlocks.Core.Pagination;
-
 namespace wfc.referential.AcceptanceTests.PartnerCountryTests.GetFiltredTests;
 
-public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredPartnerCountriesEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPartnerCountryRepository> _repoMock = new();
-
-    public GetFiltredPartnerCountriesEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IPartnerCountryRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static PartnerCountry Make(Guid partnerId, Guid countryId, bool enabled = true)
     {
         var pc = PartnerCountry.Create(
@@ -75,7 +45,7 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
             pageNumber: 2,
             pageSize: 2);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPartnerCountriesQuery>(q => q.PageNumber == 2 && q.PageSize == 2),
                             2,
                             2,
@@ -94,7 +64,7 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
         dto.TotalCount.Should().Be(5);
         dto.TotalPages.Should().Be(3);
 
-        _repoMock.VerifyAll();
+        _partnerCountryRepoMock.VerifyAll();
     }
 
 
@@ -105,7 +75,7 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
         var pc = Make(partnerId, Guid.NewGuid());
         var paged = new PagedResult<PartnerCountry>(new() { pc }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<GetFiltredPartnerCountriesQuery>(),
                             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paged);
@@ -126,7 +96,7 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
         var pc = Make(Guid.NewGuid(), countryId);
         var paged = new PagedResult<PartnerCountry>(new() { pc }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPartnerCountriesQuery>(q => q.CountryId == countryId),
                             1, 10, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paged);
@@ -146,7 +116,7 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
         var pc = Make(Guid.NewGuid(), Guid.NewGuid(), enabled: false);
         var paged = new PagedResult<PartnerCountry>(new() { pc }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPartnerCountriesQuery>(q => q.IsEnabled == false),
                             1, 10, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paged);
@@ -170,7 +140,7 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
             };
         var paged = new PagedResult<PartnerCountry>(list.ToList(), 3, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPartnerCountriesQuery>(q =>
                                 q.PageNumber == 1 &&
                                 q.PageSize == 10 &&
@@ -197,7 +167,7 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
         var pc = Make(partnerId, countryId);
         var paged = new PagedResult<PartnerCountry>(new() { pc }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<GetFiltredPartnerCountriesQuery>(),
                             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paged);
@@ -218,7 +188,7 @@ public class GetFiltredPartnerCountriesEndpointTests : IClassFixture<WebApplicat
     {
         var paged = new PagedResult<PartnerCountry>(new(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPartnerCountriesQuery>(q => q.CountryId == Guid.Empty),
                             1, 10, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(paged);

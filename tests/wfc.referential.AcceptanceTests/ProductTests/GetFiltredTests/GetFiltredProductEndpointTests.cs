@@ -1,46 +1,17 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Products.Queries.GetFiltredProducts;
 using wfc.referential.Domain.ProductAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ProductTests.GetFiltredTests;
 
-public class GetFiltredProductEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredProductEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IProductRepository> _repoMock = new();
-
-    public GetFiltredProductEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IProductRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     // Helper to build dummy Products quickly
     private static Product DummyProduct(string code, string name) =>
@@ -60,7 +31,7 @@ public class GetFiltredProductEndpointTests : IClassFixture<WebApplicationFactor
                                DummyProduct("005", "Jibi") };
 
         // repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _productRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredProductsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1, 2,
                             It.IsAny<CancellationToken>()))
@@ -78,7 +49,7 @@ public class GetFiltredProductEndpointTests : IClassFixture<WebApplicationFactor
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _productRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredProductsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                 1, 2,
                                 It.IsAny<CancellationToken>()),
@@ -93,7 +64,7 @@ public class GetFiltredProductEndpointTests : IClassFixture<WebApplicationFactor
         var usd = DummyProduct("001", "Cash Express");
 
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _productRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                     It.IsAny<GetFiltredProductsQuery>(),
                     1, 10,
                     It.IsAny<CancellationToken>()))
@@ -120,7 +91,7 @@ public class GetFiltredProductEndpointTests : IClassFixture<WebApplicationFactor
                         DummyProduct("002", "Floussy"),
                         DummyProduct("003", "Jibi") };
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _productRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                     It.IsAny<GetFiltredProductsQuery>(),
                     1, 10,
                     It.IsAny<CancellationToken>()))
@@ -138,7 +109,7 @@ public class GetFiltredProductEndpointTests : IClassFixture<WebApplicationFactor
         dto.Items.Should().HaveCount(3);
 
         // repository must have been called with default paging values
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _productRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredProductsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                                 1, 10,
                                 It.IsAny<CancellationToken>()),

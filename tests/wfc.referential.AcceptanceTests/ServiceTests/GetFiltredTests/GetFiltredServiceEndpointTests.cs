@@ -1,15 +1,9 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Services.Queries.GetFiltredServices;
 using wfc.referential.Domain.ProductAggregate;
 using wfc.referential.Domain.ServiceAggregate;
@@ -17,32 +11,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ServiceTests.GetFiltredTests;
 
-public class GetFiltredServiceEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredServiceEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IServiceRepository> _repoMock = new();
-
-    public GetFiltredServiceEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IServiceRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static Service DummyService(string code, string name) =>
         Service.Create(ServiceId.Of(Guid.NewGuid()), code, name, true, ProductId.Of(Guid.NewGuid()));
 
@@ -57,7 +27,7 @@ public class GetFiltredServiceEndpointTests : IClassFixture<WebApplicationFactor
             DummyService("SVC003", "Jibi")
         };
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredServicesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1, 2,
                             It.IsAny<CancellationToken>()))
@@ -79,7 +49,7 @@ public class GetFiltredServiceEndpointTests : IClassFixture<WebApplicationFactor
     {
         var svc = DummyService("SVC001", "ExpressService");
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredServicesQuery>(q => q.Code == "SVC001"),
                             1, 10,
                             It.IsAny<CancellationToken>()))
@@ -102,7 +72,7 @@ public class GetFiltredServiceEndpointTests : IClassFixture<WebApplicationFactor
             DummyService("SVC003", "Jibi")
         };
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredServicesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                             1, 10,
                             It.IsAny<CancellationToken>()))

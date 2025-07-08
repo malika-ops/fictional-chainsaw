@@ -1,47 +1,18 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using BuildingBlocks.Core.Pagination;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.ContractDetails.Dtos;
-using wfc.referential.Domain.ContractDetailsAggregate;
 using wfc.referential.Domain.ContractAggregate;
+using wfc.referential.Domain.ContractDetailsAggregate;
 using wfc.referential.Domain.PricingAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ContractDetailsTests.GetFilteredTests;
 
-public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFilteredContractDetailsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IContractDetailsRepository> _repoMock = new();
-
-    public GetFilteredContractDetailsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IContractDetailsRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "GET /api/contractdetails returns paged list with default parameters")]
     public async Task Get_ShouldReturnPagedList_WithDefaultParameters()
@@ -57,7 +28,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
 
         var pagedResult = new PagedResult<ContractDetails>(allContractDetails.Take(10).ToList(), allContractDetails.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -75,7 +46,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
         result.PageNumber.Should().Be(1);
         result.PageSize.Should().Be(10);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 1, // default pageNumber
                                 10, // default pageSize
@@ -95,7 +66,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
 
         var pagedResult = new PagedResult<ContractDetails>(contractDetails.ToList(), contractDetails.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -128,7 +99,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
 
         var pagedResult = new PagedResult<ContractDetails>(contractDetails.ToList(), contractDetails.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -158,7 +129,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
 
         var pagedResult = new PagedResult<ContractDetails>(new List<ContractDetails> { disabledContractDetails }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -181,7 +152,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
         // Arrange
         var emptyResult = new PagedResult<ContractDetails>(new List<ContractDetails>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -209,7 +180,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
 
         var pagedResult = new PagedResult<ContractDetails>(new List<ContractDetails> { contractDetails }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -243,7 +214,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
             2,
             5);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -262,7 +233,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
         result.TotalCount.Should().Be(25);
         result.TotalPages.Should().Be(5);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 2, // requested pageNumber
                                 5, // requested pageSize
@@ -280,7 +251,7 @@ public class GetFilteredContractDetailsEndpointTests : IClassFixture<WebApplicat
 
         var pagedResult = new PagedResult<ContractDetails>(new List<ContractDetails> { contractDetails }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _contractDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),

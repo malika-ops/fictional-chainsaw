@@ -1,51 +1,14 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TypeDefinitionsTests.PatchTests;
 
-public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchTypeDefinitionEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITypeDefinitionRepository> _repoMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
-
-    public PatchTypeDefinitionEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ITypeDefinitionRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // Default noop for Update
-                _repoMock
-                    .Setup(r => r.Update(It.IsAny<TypeDefinition>()));
-
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
-    }
-
     // Helper to create a test TypeDefinition
     private static TypeDefinition CreateTestTypeDefinition(Guid id, string libelle, string description)
     {
@@ -63,15 +26,15 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         var id = Guid.NewGuid();
         var typeDefinition = CreateTestTypeDefinition(id, "Old Libelle", "Old Description");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(typeDefinition);
 
         // Setup duplicate check to return null (no duplicates)
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((TypeDefinition?)null);
 
         TypeDefinition? updated = null;
-        _repoMock.Setup(r => r.Update(It.IsAny<TypeDefinition>()))
+        _typeDefinitionRepoMock.Setup(r => r.Update(It.IsAny<TypeDefinition>()))
                  .Callback<TypeDefinition>(td => updated = td);
 
         var payload = new
@@ -93,7 +56,7 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         updated.Description.Should().Be("Old Description"); // Should not change
         updated.IsEnabled.Should().BeTrue(); // Should remain true
 
-        _repoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Once);
+        _typeDefinitionRepoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/type-definitions/{id} returns 200 when updating enabled status")]
@@ -103,15 +66,15 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         var id = Guid.NewGuid();
         var typeDefinition = CreateTestTypeDefinition(id, "Test Libelle", "Test Description");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(typeDefinition);
 
         // Setup duplicate check to return null (no duplicates)
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((TypeDefinition?)null);
 
         TypeDefinition? updated = null;
-        _repoMock.Setup(r => r.Update(It.IsAny<TypeDefinition>()))
+        _typeDefinitionRepoMock.Setup(r => r.Update(It.IsAny<TypeDefinition>()))
                  .Callback<TypeDefinition>(td => updated = td);
 
         var payload = new
@@ -132,7 +95,7 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         updated.Libelle.Should().Be("Test Libelle"); // Should not change
         updated.Description.Should().Be("Test Description"); // Should not change
 
-        _repoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Once);
+        _typeDefinitionRepoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/type-definitions/{id} returns 404 when typeDefinition doesn't exist")]
@@ -141,7 +104,7 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         // Arrange
         var id = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((TypeDefinition?)null);
 
         var payload = new
@@ -156,7 +119,7 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound); // Updated to expect 404 like Bank pattern
 
-        _repoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Never);
+        _typeDefinitionRepoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/type-definitions/{id} returns 400 when Libelle is empty")]
@@ -166,7 +129,7 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         var id = Guid.NewGuid();
         var typeDefinition = CreateTestTypeDefinition(id, "Old Libelle", "Old Description");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(typeDefinition);
 
         var payload = new
@@ -181,7 +144,7 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _repoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Never);
+        _typeDefinitionRepoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/type-definitions/{id} returns 400 when Description is empty")]
@@ -191,7 +154,7 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         var id = Guid.NewGuid();
         var typeDefinition = CreateTestTypeDefinition(id, "Old Libelle", "Old Description");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(typeDefinition);
 
         var payload = new
@@ -206,7 +169,7 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _repoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Never);
+        _typeDefinitionRepoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/type-definitions/{id} handles both libelle and description changes")]
@@ -216,15 +179,15 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         var id = Guid.NewGuid();
         var typeDefinition = CreateTestTypeDefinition(id, "Old Libelle", "Old Description");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(typeDefinition);
 
         // Setup duplicate check to return null (no duplicates)
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((TypeDefinition?)null);
 
         TypeDefinition? updated = null;
-        _repoMock.Setup(r => r.Update(It.IsAny<TypeDefinition>()))
+        _typeDefinitionRepoMock.Setup(r => r.Update(It.IsAny<TypeDefinition>()))
                  .Callback<TypeDefinition>(td => updated = td);
 
         var payload = new
@@ -247,7 +210,7 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         updated.Description.Should().Be("Updated Description");
         updated.IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Once);
+        _typeDefinitionRepoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/type-definitions/{id} returns 409 when duplicate libelle exists")]
@@ -259,11 +222,11 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         var typeDefinition = CreateTestTypeDefinition(id, "Old Libelle", "Old Description");
         var duplicateTypeDefinition = CreateTestTypeDefinition(duplicateId, "Duplicate Libelle", "Other Description");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetByIdAsync(It.Is<TypeDefinitionId>(tid => tid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(typeDefinition);
 
         // Setup duplicate check to return existing TypeDefinition
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(duplicateTypeDefinition);
 
         var payload = new
@@ -278,6 +241,6 @@ public class PatchTypeDefinitionEndpointTests : IClassFixture<WebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        _repoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Never);
+        _typeDefinitionRepoMock.Verify(r => r.Update(It.IsAny<TypeDefinition>()), Times.Never);
     }
 }

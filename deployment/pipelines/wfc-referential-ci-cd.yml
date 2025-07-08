@@ -88,7 +88,7 @@ stages:
       timeoutInMinutes: 10  # Add timeout
       inputs:
         command: 'test'
-        projects: '**/*UnitTests.csproj'  #'**/*[Tt]ests.csproj'
+        projects: '**/*[Tt]ests.csproj'
         arguments: '--configuration $(buildConfiguration) --logger "trx;LogFileName=testresults.trx" --collect:"XPlat Code Coverage"'
         publishTestResults: true
         failTaskOnFailedTests: true

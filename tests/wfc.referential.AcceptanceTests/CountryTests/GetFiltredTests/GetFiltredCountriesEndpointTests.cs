@@ -1,17 +1,11 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Pagination;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BuildingBlocks.Core.Pagination;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.Countries.Queries.GetFiltredCounties;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
@@ -19,32 +13,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CountryTests.GetFiltredTests;
 
-public class GetFiltredCountriesEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredCountriesEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICountryRepository> _repoMock = new();
-
-    public GetFiltredCountriesEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customised = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ICountryRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customised.CreateClient();
-    }
-
-
     private static Country CreateCountry(string code, string name, bool enabled = true)
     {
         var country = Country.Create(
@@ -78,7 +48,7 @@ public class GetFiltredCountriesEndpointTests : IClassFixture<WebApplicationFact
 
         var paged = new PagedResult<Country>(items.ToList(), totalCount: 4, pageNumber: 1, pageSize: 2);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.Is<GetFiltredCountriesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                 1,
                 2,
@@ -99,7 +69,7 @@ public class GetFiltredCountriesEndpointTests : IClassFixture<WebApplicationFact
     {
         var country = CreateCountry("FR", "France");
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountriesQuery>(q => q.Name == "France"),
                             1, 10, It.IsAny<CancellationToken>(),
                             It.IsAny<Expression<Func<Country, object>>[]>()))
@@ -117,7 +87,7 @@ public class GetFiltredCountriesEndpointTests : IClassFixture<WebApplicationFact
     {
         var country = CreateCountry("US", "United States");
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountriesQuery>(q => q.Code == "US"),
                             1, 10, It.IsAny<CancellationToken>(),
                             It.IsAny<Expression<Func<Country, object>>[]>()))
@@ -135,7 +105,7 @@ public class GetFiltredCountriesEndpointTests : IClassFixture<WebApplicationFact
     {
         var disabled = CreateCountry("ZZ", "Disabledland", enabled: false);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountriesQuery>(q => q.IsEnabled == false),
                             1, 10, It.IsAny<CancellationToken>(),
                             It.IsAny<Expression<Func<Country, object>>[]>()))
@@ -154,7 +124,7 @@ public class GetFiltredCountriesEndpointTests : IClassFixture<WebApplicationFact
         var list = new[] { CreateCountry("A", "A"), CreateCountry("B", "B"), CreateCountry("C", "C") };
         var paged = new PagedResult<Country>(list.ToList(), 3, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountriesQuery>(q => q.PageNumber == 1 && q.PageSize == 10 && q.IsEnabled == true),
                             1, 10, It.IsAny<CancellationToken>(),
                             It.IsAny<Expression<Func<Country, object>>[]>()))
@@ -174,7 +144,7 @@ public class GetFiltredCountriesEndpointTests : IClassFixture<WebApplicationFact
 
         var country = CreateCountry("AA", "Atlantis");
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountriesQuery>(q =>
                                 q.Code == "AA" &&
                                 q.Name == "Atlantis" &&
@@ -195,7 +165,7 @@ public class GetFiltredCountriesEndpointTests : IClassFixture<WebApplicationFact
     [Fact(DisplayName = "GET /api/countries returns empty page when no match")]
     public async Task Get_ShouldReturnEmpty_WhenNoMatch()
     {
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _countryRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredCountriesQuery>(q => q.Name == "Neverland"),
                             1, 10, It.IsAny<CancellationToken>(), 
                             It.IsAny<Expression<Func<Country, object>>[]>()))

@@ -18,32 +18,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ServiceControleTests.GetByIdTests;
 
-public class GetServiceControleByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetServiceControleByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IServiceControleRepository> _repo = new();
-
-    public GetServiceControleByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IServiceControleRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
-
     private static ServiceControle Make(Guid id,
                                         Guid serviceId,
                                         Guid controleId,
@@ -80,7 +56,7 @@ public class GetServiceControleByIdEndpointTests : IClassFixture<WebApplicationF
 
         var entity = Make(id, svc, ctl, ch, execOrder: 3);
 
-        _repo.Setup(r => r.GetByIdWithIncludesAsync(
+        _serviceControlRepoMock.Setup(r => r.GetByIdWithIncludesAsync(
                         ServiceControleId.Of(id),
                         It.IsAny<CancellationToken>(),
                         It.IsAny<Expression<Func<ServiceControle, object>>[]>()))
@@ -96,7 +72,7 @@ public class GetServiceControleByIdEndpointTests : IClassFixture<WebApplicationF
         dto.ExecOrder.Should().Be(3);
         dto.IsEnabled.Should().BeTrue();
 
-        _repo.Verify(r => r.GetByIdWithIncludesAsync(
+        _serviceControlRepoMock.Verify(r => r.GetByIdWithIncludesAsync(
                         ServiceControleId.Of(id),
                         It.IsAny<CancellationToken>(),
                         It.IsAny<Expression<Func<ServiceControle, object>>[]>()),
@@ -115,7 +91,7 @@ public class GetServiceControleByIdEndpointTests : IClassFixture<WebApplicationF
                           Guid.NewGuid(),
                           enabled: false);
 
-        _repo.Setup(r => r.GetByIdWithIncludesAsync(
+        _serviceControlRepoMock.Setup(r => r.GetByIdWithIncludesAsync(
                         ServiceControleId.Of(id),
                         It.IsAny<CancellationToken>(),
                         It.IsAny<Expression<Func<ServiceControle, object>>[]>()))
@@ -134,7 +110,7 @@ public class GetServiceControleByIdEndpointTests : IClassFixture<WebApplicationF
     {
         var missing = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdWithIncludesAsync(
+        _serviceControlRepoMock.Setup(r => r.GetByIdWithIncludesAsync(
                         ServiceControleId.Of(missing),
                         It.IsAny<CancellationToken>(),
                         It.IsAny<Expression<Func<ServiceControle, object>>[]>()))
@@ -149,7 +125,7 @@ public class GetServiceControleByIdEndpointTests : IClassFixture<WebApplicationF
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdWithIncludesAsync(
+        _serviceControlRepoMock.Verify(r => r.GetByIdWithIncludesAsync(
                         ServiceControleId.Of(missing),
                         It.IsAny<CancellationToken>(),
                         It.IsAny<Expression<Func<ServiceControle, object>>[]>()),
@@ -166,7 +142,7 @@ public class GetServiceControleByIdEndpointTests : IClassFixture<WebApplicationF
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdWithIncludesAsync(
+        _serviceControlRepoMock.Verify(r => r.GetByIdWithIncludesAsync(
                         It.IsAny<ServiceControleId>(),
                         It.IsAny<CancellationToken>(),
                         It.IsAny<Expression<Func<ServiceControle, object>>[]>()),

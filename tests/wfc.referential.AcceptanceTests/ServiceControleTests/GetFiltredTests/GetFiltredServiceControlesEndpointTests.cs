@@ -1,16 +1,10 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Pagination;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.ServiceControles.Queries.GetFiltredServiceControles;
 using wfc.referential.Domain.ControleAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
@@ -20,31 +14,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ServiceControleTests.GetFiltredTests;
 
-public class GetFiltredServiceControlesEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredServiceControlesEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IServiceControleRepository> _repo = new();
-
-    public GetFiltredServiceControlesEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IServiceControleRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static ServiceControle Make(Guid serviceId,
                                         Guid controleId,
                                         Guid channelId,
@@ -77,7 +48,7 @@ public class GetFiltredServiceControlesEndpointTests : IClassFixture<WebApplicat
 
         var page = new PagedResult<ServiceControle>(new() { item1, item2 }, 5, 1, 2);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceControlRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredServiceControlesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                         1, 2, It.IsAny<CancellationToken>(),
                  It.IsAny<Expression<Func<ServiceControle, object>>[]>()))
@@ -101,7 +72,7 @@ public class GetFiltredServiceControlesEndpointTests : IClassFixture<WebApplicat
         dto.Items[1].GetProperty("controleId").GetGuid().Should().Be(cId2);
         dto.Items[1].GetProperty("execOrder").GetInt32().Should().Be(2);
 
-        _repo.Verify(r => r.GetPagedByCriteriaAsync(
+        _serviceControlRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredServiceControlesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                         1, 2, It.IsAny<CancellationToken>(),
                  It.IsAny<Expression<Func<ServiceControle, object>>[]>()), Times.Once);
@@ -113,7 +84,7 @@ public class GetFiltredServiceControlesEndpointTests : IClassFixture<WebApplicat
         var svcId = Guid.NewGuid();
         var entity = Make(svcId, Guid.NewGuid(), Guid.NewGuid());
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceControlRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredServiceControlesQuery>(q => q.ServiceId == svcId),
                         1, 10, It.IsAny<CancellationToken>(),
                  It.IsAny<Expression<Func<ServiceControle, object>>[]>()))
@@ -132,7 +103,7 @@ public class GetFiltredServiceControlesEndpointTests : IClassFixture<WebApplicat
         var ctlId = Guid.NewGuid();
         var entity = Make(Guid.NewGuid(), ctlId, Guid.NewGuid());
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceControlRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredServiceControlesQuery>(q => q.ControleId == ctlId),
                         1, 10, It.IsAny<CancellationToken>(),
                  It.IsAny<Expression<Func<ServiceControle, object>>[]>()))
@@ -151,7 +122,7 @@ public class GetFiltredServiceControlesEndpointTests : IClassFixture<WebApplicat
     {
         var disabled = Make(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), enabled: false);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceControlRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredServiceControlesQuery>(q => q.IsEnabled == false),
                         1, 10, It.IsAny<CancellationToken>(),
                  It.IsAny<Expression<Func<ServiceControle, object>>[]>()))
@@ -177,7 +148,7 @@ public class GetFiltredServiceControlesEndpointTests : IClassFixture<WebApplicat
 
         var page = new PagedResult<ServiceControle>(links.ToList(), 3, 1, 10);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceControlRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredServiceControlesQuery>(q => q.PageNumber == 1 && q.PageSize == 10 && q.IsEnabled == true),
                         1, 10, It.IsAny<CancellationToken>(),
                  It.IsAny<Expression<Func<ServiceControle, object>>[]>()))
@@ -203,7 +174,7 @@ public class GetFiltredServiceControlesEndpointTests : IClassFixture<WebApplicat
 
         var page = new PagedResult<ServiceControle>(new() { link }, 1, 1, 10);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceControlRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredServiceControlesQuery>(q =>
                             q.ServiceId == svcId &&
                             q.ControleId == ctlId &&
@@ -229,7 +200,7 @@ public class GetFiltredServiceControlesEndpointTests : IClassFixture<WebApplicat
     {
         var page = new PagedResult<ServiceControle>(new(), 0, 1, 10);
 
-        _repo.Setup(r => r.GetPagedByCriteriaAsync(
+        _serviceControlRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                         It.Is<GetFiltredServiceControlesQuery>(q => q.ServiceId == Guid.Empty),
                         1, 10, It.IsAny<CancellationToken>(),
                  It.IsAny<Expression<Func<ServiceControle, object>>[]>()))

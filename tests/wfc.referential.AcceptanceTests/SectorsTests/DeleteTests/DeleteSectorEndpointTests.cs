@@ -1,12 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.SectorAggregate;
@@ -14,32 +9,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.SectorsTests.DeleteTests;
 
-public class DeleteSectorEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteSectorEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ISectorRepository> _sectorRepoMock = new();
-    private readonly Mock<IAgencyRepository> _agencyRepoMock = new();
-
-    public DeleteSectorEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ISectorRepository>();
-                services.RemoveAll<IAgencyRepository>();
-
-                _sectorRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_sectorRepoMock.Object);
-                services.AddSingleton(_agencyRepoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "US#46 - DELETE /api/sectors/{id} disables sector when no linked agencies")]
     public async Task DeleteSector_Should_DisableSector_WhenNoLinkedAgencies()
     {

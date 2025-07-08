@@ -1,14 +1,8 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.SectorAggregate;
@@ -16,51 +10,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTests.UpdateTests;
 
-public class UpdateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateAgencyEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyRepository> _agencyRepoMock = new();
-    private readonly Mock<ICityRepository> _cityRepoMock = new();
-    private readonly Mock<ISectorRepository> _sectorRepoMock = new();
-    private readonly Mock<IParamTypeRepository> _paramRepoMock = new();
-    private readonly Mock<IPartnerRepository> _partnerRepoMock = new();
-    private readonly Mock<ISupportAccountRepository> _supportRepoMock = new();
-
-    public UpdateAgencyEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IAgencyRepository>();
-                services.RemoveAll<ICityRepository>();
-                services.RemoveAll<ISectorRepository>();
-                services.RemoveAll<IParamTypeRepository>();
-                services.RemoveAll<IPartnerRepository>();
-                services.RemoveAll<ISupportAccountRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _agencyRepoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_agencyRepoMock.Object);
-                services.AddSingleton(_cityRepoMock.Object);
-                services.AddSingleton(_sectorRepoMock.Object);
-                services.AddSingleton(_paramRepoMock.Object);
-                services.AddSingleton(_partnerRepoMock.Object);
-                services.AddSingleton(_supportRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static Agency CreateAgency(Guid id, string code, string name, Guid? cityId = null, Guid? sectorId = null) =>
         Agency.Create(
             AgencyId.Of(id),

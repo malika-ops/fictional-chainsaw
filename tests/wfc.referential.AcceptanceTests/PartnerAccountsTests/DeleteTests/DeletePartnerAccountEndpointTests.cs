@@ -1,56 +1,19 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.SupportAccountAggregate;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.DeleteTests;
 
-public class DeletePartnerAccountEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeletePartnerAccountEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPartnerAccountRepository> _partnerAccountRepoMock = new();
-    private readonly Mock<IPartnerRepository> _partnerRepoMock = new();
-
-    public DeletePartnerAccountEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IPartnerAccountRepository>();
-                services.RemoveAll<IPartnerRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // Setup BaseRepository methods
-                _partnerAccountRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_partnerAccountRepoMock.Object);
-                services.AddSingleton(_partnerRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static PartnerAccount CreateTestPartnerAccount(Guid id)
     {
         var bankId = Guid.NewGuid();

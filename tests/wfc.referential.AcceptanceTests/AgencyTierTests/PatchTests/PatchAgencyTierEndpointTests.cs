@@ -1,57 +1,18 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.AgencyTierAggregate;
 using wfc.referential.Domain.TierAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTierTests.PatchTests;
-
-public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchAgencyTierEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyTierRepository> _agencyTierRepo = new();
-    private readonly Mock<IAgencyRepository> _agencyRepo = new();
-    private readonly Mock<ITierRepository> _tierRepo = new();
-
-    public PatchAgencyTierEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IAgencyTierRepository>();
-                s.RemoveAll<IAgencyRepository>();
-                s.RemoveAll<ITierRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _agencyTierRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                               .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_agencyTierRepo.Object);
-                s.AddSingleton(_agencyRepo.Object);
-                s.AddSingleton(_tierRepo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static AgencyTier MakeAgencyTier(Guid id, Guid agencyId,
                                              Guid tierId, string code = "CODE1",
                                              string pwd = "pwd", bool en = true) =>
@@ -94,10 +55,10 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         var id = Guid.NewGuid();
         var orig = MakeAgencyTier(id, Guid.NewGuid(), Guid.NewGuid(), "OLD");
 
-        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyTierRepoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(orig);
 
-        _agencyTierRepo.Setup(r => r.GetOneByConditionAsync(
+        _agencyTierRepoMock.Setup(r => r.GetOneByConditionAsync(
                                  It.IsAny<Expression<Func<AgencyTier, bool>>>(),
                                  It.IsAny<CancellationToken>()))
                        .ReturnsAsync((AgencyTier?)null);
@@ -112,7 +73,7 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
 
         orig.Code.Should().Be("NEW");
         orig.IsEnabled.Should().BeTrue();      
-        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 200 when patching only IsEnabled")]
@@ -121,7 +82,7 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         var id = Guid.NewGuid();
         var orig = MakeAgencyTier(id, Guid.NewGuid(), Guid.NewGuid());
 
-        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyTierRepoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(orig);
 
         var payload = new { AgencyTierId = id, IsEnabled = false };
@@ -134,7 +95,7 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
 
         orig.IsEnabled.Should().BeFalse();
         orig.Code.Should().Be("CODE1");   
-        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
 
@@ -143,7 +104,7 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
     {
         var id = Guid.NewGuid();
 
-        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyTierRepoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
                        .ReturnsAsync((AgencyTier?)null);
 
         var payload = new { AgencyTierId = id, Code = "NOPE" };
@@ -151,7 +112,7 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         var resp = await PatchJsonAsync(_client, $"/api/agencyTiers/{id}", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 404 when new TierId not found")]
@@ -161,10 +122,10 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         var newTid = Guid.NewGuid();
         var orig = MakeAgencyTier(id, Guid.NewGuid(), Guid.NewGuid());
 
-        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyTierRepoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(orig);
 
-        _tierRepo.Setup(r => r.GetByIdAsync(TierId.Of(newTid), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(newTid), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Domain.TierAggregate.Tier?)null); // missing
 
         var payload = new { AgencyTierId = id, TierId = newTid };
@@ -172,7 +133,7 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         var resp = await PatchJsonAsync(_client, $"/api/agencyTiers/{id}", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/agencyTiers/{id} returns 404 when new AgencyId not found")]
@@ -182,10 +143,10 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         var newAid = Guid.NewGuid();
         var orig = MakeAgencyTier(id, Guid.NewGuid(), Guid.NewGuid());
 
-        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyTierRepoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(orig);
 
-        _agencyRepo.Setup(r => r.GetByIdAsync(AgencyId.Of(newAid), It.IsAny<CancellationToken>()))
+        _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(newAid), It.IsAny<CancellationToken>()))
                    .ReturnsAsync((Domain.AgencyAggregate.Agency?)null); // missing
 
         var payload = new { AgencyTierId = id, AgencyId = newAid };
@@ -193,7 +154,7 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         var resp = await PatchJsonAsync(_client, $"/api/agencyTiers/{id}", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/agencyTiers/{id} allows same Code for same entity")]
@@ -204,10 +165,10 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         var tierId = Guid.NewGuid();
         var entity = MakeAgencyTier(id, agencyId, tierId, "CODEX");
 
-        _agencyTierRepo.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyTierRepoMock.Setup(r => r.GetByIdAsync(AgencyTierId.Of(id), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(entity);
 
-        _agencyTierRepo.Setup(r => r.GetOneByConditionAsync(
+        _agencyTierRepoMock.Setup(r => r.GetOneByConditionAsync(
                                  It.IsAny<Expression<Func<AgencyTier, bool>>>(),
                                  It.IsAny<CancellationToken>()))
                        .ReturnsAsync(entity); // same entity returned → allowed
@@ -220,6 +181,6 @@ public class PatchAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _agencyTierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _agencyTierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

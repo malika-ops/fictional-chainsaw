@@ -1,46 +1,17 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.TypeDefinitions.Queries.GetFiltredTypeDefinitions;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TypeDefinitionsTests.GetFiltredTests;
 
-public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredTypeDefinitionsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITypeDefinitionRepository> _repoMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
-
-    public GetFiltredTypeDefinitionsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ITypeDefinitionRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
-    }
-
     // Helper to build test TypeDefinitions
     private static TypeDefinition CreateTestTypeDefinition(string libelle, string description)
     {
@@ -75,7 +46,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
             pageSize: 2
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredTypeDefinitionsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1, 2,
                             It.IsAny<CancellationToken>()))
@@ -93,7 +64,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredTypeDefinitionsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                 1, 2,
                                 It.IsAny<CancellationToken>()),
@@ -113,7 +84,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredTypeDefinitionsQuery>(q => q.Libelle == "Type1"),
                             It.IsAny<int>(), It.IsAny<int>(),
                             It.IsAny<CancellationToken>()))
@@ -128,7 +99,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("libelle").GetString().Should().Be("Type1");
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredTypeDefinitionsQuery>(q => q.Libelle == "Type1"),
                                 It.IsAny<int>(), It.IsAny<int>(),
                                 It.IsAny<CancellationToken>()),
@@ -148,7 +119,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredTypeDefinitionsQuery>(q => q.Description == "Description 2"),
                             It.IsAny<int>(), It.IsAny<int>(),
                             It.IsAny<CancellationToken>()))
@@ -163,7 +134,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("description").GetString().Should().Be("Description 2");
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredTypeDefinitionsQuery>(q => q.Description == "Description 2"),
                                 It.IsAny<int>(), It.IsAny<int>(),
                                 It.IsAny<CancellationToken>()),
@@ -188,7 +159,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredTypeDefinitionsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                             1, 10,
                             It.IsAny<CancellationToken>()))
@@ -206,7 +177,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
         dto.Items.Should().HaveCount(3);
 
         // Repository must have been called with default paging values
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredTypeDefinitionsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                                 1, 10,
                                 It.IsAny<CancellationToken>()),
@@ -227,7 +198,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredTypeDefinitionsQuery>(q => q.IsEnabled == false),
                             It.IsAny<int>(), It.IsAny<int>(),
                             It.IsAny<CancellationToken>()))
@@ -242,7 +213,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("isEnabled").GetBoolean().Should().BeFalse();
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredTypeDefinitionsQuery>(q => q.IsEnabled == false),
                                 It.IsAny<int>(), It.IsAny<int>(),
                                 It.IsAny<CancellationToken>()),
@@ -260,7 +231,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<GetFiltredTypeDefinitionsQuery>(),
                             It.IsAny<int>(), It.IsAny<int>(),
                             It.IsAny<CancellationToken>()))
@@ -289,7 +260,7 @@ public class GetFiltredTypeDefinitionsEndpointTests : IClassFixture<WebApplicati
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _typeDefinitionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredTypeDefinitionsQuery>(q =>
                                 q.Libelle == "TestType" &&
                                 q.Description == "TestDescription" &&

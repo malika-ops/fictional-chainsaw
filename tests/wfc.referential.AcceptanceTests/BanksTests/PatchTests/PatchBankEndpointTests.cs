@@ -1,42 +1,15 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Banks.Dtos;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.BanksTests.PatchTests;
 
-public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchBankAcceptanceTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IBankRepository> _repoMock = new();
-
-    public PatchBankAcceptanceTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IBankRepository>();
-
-                _repoMock.Setup(r => r.Update(It.IsAny<Bank>()));
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "PATCH /api/banks/{id} modifies only provided fields")]
     public async Task PatchBank_Should_ModifyOnlyProvidedFields_WhenPartialDataSent()
     {
@@ -46,9 +19,9 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
             BankId.Of(bankId),
             "AWB", "Attijariwafa Bank", "AWB");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(originalBank);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Bank)null);
 
         var patchRequest = new PatchBankRequest
@@ -70,8 +43,8 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
         originalBank.Code.Should().Be("AWB"); // Unchanged
         originalBank.Abbreviation.Should().Be("AWB"); // Unchanged
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _bankRepoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Once);
+        _bankRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/banks/{id} validates duplicates for changed fields only")]
@@ -84,9 +57,9 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
         var targetBank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
         var conflictingBank = Bank.Create(BankId.Of(existingBankId), "BMCE", "Banque Marocaine du Commerce Extérieur", "BMCE");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(targetBank);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(conflictingBank);
 
         var patchRequest = new PatchBankRequest
@@ -99,7 +72,7 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
+        _bankRepoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/banks/{id} allows same values in unchanged fields")]
@@ -111,9 +84,9 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
             BankId.Of(bankId),
             "AWB", "Attijariwafa Bank", "AWB");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(bank);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Bank)null);
 
         var patchRequest = new PatchBankRequest
@@ -130,8 +103,8 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _bankRepoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Once);
+        _bankRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/banks/{id} returns 404 when bank not found")]
@@ -140,7 +113,7 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
         // Arrange
         var bankId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Bank)null);
 
         var patchRequest = new PatchBankRequest
@@ -153,7 +126,7 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
+        _bankRepoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Never);
     }
 
     [Theory(DisplayName = "PATCH /api/banks/{id} updates individual fields correctly")]
@@ -170,9 +143,9 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
             BankId.Of(bankId),
             "AWB", "Attijariwafa Bank", "AWB");
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(It.Is<BankId>(id => id.Value == bankId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(bank);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Bank, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Bank)null);
 
         var patchRequest = new PatchBankRequest
@@ -191,7 +164,7 @@ public class PatchBankAcceptanceTests : IClassFixture<WebApplicationFactory<Prog
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _bankRepoMock.Verify(r => r.Update(It.IsAny<Bank>()), Times.Once);
+        _bankRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

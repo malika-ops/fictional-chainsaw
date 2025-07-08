@@ -2,12 +2,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.TaxRuleDetails.Dtos;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
@@ -21,37 +16,9 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TaxRuleDetailTests;
 
-public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchTaxRuleDetailEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITaxRuleDetailRepository> _repoMock = new();
-    private readonly Mock<ICorridorRepository> _repoCorridorMock = new();
-    private readonly Mock<ITaxRepository> _repoTaxMock = new();
-    private readonly Mock<IServiceRepository> _repoServiceMock = new();
     private const string BaseUrl = "api/tax-rule-details";
-
-    public PatchTaxRuleDetailEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ITaxRuleDetailRepository>();
-                services.RemoveAll<ICorridorRepository>();
-                services.RemoveAll<ITaxRepository>();
-                services.RemoveAll<IServiceRepository>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_repoCorridorMock.Object);
-                services.AddSingleton(_repoTaxMock.Object);
-                services.AddSingleton(_repoServiceMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = $"PATCH {BaseUrl}/id updates the TaxRuleDetail successfully")]
     public async Task PatchTaxRuleDetail_ShouldReturnUpdatedId_WhenTaxRuleDetailExists()
@@ -71,24 +38,24 @@ public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFacto
             appliedOn: ApplicationRule.Fees,
             isEnabled: true);
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()))
+        _taxRuleDetailsRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(taxRuleDetail);
 
-        _repoCorridorMock.Setup(r =>
+        _corridorRepoMock.Setup(r =>
             r.GetByIdAsync(It.IsAny<CorridorId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Corridor.Create(CorridorId.Create(), CountryId.Of(Guid.NewGuid()),
             CountryId.Of(Guid.NewGuid()), CityId.Create(), CityId.Create(),
             AgencyId.Of(Guid.NewGuid()), AgencyId.Of(Guid.NewGuid())));
 
-        _repoTaxMock.Setup(r =>
+        _taxRepoMock.Setup(r =>
             r.GetByIdAsync(It.IsAny<TaxId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Tax.Create(TaxId.Create(), "code", "codeEn", "codeAR", "Test Tax", 20, 10));
 
-        _repoServiceMock.Setup(r =>
+        _serviceRepoMock.Setup(r =>
             r.GetByIdAsync(It.IsAny<ServiceId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name", true, ProductId.Of(Guid.NewGuid())));
 
-        _repoMock.Setup(r => r.Update(It.IsAny<TaxRuleDetail>()));
+        _taxRuleDetailsRepoMock.Setup(r => r.Update(It.IsAny<TaxRuleDetail>()));
 
 
         // Act
@@ -99,8 +66,8 @@ public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFacto
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         updatedId.Should().Be(true);
 
-        _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.Update(It.Is<TaxRuleDetail>(trd =>
+        _taxRuleDetailsRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<TaxRuleDetailsId>(), It.IsAny<CancellationToken>()), Times.Once);
+        _taxRuleDetailsRepoMock.Verify(r => r.Update(It.Is<TaxRuleDetail>(trd =>
             trd.Id.Value == taxRuleDetailId &&
             trd.AppliedOn == patchRequest.AppliedOn)), Times.Once);
     }
@@ -115,7 +82,7 @@ public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFacto
             CorridorId = Guid.NewGuid()
         };
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<TaxRuleDetail, bool>>>(), It.IsAny<CancellationToken>()))
+        _taxRuleDetailsRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<TaxRuleDetail, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaxRuleDetail)null);
 
         // Act
@@ -124,7 +91,7 @@ public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFacto
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repoMock.Verify(r => r.Update(It.IsAny<TaxRuleDetail>()), Times.Never);
+        _taxRuleDetailsRepoMock.Verify(r => r.Update(It.IsAny<TaxRuleDetail>()), Times.Never);
     }
 
     [Fact(DisplayName = $"PATCH {BaseUrl}/id returns 400 when validation fails")]
@@ -143,7 +110,7 @@ public class PatchTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFacto
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _repoMock.Verify(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<TaxRuleDetail, bool>>>(), It.IsAny<CancellationToken>()), Times.Never);
-        _repoMock.Verify(r => r.Update(It.IsAny<TaxRuleDetail>()), Times.Never);
+        _taxRuleDetailsRepoMock.Verify(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<TaxRuleDetail, bool>>>(), It.IsAny<CancellationToken>()), Times.Never);
+        _taxRuleDetailsRepoMock.Verify(r => r.Update(It.IsAny<TaxRuleDetail>()), Times.Never);
     }
 }

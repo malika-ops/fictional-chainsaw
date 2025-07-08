@@ -2,48 +2,16 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.ProductAggregate;
 using wfc.referential.Domain.ServiceAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ServiceTests.UpdateTests;
 
-public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateServiceEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IServiceRepository> _repoMock = new();
-
-    public UpdateServiceEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IServiceRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _repoMock.Setup(r => r.Update(It.IsAny<Service>()));
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static Service DummyService(Guid id, string code, string name) =>
         Service.Create(ServiceId.Of(id), code, name, true, ProductId.Of(Guid.NewGuid()));
 
@@ -54,13 +22,13 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var oldService = DummyService(id, "SVC001", "ExpressService");
 
 
-        _repoMock.SetupSequence(r => r.GetOneByConditionAsync(
+        _serviceRepoMock.SetupSequence(r => r.GetOneByConditionAsync(
         It.IsAny<Expression<Func<Service, bool>>>(),
         It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult<Service?>(oldService))  // Premier appel
             .Returns(Task.FromResult<Service?>(null));
         Service? updated = null;
-        _repoMock.Setup(r => r.Update(oldService))
+        _serviceRepoMock.Setup(r => r.Update(oldService))
                 .Callback<Service>((rg) => updated = rg);
 
         var payload = new
@@ -80,7 +48,7 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         updated!.Code.Should().Be("NEW001");
         updated.Name.Should().Be("Updated Express");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Service>()),
+        _serviceRepoMock.Verify(r => r.Update(It.IsAny<Service>()),
                          Times.Once);
     }
 
@@ -104,7 +72,7 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
             .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Service>()), Times.Never);
+        _serviceRepoMock.Verify(r => r.Update(It.IsAny<Service>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/services/{id} returns 400 when Code already exists")]
@@ -114,10 +82,10 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var existing = DummyService(Guid.NewGuid(), "SVC001", "Express");
         var target = DummyService(id, "SVC002", "Transfer");
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+        _serviceRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(target);
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+        _serviceRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existing); // duplicate code
 
         var payload = new
@@ -137,6 +105,6 @@ public class UpdateServiceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Contain("Service with code : SVC001 already exists");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Service>()), Times.Never);
+        _serviceRepoMock.Verify(r => r.Update(It.IsAny<Service>()), Times.Never);
     }
 }

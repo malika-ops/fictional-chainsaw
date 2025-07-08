@@ -1,45 +1,15 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.BankAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.BanksTests.GetByIdTests;
 
-public class GetBankByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetBankByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IBankRepository> _repo = new();
-
-    public GetBankByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IBankRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Bank Make(Guid id, string code = "BANK-001", string? name = null, bool enabled = true)
     {
         var bank = Bank.Create(
@@ -63,7 +33,7 @@ public class GetBankByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(BankId.Of(id), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(BankId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Bank?)null);
 
         var res = await _client.GetAsync($"/api/banks/{id}");
@@ -75,7 +45,7 @@ public class GetBankByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(BankId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _bankRepoMock.Verify(r => r.GetByIdAsync(BankId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/banks/{id} → 404 when id is malformed")]
@@ -87,7 +57,7 @@ public class GetBankByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<BankId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _bankRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<BankId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/banks/{id} → 200 for disabled Bank")]
@@ -96,7 +66,7 @@ public class GetBankByIdEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var id = Guid.NewGuid();
         var entity = Make(id, "BANK-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(BankId.Of(id), It.IsAny<CancellationToken>()))
+        _bankRepoMock.Setup(r => r.GetByIdAsync(BankId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/banks/{id}");

@@ -1,14 +1,8 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.TaxRuleDetails.Dtos;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
@@ -22,44 +16,9 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TaxRuleDetailTests;
 
-public class CreateTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateTaxRuleDetailEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITaxRuleDetailRepository> _repoMock = new();
-    private readonly Mock<ICorridorRepository> _repoCorridorMock = new();
-    private readonly Mock<ITaxRepository> _repoTaxMock = new();
-    private readonly Mock<IServiceRepository> _repoServiceMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
     private const string BaseUrl = "api/tax-rule-details";
-
-    public CreateTaxRuleDetailEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ITaxRuleDetailRepository>();
-                services.RemoveAll<ICorridorRepository>();
-                services.RemoveAll<ITaxRepository>();
-                services.RemoveAll<IServiceRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _repoMock
-                    .Setup(r => r.AddAsync(It.IsAny<TaxRuleDetail>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((TaxRuleDetail trd, CancellationToken _) => trd);
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_repoCorridorMock.Object);
-                services.AddSingleton(_repoTaxMock.Object);
-                services.AddSingleton(_repoServiceMock.Object);
-                services.AddSingleton(_cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = $"POST {BaseUrl} returns 201 and Guid when request is valid")]
     public async Task Post_ShouldReturn200_AndGuid_WhenRequestIsValid()
@@ -73,15 +32,15 @@ public class CreateTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFact
             AppliedOn = ApplicationRule.Amount
         };
 
-        _repoCorridorMock.Setup(r =>
+        _corridorRepoMock.Setup(r =>
             r.GetByIdAsync(It.Is<CorridorId>(id => id.Value == payload.CorridorId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Corridor.Create(CorridorId.Create(),CountryId.Of(Guid.NewGuid()),
             CountryId.Of(Guid.NewGuid()),CityId.Create(), CityId.Create(),
             AgencyId.Of(Guid.NewGuid()),AgencyId.Of(Guid.NewGuid())));
-        _repoTaxMock.Setup(r =>
+        _taxRepoMock.Setup(r =>
             r.GetByIdAsync(It.Is<TaxId>(id => id.Value == payload.TaxId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Tax.Create(TaxId.Create(),"code","codeEn","codeAR", "Test Tax", 20, 10));
-        _repoServiceMock.Setup(r =>
+        _serviceRepoMock.Setup(r =>
             r.GetByIdAsync(It.Is<ServiceId>(id => id.Value == payload.ServiceId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name",true, ProductId.Of(Guid.NewGuid())));
 
@@ -93,7 +52,7 @@ public class CreateTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFact
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         returnedId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r =>
+        _taxRuleDetailsRepoMock.Verify(r =>
             r.AddAsync(It.Is<TaxRuleDetail>(trd =>
                 trd.CorridorId.Value == payload.CorridorId &&
                 trd.TaxId.Value == payload.TaxId &&
@@ -133,7 +92,7 @@ public class CreateTaxRuleDetailEndpointTests : IClassFixture<WebApplicationFact
         serviceErrors[0].GetString().Should().Contain("ServiceId is required");
 
         // Verify repo was never called
-        _repoMock.Verify(r =>
+        _taxRuleDetailsRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<TaxRuleDetail>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }

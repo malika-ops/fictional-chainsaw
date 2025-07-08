@@ -1,16 +1,10 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Pagination;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BuildingBlocks.Core.Pagination;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.AgencyTiers.Queries.GetFiltredAgencyTiers;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.AgencyTierAggregate;
 using wfc.referential.Domain.TierAggregate;
@@ -18,32 +12,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTierTests.GetFiltredTests;
 
-public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredAgencyTiersEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyTierRepository> _repoMock = new();
-
-    public GetFiltredAgencyTiersEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IAgencyTierRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static AgencyTier CreateAgencyTier(Guid agencyId, Guid tierId, string code, bool enabled = true)
     {
         var entity = AgencyTier.Create(
@@ -76,7 +46,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
             pageNumber: 1,
             pageSize: 2);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1,
                             2,
@@ -95,7 +65,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                 1,
                                 2,
@@ -111,7 +81,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
         var entity = CreateAgencyTier(agencyId, Guid.NewGuid(), "AG-1");
         var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { entity }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredAgencyTiersQuery>(q => q.AgencyId == agencyId),
                             1,
                             10,
@@ -125,7 +95,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("agencyId").GetGuid().Should().Be(agencyId);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredAgencyTiersQuery>(q => q.AgencyId == agencyId),
                                 1,
                                 10,
@@ -140,7 +110,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
         var entity = CreateAgencyTier(Guid.NewGuid(), tierId, "T-1");
         var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { entity }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredAgencyTiersQuery>(q => q.TierId == tierId),
                             1,
                             10,
@@ -162,7 +132,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
         var entity = CreateAgencyTier(Guid.NewGuid(), Guid.NewGuid(), code);
         var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { entity }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredAgencyTiersQuery>(q => q.Code == code),
                             1,
                             10,
@@ -183,7 +153,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
         var disabled = CreateAgencyTier(Guid.NewGuid(), Guid.NewGuid(), "DIS", enabled: false);
         var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { disabled }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredAgencyTiersQuery>(q => q.IsEnabled == false),
                             1,
                             10,
@@ -210,7 +180,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
 
         var paged = new PagedResult<AgencyTier>(entities.ToList(), 3, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredAgencyTiersQuery>(q => q.PageNumber == 1 && q.PageSize == 10 && q.IsEnabled == true),
                             1,
                             10,
@@ -236,7 +206,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
         var entity = CreateAgencyTier(agencyId, tierId, code);
         var paged = new PagedResult<AgencyTier>(new List<AgencyTier> { entity }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredAgencyTiersQuery>(q =>
                                 q.AgencyId == agencyId &&
                                 q.TierId == tierId &&
@@ -260,7 +230,7 @@ public class GetFiltredAgencyTiersEndpointTests : IClassFixture<WebApplicationFa
     {
         var paged = new PagedResult<AgencyTier>(new List<AgencyTier>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _agencyTierRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredAgencyTiersQuery>(q => q.Code == "NONE"),
                             1,
                             10,

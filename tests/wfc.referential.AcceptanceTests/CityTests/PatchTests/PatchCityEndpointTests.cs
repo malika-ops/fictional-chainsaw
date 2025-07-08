@@ -1,50 +1,16 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Cities.Dtos;
-using wfc.referential.Application.Constants;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.RegionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CityTests.PatchTests;
 
-public class PatchCityEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchCityEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICityRepository> _repoMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
-    public PatchCityEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        // Clone the factory and customize the host
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                // 🧹 Remove concrete registrations that hit the DB / Redis
-                services.RemoveAll<ICityRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // 🔌 Plug mocks back in
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "PATCH /api/cities/{id} updates the city successfully")]
     public async Task PatchCity_ShouldReturnUpdatedCityId_WhenCityExists()
     {
@@ -58,7 +24,7 @@ public class PatchCityEndpointTests : IClassFixture<WebApplicationFactory<Progra
 
         var city = City.Create(cityId, "code", "name", "timezone", RegionId.Of(Guid.NewGuid()), "abbrev");
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(c => c.Id == cityId, It.IsAny<CancellationToken>()))
+        _cityRepoMock.Setup(r => r.GetOneByConditionAsync(c => c.Id == cityId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(city);
 
         // Act
@@ -70,7 +36,7 @@ public class PatchCityEndpointTests : IClassFixture<WebApplicationFactory<Progra
         updatedRegionId.Should().Be(true);
         city.Name.Should().BeEquivalentTo(patchRequest.Name);
 
-        _repoMock.Verify(r =>
+        _cityRepoMock.Verify(r =>
             r.Update(It.Is<City>(c => c.Name == patchRequest.Name && c.Code == patchRequest.Code)), Times.Once);
 
     }
@@ -87,7 +53,7 @@ public class PatchCityEndpointTests : IClassFixture<WebApplicationFactory<Progra
             Name = "Non-existing Region",
         };
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(c => c.Id == CityId.Of(cityId), It.IsAny<CancellationToken>()))
+        _cityRepoMock.Setup(r => r.GetOneByConditionAsync(c => c.Id == CityId.Of(cityId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((City)null);
 
         // Act
@@ -96,7 +62,7 @@ public class PatchCityEndpointTests : IClassFixture<WebApplicationFactory<Progra
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repoMock.Verify(r =>
+        _cityRepoMock.Verify(r =>
             r.Update(It.IsAny<City>()),
             Times.Never);
 
@@ -121,7 +87,7 @@ public class PatchCityEndpointTests : IClassFixture<WebApplicationFactory<Progra
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _repoMock.Verify(r =>
+        _cityRepoMock.Verify(r =>
             r.Update(It.IsAny<City>()),
             Times.Never);
 

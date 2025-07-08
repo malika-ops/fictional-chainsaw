@@ -1,14 +1,8 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.PricingAggregate;
 using wfc.referential.Domain.ServiceAggregate;
@@ -16,37 +10,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PricingTests.DeleteTests;
 
-public class DeletePricingEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeletePricingEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPricingRepository> _pricingRepoMock = new();
-
-    public DeletePricingEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IPricingRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _pricingRepoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_pricingRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
-
     private static Pricing MakePricing(Guid id, bool enabled = true)
     {
         var price = Pricing.Create(

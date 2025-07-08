@@ -1,40 +1,14 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CurrencyAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CurrencyTests.DeleteTests;
 
-public class DeleteCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteCurrencyAcceptanceTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICurrencyRepository> _repoMock = new();
-
-    public DeleteCurrencyAcceptanceTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ICurrencyRepository>();
-
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "DELETE /api/currencies/{id} disables currency when deletion requested")]
     public async Task DeleteCurrency_Should_DisableCurrency_WhenDeletionRequested()
     {
@@ -44,7 +18,7 @@ public class DeleteCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
             CurrencyId.Of(currencyId),
             "USD", "دولار أمريكي", "US Dollar", "US Dollar", 840);
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
 
         // Act
@@ -58,8 +32,8 @@ public class DeleteCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
         // Verify currency was disabled (soft delete)
         currency.IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _currencyRepoMock.Verify(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()), Times.Once);
+        _currencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "DELETE /api/currencies/{id} returns 400 when currency not found")]
@@ -68,7 +42,7 @@ public class DeleteCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
         // Arrange
         var currencyId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency)null);
 
         // Act
@@ -76,7 +50,7 @@ public class DeleteCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "DELETE /api/currencies/{id} changes status to inactive instead of physical deletion")]
@@ -91,7 +65,7 @@ public class DeleteCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
         // Verify currency starts as enabled
         currency.IsEnabled.Should().BeTrue();
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
 
         // Act
@@ -114,7 +88,7 @@ public class DeleteCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
         // Arrange
         var nonExistentCurrencyId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == nonExistentCurrencyId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == nonExistentCurrencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency)null);
 
         // Act
@@ -124,7 +98,7 @@ public class DeleteCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         // Verify no save operation was attempted
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "DELETE /api/currencies/{id} returns 400 for invalid GUID format")]
@@ -137,7 +111,7 @@ public class DeleteCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         // Verify no repository operations were attempted
-        _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<CurrencyId>(), It.IsAny<CancellationToken>()), Times.Never);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<CurrencyId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

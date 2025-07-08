@@ -1,47 +1,17 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.ServiceAggregate;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ProductAggregate;
+using wfc.referential.Domain.ServiceAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ServiceTests.GetByIdTests;
 
-public class GetServiceByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetServiceByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IServiceRepository> _repo = new();
-
-    public GetServiceByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IServiceRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Service Make(Guid id, string code = "SERVICE-001", string? name = null, bool enabled = true)
     {
         var service = Service.Create(
@@ -88,7 +58,7 @@ public class GetServiceByIdEndpointTests : IClassFixture<WebApplicationFactory<P
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(ServiceId.Of(id), It.IsAny<CancellationToken>()))
+        _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Service?)null);
 
         var res = await _client.GetAsync($"/api/services/{id}");
@@ -100,7 +70,7 @@ public class GetServiceByIdEndpointTests : IClassFixture<WebApplicationFactory<P
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(ServiceId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _serviceRepoMock.Verify(r => r.GetByIdAsync(ServiceId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/services/{id} → 404 when id is malformed")]
@@ -112,7 +82,7 @@ public class GetServiceByIdEndpointTests : IClassFixture<WebApplicationFactory<P
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<ServiceId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _serviceRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<ServiceId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/services/{id} → 200 for disabled Service")]
@@ -121,7 +91,7 @@ public class GetServiceByIdEndpointTests : IClassFixture<WebApplicationFactory<P
         var id = Guid.NewGuid();
         var entity = Make(id, "SERVICE-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(ServiceId.Of(id), It.IsAny<CancellationToken>()))
+        _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/services/{id}");

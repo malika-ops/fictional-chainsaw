@@ -1,12 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Sectors.Dtos;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.SectorAggregate;
@@ -14,40 +9,20 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.SectorsTests.CreateTests;
 
-public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateSectorEndpointTests : BaseAcceptanceTests
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ISectorRepository> _repoMock = new();
-    private readonly Mock<ICityRepository> _cityRepoMock = new();
-
-    public CreateSectorEndpointTests(WebApplicationFactory<Program> factory)
+    public CreateSectorEndpointTests(TestWebApplicationFactory factory) : base(factory)
     {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ISectorRepository>();
-                services.RemoveAll<ICityRepository>();
 
-                _repoMock.Setup(r => r.AddAsync(It.IsAny<Sector>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Sector s, CancellationToken _) => s);
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-                _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Sector)null);
+        _sectorRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Sector)null);
 
-                // FIXED: Setup city repository with correct parameter type
-                _cityRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<CityId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((CityId cityId, CancellationToken _) =>
-                        City.Create(cityId, "TEST", "Test City", "GMT",
-                                   new Domain.RegionAggregate.RegionId(Guid.NewGuid()), "TC"));
+        // FIXED: Setup city repository with correct parameter type
+        _cityRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<CityId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CityId cityId, CancellationToken _) =>
+                City.Create(cityId, "TEST", "Test City", "GMT",
+                           new Domain.RegionAggregate.RegionId(Guid.NewGuid()), "TC"));
 
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cityRepoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
     }
 
     [Fact(DisplayName = "POST /api/sectors creates sector with all required fields")]
@@ -70,13 +45,13 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         sectorId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
+        _sectorRepoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
             s.Code == "SEC001" &&
             s.Name == "Downtown Sector" &&
             s.CityId.Value == cityId &&
             s.IsEnabled == true), It.IsAny<CancellationToken>()), Times.Once);
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _sectorRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "POST /api/sectors returns 409 when duplicate Code is provided")]
@@ -87,7 +62,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
             SectorId.Of(Guid.NewGuid()),
             "SEC001", "Existing Sector", CityId.Of(Guid.NewGuid()));
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
+        _sectorRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingSector);
 
         var duplicateRequest = new CreateSectorRequest
@@ -102,7 +77,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Sector>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sectorRepoMock.Verify(r => r.AddAsync(It.IsAny<Sector>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/sectors auto-generates sector ID")]
@@ -124,7 +99,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         sectorId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
+        _sectorRepoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
             s.Id != null && s.Id.Value != Guid.Empty), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -145,7 +120,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
+        _sectorRepoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
             s.IsEnabled == true), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -170,7 +145,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Sector>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sectorRepoMock.Verify(r => r.AddAsync(It.IsAny<Sector>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/sectors returns 400 when CityId is empty")]
@@ -189,7 +164,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Sector>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sectorRepoMock.Verify(r => r.AddAsync(It.IsAny<Sector>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/sectors returns 400 when City doesn't exist")]
@@ -212,7 +187,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Sector>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sectorRepoMock.Verify(r => r.AddAsync(It.IsAny<Sector>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory(DisplayName = "POST /api/sectors validates SectorCode format")]
@@ -261,7 +236,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        _repoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
+        _sectorRepoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
             s.Name == "Secteur Ville-Centre & Périphérie (Zone 1)"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -274,7 +249,7 @@ public class CreateSectorEndpointTests : IClassFixture<WebApplicationFactory<Pro
             SectorId.Of(Guid.NewGuid()),
             existingCode, "Existing Sector", CityId.Of(Guid.NewGuid()));
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
+        _sectorRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Sector, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingSector);
 
         var duplicateRequest = new CreateSectorRequest

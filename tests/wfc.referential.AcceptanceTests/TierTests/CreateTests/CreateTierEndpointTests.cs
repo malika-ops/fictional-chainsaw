@@ -1,52 +1,15 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.TierAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TierTests.CreateTests;
 
-public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateTierEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITierRepository> _repoMock = new();
-
-    public CreateTierEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ITierRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _repoMock
-                    .Setup(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Tier tier, CancellationToken _) => tier);
-
-                _repoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "POST /api/tiers returns 200 and Guid (fixture version)")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
@@ -67,7 +30,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         returnedId.Should().NotBeEmpty();
 
         // verify repository interaction using *FluentAssertions on Moq invocations
-        _repoMock.Verify(r =>
+        _tierRepoMock.Verify(r =>
             r.AddAsync(It.Is<Tier>(t =>
                     t.Name == payload.Name &&
                     t.Description == payload.Description),
@@ -76,7 +39,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
             Times.Once
         );
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "POST /api/tiers returns 400 & problem‑details when Name is missing")]
@@ -105,7 +68,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
             .Should().Be("Name is required.");
 
         // the handler must NOT be reached
-        _repoMock.Verify(r =>
+        _tierRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "when validation fails, the command handler should not be executed");
@@ -133,7 +96,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
             .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
+        _tierRepoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
                          Times.Never);
     }
 
@@ -160,7 +123,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
             .GetProperty("Name")[0].GetString()
             .Should().Be("Name max length is 100 chars.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
+        _tierRepoMock.Verify(r => r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
                          Times.Never);
     }
 
@@ -176,7 +139,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
             duplicateName,
             "Existing premium tier");
 
-        _repoMock
+        _tierRepoMock
             .Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Tier, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingTier);
 
@@ -198,12 +161,12 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
         error.Should().Be($"Tier with name '{duplicateName}' already exists.");
 
-        _repoMock.Verify(r =>
+        _tierRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "no insertion should happen when the name is already taken");
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()),
                          Times.Never,
                          "no save should happen when the name is already taken");
     }
@@ -221,7 +184,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
             existingName,
             "Existing premium tier");
 
-        _repoMock
+        _tierRepoMock
             .Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Tier, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingTier);
 
@@ -244,7 +207,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         error.Should().Be($"Tier with name '{duplicateNameDifferentCase}' already exists.");
 
         // Handler must NOT attempt to add the entity
-        _repoMock.Verify(r =>
+        _tierRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<Tier>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "no insertion should happen when the name is already taken (case insensitive)");
@@ -268,7 +231,7 @@ public class CreateTierEndpointTests : IClassFixture<WebApplicationFactory<Progr
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         returnedId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r =>
+        _tierRepoMock.Verify(r =>
             r.AddAsync(It.Is<Tier>(t =>
                     t.Name == payload.Name &&
                     t.Description == string.Empty), // Description should default to empty string

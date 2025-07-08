@@ -88,7 +88,6 @@ app.MapEndpoints();
 
 
 app.UseApiServices();
-//app.Lifetime.ApplicationStopped.Register(Log.CloseAndFlush);
 app.Run();
 
 public partial class Program { }

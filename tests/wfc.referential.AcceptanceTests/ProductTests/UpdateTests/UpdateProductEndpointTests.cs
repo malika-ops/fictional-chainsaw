@@ -2,49 +2,15 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.ProductAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ProductTests.UpdateTests;
 
-public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateProductEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IProductRepository> _repoMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
-
-
-    public UpdateProductEndpointTests(WebApplicationFactory<Program> factory)
-    {
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IProductRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // default noop for Update
-                _repoMock
-                    .Setup(r => r.Update(It.IsAny<Product>()));
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     // helper to create a Product quickly
     private static Product DummyProduct(Guid id, string code, string name) =>
@@ -58,7 +24,7 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var oldProduct = DummyProduct(id, "001", "Cash Express");
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+        _productRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Expression<Func<Product, bool>> predicate, CancellationToken _) =>
             {
                 var func = predicate.Compile();
@@ -71,7 +37,7 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
 
         Product? updated = null;
-        _repoMock.Setup(r => r.Update(oldProduct))
+        _productRepoMock.Setup(r => r.Update(oldProduct))
                  .Callback<Product>((rg) => updated = rg);
 
         var payload = new
@@ -92,7 +58,7 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         updated!.Code.Should().Be("codeAAB");
         updated.Name.Should().Be("nameAAB");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Product>()),
+        _productRepoMock.Verify(r => r.Update(It.IsAny<Product>()),
                          Times.Once);
     }
 
@@ -118,7 +84,7 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
             .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Product>()),
+        _productRepoMock.Verify(r => r.Update(It.IsAny<Product>()),
                          Times.Never);
     }
 
@@ -131,10 +97,10 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var existing = DummyProduct(Guid.NewGuid(), "001", "Cash Express");
         var target = DummyProduct(id, "002", "Floussy");
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+        _productRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(target);
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+        _productRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(existing); // duplicate code
 
         var payload = new
@@ -154,7 +120,7 @@ public class UpdateProductEndpointTests : IClassFixture<WebApplicationFactory<Pr
         doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"{nameof(Product)} with code : {payload.Code} already exist");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Product>()),
+        _productRepoMock.Verify(r => r.Update(It.IsAny<Product>()),
                          Times.Never);
     }
 }

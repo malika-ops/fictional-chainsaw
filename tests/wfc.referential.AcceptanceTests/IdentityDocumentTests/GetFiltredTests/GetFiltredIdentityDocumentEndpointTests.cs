@@ -1,42 +1,17 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.IdentityDocuments.Queries.GetFiltredIdentityDocuments;
 using wfc.referential.Domain.IdentityDocumentAggregate;
-using BuildingBlocks.Core.Pagination;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.IdentityDocumentTests.GetFiltredTests;
 
-public class GetFiltredIdentityDocumentsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredIdentityDocumentsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IIdentityDocumentRepository> _repoMock = new();
-
-    public GetFiltredIdentityDocumentsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IIdentityDocumentRepository>();
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static IdentityDocument Dummy(string code, string name) =>
         IdentityDocument.Create(IdentityDocumentId.Of(Guid.NewGuid()), code, name, null);
 
@@ -59,7 +34,7 @@ public class GetFiltredIdentityDocumentsEndpointTests : IClassFixture<WebApplica
             pageSize: 2
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _identityDocumentRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                     It.Is<GetFiltredIdentityDocumentsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                     1, 2,
                     It.IsAny<CancellationToken>()))
@@ -86,7 +61,7 @@ public class GetFiltredIdentityDocumentsEndpointTests : IClassFixture<WebApplica
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _identityDocumentRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                     It.Is<GetFiltredIdentityDocumentsQuery>(q => q.Code == "CIN"),
                     1, 10,
                     It.IsAny<CancellationToken>()))
@@ -112,7 +87,7 @@ public class GetFiltredIdentityDocumentsEndpointTests : IClassFixture<WebApplica
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _identityDocumentRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                     It.Is<GetFiltredIdentityDocumentsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                     1, 10,
                     It.IsAny<CancellationToken>()))
@@ -139,7 +114,7 @@ public class GetFiltredIdentityDocumentsEndpointTests : IClassFixture<WebApplica
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _identityDocumentRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                     It.Is<GetFiltredIdentityDocumentsQuery>(q => q.Name == "Carte"),
                     1, 10,
                     It.IsAny<CancellationToken>()))
@@ -166,7 +141,7 @@ public class GetFiltredIdentityDocumentsEndpointTests : IClassFixture<WebApplica
             pageSize: 10
         );
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _identityDocumentRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                     It.Is<GetFiltredIdentityDocumentsQuery>(q => q.IsEnabled == false),
                     1, 10,
                     It.IsAny<CancellationToken>()))

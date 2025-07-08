@@ -1,50 +1,15 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ParamTypesTests.DeleteTests;
 
-public class DeleteParamTypeEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteParamTypeEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IParamTypeRepository> _repoMock = new();
-
-    public DeleteParamTypeEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IParamTypeRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _repoMock
-                    .Setup(r => r.Update(It.IsAny<ParamType>()));
-
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
-    }
 
     // Helper to build test ParamType
     private static ParamType CreateTestParamType(Guid id, string value)
@@ -64,7 +29,7 @@ public class DeleteParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         var id = Guid.NewGuid();
         var paramType = CreateTestParamType(id, "Test Value");
 
-        _repoMock
+        _paramTypeRepoMock
             .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(paramType);
 
@@ -80,8 +45,8 @@ public class DeleteParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         paramType.IsEnabled.Should().BeFalse();
 
         // Verify repository interactions - Delete handler calls Disable() and SaveChangesAsync()
-        _repoMock.Verify(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _paramTypeRepoMock.Verify(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()), Times.Once);
+        _paramTypeRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "DELETE /api/paramtypes/{id} returns 400 when paramtype is not found")]
@@ -90,7 +55,7 @@ public class DeleteParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
 
-        _repoMock
+        _paramTypeRepoMock
             .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ParamType?)null);
 
@@ -100,8 +65,8 @@ public class DeleteParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Matches Bank pattern
 
-        _repoMock.Verify(r => r.Update(It.IsAny<ParamType>()), Times.Never);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _paramTypeRepoMock.Verify(r => r.Update(It.IsAny<ParamType>()), Times.Never);
+        _paramTypeRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "DELETE /api/paramtypes/{id} changes status to inactive instead of physical deletion")]
@@ -114,7 +79,7 @@ public class DeleteParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         // Verify paramType starts as enabled
         paramType.IsEnabled.Should().BeTrue();
 
-        _repoMock
+        _paramTypeRepoMock
             .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(paramType);
 
@@ -138,7 +103,7 @@ public class DeleteParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var nonExistentParamTypeId = Guid.NewGuid();
 
-        _repoMock
+        _paramTypeRepoMock
             .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == nonExistentParamTypeId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ParamType?)null);
 
@@ -149,7 +114,7 @@ public class DeleteParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         // Verify no save operation was attempted
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _paramTypeRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "DELETE /api/paramtypes/{id} returns 400 for invalid GUID format")]
@@ -162,7 +127,7 @@ public class DeleteParamTypeEndpointTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         // Verify no repository operations were attempted
-        _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<ParamTypeId>(), It.IsAny<CancellationToken>()), Times.Never);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _paramTypeRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<ParamTypeId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _paramTypeRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

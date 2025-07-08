@@ -1,44 +1,18 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Pagination;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BuildingBlocks.Core.Pagination;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.Agencies.Queries.GetFiltredAgencies;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTests.GetFiltredTests;
 
-public class GetFiltredAgenciesEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredAgenciesEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyRepository> _repoMock = new();
-
-    public GetFiltredAgenciesEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IAgencyRepository>();
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
-
     /// <summary>Quickly builds a dummy <see cref="Agency"/> aggregate.</summary>
     private static Agency CreateAgency(string code, string name)
     {
@@ -97,7 +71,7 @@ public class GetFiltredAgenciesEndpointTests : IClassFixture<WebApplicationFacto
             pageNumber: 1,
             pageSize: 2);
 
-        _repoMock
+        _agencyRepoMock
             .Setup(r => r.GetPagedByCriteriaAsync(
                 It.Is<GetFiltredAgenciesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                 1, 2, It.IsAny<CancellationToken>()))
@@ -115,7 +89,7 @@ public class GetFiltredAgenciesEndpointTests : IClassFixture<WebApplicationFacto
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _agencyRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                               It.Is<GetFiltredAgenciesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                               1, 2, It.IsAny<CancellationToken>()),
                          Times.Once);
@@ -133,7 +107,7 @@ public class GetFiltredAgenciesEndpointTests : IClassFixture<WebApplicationFacto
             pageNumber: 1,
             pageSize: 10);
 
-        _repoMock
+        _agencyRepoMock
             .Setup(r => r.GetPagedByCriteriaAsync(
                 It.Is<GetFiltredAgenciesQuery>(q => q.Code == "AG-003"),
                 1, 10, It.IsAny<CancellationToken>()))
@@ -148,7 +122,7 @@ public class GetFiltredAgenciesEndpointTests : IClassFixture<WebApplicationFacto
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("code").GetString().Should().Be("AG-003");
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _agencyRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                               It.Is<GetFiltredAgenciesQuery>(q => q.Code == "AG-003"),
                               1, 10, It.IsAny<CancellationToken>()),
                          Times.Once);
@@ -171,7 +145,7 @@ public class GetFiltredAgenciesEndpointTests : IClassFixture<WebApplicationFacto
             pageNumber: 1,
             pageSize: 10); 
 
-        _repoMock
+        _agencyRepoMock
             .Setup(r => r.GetPagedByCriteriaAsync(
                 It.Is<GetFiltredAgenciesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                 1, 10, It.IsAny<CancellationToken>()))
@@ -187,7 +161,7 @@ public class GetFiltredAgenciesEndpointTests : IClassFixture<WebApplicationFacto
         dto.PageSize.Should().Be(10);
         dto.Items.Should().HaveCount(3);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _agencyRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                               It.Is<GetFiltredAgenciesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                               1, 10, It.IsAny<CancellationToken>()),
                          Times.Once);

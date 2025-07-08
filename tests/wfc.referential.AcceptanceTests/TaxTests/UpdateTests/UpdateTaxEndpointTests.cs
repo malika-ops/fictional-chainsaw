@@ -1,54 +1,18 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.Taxes.Dtos;
-using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.TaxAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TaxTests.UpdateTests;
 
-public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateTaxEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITaxRepository> _repoMock = new();
     private const string BaseUrl = "api/taxes";
-
-
-    public UpdateTaxEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ITaxRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // default noop for Update
-                _repoMock
-                    .Setup(r => r.Update(It.IsAny<Tax>()));
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
 
     private static Tax DummyTax(Guid id,string code, string description) =>
         Tax.Create(TaxId.Of(id), code, $"{code}AR", $"{code}EN", description, 43, 20);
@@ -61,11 +25,11 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var id = Guid.NewGuid();
         var oldTax = DummyTax(id, "VAT_DE", "Germany VAT - Standard Rate");
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
+        _taxRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(oldTax);
 
         Tax? updated = null;
-        _repoMock.Setup(r => r.Update(oldTax))
+        _taxRepoMock.Setup(r => r.Update(oldTax))
                  .Callback<Tax>((rg) => updated = rg);
 
         var payload = new UpdateTaxRequest
@@ -90,7 +54,7 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         updated!.Code.Should().Be("testAAB");
         updated.CodeEn.Should().Be("TestAABEN");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Tax>()),
+        _taxRepoMock.Verify(r => r.Update(It.IsAny<Tax>()),
                          Times.Once);
     }
 
@@ -120,7 +84,7 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             .GetProperty("Code")[0].GetString()
             .Should().Be("Code is required.");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Tax>()),
+        _taxRepoMock.Verify(r => r.Update(It.IsAny<Tax>()),
                          Times.Never);
     }
 
@@ -132,7 +96,7 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var existing = DummyTax(Guid.NewGuid(),"GST_CA", "Canada GST - Federal Goods and Services Tax");
         var target = DummyTax(id, "SALETX_CA", "US Sales Tax - California");
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
+        _taxRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Expression<Func<Tax, bool>> predicate, CancellationToken _) =>
             {
                 var func = predicate.Compile();
@@ -167,7 +131,7 @@ public class UpdateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"{nameof(Tax)} with code : {payload.Code} already exist");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Tax>()),
+        _taxRepoMock.Verify(r => r.Update(It.IsAny<Tax>()),
                          Times.Never);
     }
 }

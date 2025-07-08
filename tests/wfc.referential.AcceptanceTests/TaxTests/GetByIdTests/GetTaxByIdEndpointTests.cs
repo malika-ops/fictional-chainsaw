@@ -1,45 +1,15 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.TaxAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TaxTests.GetByIdTests;
 
-public class GetTaxByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetTaxByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITaxRepository> _repo = new();
-
-    public GetTaxByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ITaxRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Tax Make(Guid id, string code = "TAX-001", string? name = null, bool enabled = true)
     {
         var tax = Tax.Create(
@@ -66,7 +36,7 @@ public class GetTaxByIdEndpointTests : IClassFixture<WebApplicationFactory<Progr
         var id = Guid.NewGuid();
         var entity = Make(id, "TAX-123", "VAT Tax");
 
-        _repo.Setup(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()))
+        _taxRepoMock.Setup(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/taxes/{id}");
@@ -78,7 +48,7 @@ public class GetTaxByIdEndpointTests : IClassFixture<WebApplicationFactory<Progr
         body.Description.Should().Be("VAT Tax");
         body.IsEnabled.Should().BeTrue();
 
-        _repo.Verify(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _taxRepoMock.Verify(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/taxes/{id} → 404 when Tax not found")]
@@ -86,7 +56,7 @@ public class GetTaxByIdEndpointTests : IClassFixture<WebApplicationFactory<Progr
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()))
+        _taxRepoMock.Setup(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Tax?)null);
 
         var res = await _client.GetAsync($"/api/taxes/{id}");
@@ -98,7 +68,7 @@ public class GetTaxByIdEndpointTests : IClassFixture<WebApplicationFactory<Progr
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _taxRepoMock.Verify(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/taxes/{id} → 404 when id is malformed")]
@@ -110,7 +80,7 @@ public class GetTaxByIdEndpointTests : IClassFixture<WebApplicationFactory<Progr
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<TaxId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _taxRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<TaxId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/taxes/{id} → 200 for disabled Tax")]
@@ -119,7 +89,7 @@ public class GetTaxByIdEndpointTests : IClassFixture<WebApplicationFactory<Progr
         var id = Guid.NewGuid();
         var entity = Make(id, "TAX-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()))
+        _taxRepoMock.Setup(r => r.GetByIdAsync(TaxId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/taxes/{id}");

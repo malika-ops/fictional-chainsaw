@@ -1,49 +1,17 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.TierAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TierTests.PatchTests;
 
-public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchTierEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITierRepository> _tierRepo = new();
-
-    public PatchTierEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ITierRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _tierRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_tierRepo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Tier MakeTier(Guid id, string name = "Bronze", string description = "Bronze Tier") =>
         Tier.Create(TierId.Of(id), name, description);
 
@@ -86,10 +54,10 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var id = Guid.NewGuid();
         var orig = MakeTier(id, "Bronze", "Bronze tier description");
 
-        _tierRepo.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(orig);
 
-        _tierRepo.Setup(r => r.GetOneByConditionAsync(
+        _tierRepoMock.Setup(r => r.GetOneByConditionAsync(
                             It.IsAny<Expression<Func<Tier, bool>>>(),
                             It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Tier?)null);
@@ -115,7 +83,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         orig.Description.Should().Be("Updated silver tier description");
         orig.IsEnabled.Should().BeFalse();
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/tiers/{id} returns 200 when patching only name")]
@@ -125,10 +93,10 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var id = Guid.NewGuid();
         var orig = MakeTier(id, "Bronze", "Bronze tier description");
 
-        _tierRepo.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(orig);
 
-        _tierRepo.Setup(r => r.GetOneByConditionAsync(
+        _tierRepoMock.Setup(r => r.GetOneByConditionAsync(
                             It.IsAny<Expression<Func<Tier, bool>>>(),
                             It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Tier?)null);
@@ -152,7 +120,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         orig.Description.Should().Be("Bronze tier description"); // unchanged
         orig.IsEnabled.Should().BeTrue(); // unchanged
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/tiers/{id} returns 200 when patching only description")]
@@ -162,7 +130,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var id = Guid.NewGuid();
         var orig = MakeTier(id, "Bronze", "Bronze tier description");
 
-        _tierRepo.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(orig);
 
         var payload = new
@@ -184,7 +152,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         orig.Description.Should().Be("Updated description only");
         orig.IsEnabled.Should().BeTrue(); // unchanged
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/tiers/{id} returns 200 when patching only IsEnabled")]
@@ -194,7 +162,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var id = Guid.NewGuid();
         var orig = MakeTier(id, "Bronze", "Bronze tier description");
 
-        _tierRepo.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(orig);
 
         var payload = new
@@ -216,7 +184,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         orig.Description.Should().Be("Bronze tier description"); // unchanged
         orig.IsEnabled.Should().BeFalse();
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/tiers/{id} returns 404 when tier not found")]
@@ -225,7 +193,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         // Arrange
         var id = Guid.NewGuid();
 
-        _tierRepo.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Tier?)null);
 
         var payload = new { TierId = id, Name = "NonExistent" };
@@ -236,7 +204,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         // Assert
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/tiers/{id} returns 409 when name already exists")]
@@ -248,10 +216,10 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var target = MakeTier(idTarget, "Bronze", "Bronze tier");
         var existing = MakeTier(idExisting, "Silver", "Silver tier");
 
-        _tierRepo.Setup(r => r.GetByIdAsync(TierId.Of(idTarget), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(idTarget), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(target);
 
-        _tierRepo.Setup(r => r.GetOneByConditionAsync(
+        _tierRepoMock.Setup(r => r.GetOneByConditionAsync(
                             It.IsAny<Expression<Func<Tier, bool>>>(),
                             It.IsAny<CancellationToken>()))
                  .ReturnsAsync(existing);
@@ -267,7 +235,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be("Tier name 'Silver' already exists.");
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/tiers/{id} returns 400 when TierId is empty GUID")]
@@ -290,7 +258,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         FirstErr(doc!.RootElement.GetProperty("errors"), "TierId")
             .Should().Be("TierId cannot be empty.");
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/tiers/{id} returns 400 when Name is empty string")]
@@ -310,7 +278,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         FirstErr(doc!.RootElement.GetProperty("errors"), "Name")
             .Should().Be("Name cannot be empty when provided.");
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/tiers/{id} returns 400 when Description is empty string")]
@@ -330,7 +298,7 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         FirstErr(doc!.RootElement.GetProperty("errors"), "Description")
             .Should().Be("Description cannot be empty when provided.");
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     
@@ -342,10 +310,10 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         var id = Guid.NewGuid();
         var tier = MakeTier(id, "Bronze", "Bronze tier");
 
-        _tierRepo.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
+        _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(tier);
 
-        _tierRepo.Setup(r => r.GetOneByConditionAsync(
+        _tierRepoMock.Setup(r => r.GetOneByConditionAsync(
                             It.IsAny<Expression<Func<Tier, bool>>>(),
                             It.IsAny<CancellationToken>()))
                  .ReturnsAsync(tier); // Same tier returned
@@ -365,6 +333,6 @@ public class PatchTierEndpointTests : IClassFixture<WebApplicationFactory<Progra
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _tierRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _tierRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -1,16 +1,9 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Pagination;
-using Castle.Components.DictionaryAdapter.Xml;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.RegionManagement.Queries.GetFiltredRegions;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.RegionAggregate;
@@ -18,32 +11,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.RegionTests.GetFiltredTests;
 
-public class GetFiltredRegionEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredRegionEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IRegionRepository> _repoMock = new();
-
-    public GetFiltredRegionEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IRegionRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     // Helper to build dummy regions quickly
     private static Region DummyRegion(string code, string name) =>
         Region.Create(RegionId.Of(Guid.NewGuid()), code, name, CountryId.Of(Guid.NewGuid()));
@@ -62,7 +31,7 @@ public class GetFiltredRegionEndpointTests : IClassFixture<WebApplicationFactory
                                DummyRegion("CAD", "Canadian") };
 
         // repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _regionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredRegionsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1, 2,
                             It.IsAny<CancellationToken>(), r => r.Cities))
@@ -80,7 +49,7 @@ public class GetFiltredRegionEndpointTests : IClassFixture<WebApplicationFactory
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _regionRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredRegionsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                 1, 2,
                                 It.IsAny<CancellationToken>(), r => r.Cities),
@@ -94,7 +63,7 @@ public class GetFiltredRegionEndpointTests : IClassFixture<WebApplicationFactory
         // Arrange
         var usd = DummyRegion("CASA", "US Dollar");
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _regionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredRegionsQuery>(q => q.Code == "CASA"),1,10,
                             It.IsAny<CancellationToken>(), r => r.Cities))
                  .ReturnsAsync(new PagedResult<Region>(new List<Region> { usd }, 1,1, 10));
@@ -107,7 +76,7 @@ public class GetFiltredRegionEndpointTests : IClassFixture<WebApplicationFactory
         dto!.Items.Should().HaveCount(1);
         dto.Items[0].GetProperty("code").GetString().Should().Be("CASA");
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _regionRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredRegionsQuery>(q => q.Code == "CASA"),
                                 1, 10,
                                 It.IsAny<CancellationToken>(), r => r.Cities),
@@ -124,7 +93,7 @@ public class GetFiltredRegionEndpointTests : IClassFixture<WebApplicationFactory
                         DummyRegion("EUR", "Euro"),
                         DummyRegion("GBP", "Pound") };
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _regionRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredRegionsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                             1, 10,
         It.IsAny<CancellationToken>(), r => r.Cities))
@@ -142,7 +111,7 @@ public class GetFiltredRegionEndpointTests : IClassFixture<WebApplicationFactory
         dto.Items.Should().HaveCount(3);
 
         // repository must have been called with default paging values
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _regionRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredRegionsQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
                                 1, 10,
                                 It.IsAny<CancellationToken>(), r => r.Cities),

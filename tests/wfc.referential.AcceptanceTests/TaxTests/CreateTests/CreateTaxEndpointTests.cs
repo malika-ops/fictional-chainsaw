@@ -2,14 +2,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Taxes.Dtos;
 using wfc.referential.Domain.TaxAggregate;
 using Xunit;
@@ -17,40 +11,10 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TaxTests.CreateTests;
 
-public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateTaxEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITaxRepository> _repoMock = new();
-    private readonly Mock<ICacheService> _cachMock = new();
     private const string BaseUrl = "api/taxes";
 
-    public CreateTaxEndpointTests(WebApplicationFactory<Program> factory)
-    {
-
-        // clone the factory and customise the host
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                // 🧹 Remove concrete registrations that hit the DB / Redis
-                services.RemoveAll<ITaxRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // 🪄  Set up mock behaviour (echoes entity back, as if EF saved it)
-                _repoMock
-                    .Setup(r => r.AddAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Tax r, CancellationToken _) => r);
-
-                // 🔌 Plug mocks back in
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cachMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = $"POST {BaseUrl} returns 200 and Guid (fixture version)")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
@@ -75,7 +39,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         returnedId.Should().NotBeEmpty();
 
         //verify repository interaction using * FluentAssertions on Moq invocations
-        _repoMock.Verify(r =>
+        _taxRepoMock.Verify(r =>
             r.AddAsync(It.Is<Tax>(r =>
                     r.Code == payload.Code &&
                     r.CodeEn == payload.CodeEn &&
@@ -121,7 +85,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             .Should().Be("CodeEn Code is required");
 
         // the handler must NOT be reached
-        _repoMock.Verify(r =>
+        _taxRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "when validation fails, the command handler should not be executed");
@@ -138,7 +102,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
             TaxId.Create(),
             duplicateCode,"codeEn", "codeAr", "description",42,20);
 
-        _repoMock
+        _taxRepoMock
             .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Tax, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(tax);
 
@@ -165,7 +129,7 @@ public class CreateTaxEndpointTests : IClassFixture<WebApplicationFactory<Progra
         error.Should().Be($"{nameof(Tax)} with code : {duplicateCode} already exist");
 
         // Handler must NOT attempt to add the entity
-        _repoMock.Verify(r =>
+        _taxRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<Tax>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "no insertion should happen when the code is already taken");

@@ -1,50 +1,16 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.ContractDetailsAggregate;
 using wfc.referential.Domain.ContractAggregate;
+using wfc.referential.Domain.ContractDetailsAggregate;
 using wfc.referential.Domain.PricingAggregate;
-using wfc.referential.Domain.PartnerAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ContractDetailsTests.DeleteTests;
 
-public class DeleteContractDetailsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteContractDetailsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IContractDetailsRepository> _contractDetailsRepoMock = new();
-
-    public DeleteContractDetailsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IContractDetailsRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _contractDetailsRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_contractDetailsRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "DELETE /api/contractdetails/{id} returns 200 when contract details exists")]
     public async Task Delete_ShouldReturn200_WhenContractDetailsExists()
     {

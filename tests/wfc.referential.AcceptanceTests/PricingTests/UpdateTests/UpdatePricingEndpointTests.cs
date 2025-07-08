@@ -1,15 +1,9 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using AutoFixture;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.PricingAggregate;
@@ -18,45 +12,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PricingTests.UpdateTests;
 
-public class UpdatePricingEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdatePricingEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPricingRepository> _pricingRepoMock = new();
-    private readonly Mock<IServiceRepository> _serviceRepoMock = new();
-    private readonly Mock<ICorridorRepository> _corridorRepoMock = new();
-    private readonly Mock<IAffiliateRepository> _affiliateRepoMock = new();
-
-    public UpdatePricingEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IPricingRepository>();
-                services.RemoveAll<IServiceRepository>();
-                services.RemoveAll<ICorridorRepository>();
-                services.RemoveAll<IAffiliateRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _pricingRepoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_pricingRepoMock.Object);
-                services.AddSingleton(_serviceRepoMock.Object);
-                services.AddSingleton(_corridorRepoMock.Object);
-                services.AddSingleton(_affiliateRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static Pricing CreatePricing(
         Guid id,
         string code,
@@ -102,13 +59,13 @@ public class UpdatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
                         .ReturnsAsync(pricing);
 
         _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of(serviceId), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Service)) as Service);
+                        .ReturnsAsync(_fixture.Create<Service>());
 
         _corridorRepoMock.Setup(r => r.GetByIdAsync(CorridorId.Of(corridorId), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Corridor)) as Corridor);
+                         .ReturnsAsync(_fixture.Create<Corridor>());
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(affiliateId), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Affiliate)) as Affiliate);
+                          .ReturnsAsync(_fixture.Create<Affiliate>());
 
         _pricingRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                System.Linq.Expressions.Expression<Func<Pricing, bool>>>(),
@@ -270,15 +227,15 @@ public class UpdatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of(serviceId), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(missing == "Service" ? null
-                                      : FormatterServices.GetUninitializedObject(typeof(Service)) as Service);
+                                      : _fixture.Create<Service>());
 
         _corridorRepoMock.Setup(r => r.GetByIdAsync(CorridorId.Of(corridorId), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(missing == "Corridor" ? null
-                                      : FormatterServices.GetUninitializedObject(typeof(Corridor)) as Corridor);
+                                      : _fixture.Create<Corridor>());
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(affiliateId), It.IsAny<CancellationToken>()))
                           .ReturnsAsync(missing == "Affiliate" ? null
-                                      : FormatterServices.GetUninitializedObject(typeof(Affiliate)) as Affiliate);
+                                      : _fixture.Create<Affiliate>());
 
         _pricingRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                System.Linq.Expressions.Expression<Func<Pricing, bool>>>(),
@@ -319,10 +276,10 @@ public class UpdatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
                         .ReturnsAsync(pricing);
 
         _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of(serviceId), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Service)) as Service);
+                        .ReturnsAsync(_fixture.Create<Service>());
 
         _corridorRepoMock.Setup(r => r.GetByIdAsync(CorridorId.Of(corridorId), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Corridor)) as Corridor);
+                         .ReturnsAsync(_fixture.Create<Corridor>());
 
         _pricingRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                System.Linq.Expressions.Expression<Func<Pricing, bool>>>(),
@@ -360,10 +317,10 @@ public class UpdatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
                         .ReturnsAsync(pricing);
 
         _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of(serviceId), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Service)) as Service);
+                        .ReturnsAsync(_fixture.Create<Service>());
 
         _corridorRepoMock.Setup(r => r.GetByIdAsync(CorridorId.Of(corridorId), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Corridor)) as Corridor);
+                         .ReturnsAsync(_fixture.Create<Corridor>());
 
         _pricingRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                System.Linq.Expressions.Expression<Func<Pricing, bool>>>(),
@@ -404,10 +361,10 @@ public class UpdatePricingEndpointTests : IClassFixture<WebApplicationFactory<Pr
                         .ReturnsAsync(pricing);
 
         _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of(serviceId), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Service)) as Service);
+                        .ReturnsAsync(_fixture.Create<Service>());
 
         _corridorRepoMock.Setup(r => r.GetByIdAsync(CorridorId.Of(corridorId), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Corridor)) as Corridor);
+                         .ReturnsAsync(_fixture.Create<Corridor>());
 
         _pricingRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                System.Linq.Expressions.Expression<Func<Pricing, bool>>>(),

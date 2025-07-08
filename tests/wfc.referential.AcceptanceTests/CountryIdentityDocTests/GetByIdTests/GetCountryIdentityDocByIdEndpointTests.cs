@@ -1,47 +1,17 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.CountryIdentityDocAggregate;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.CountryIdentityDocAggregate;
 using wfc.referential.Domain.IdentityDocumentAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CountryIdentityDocTests.GetByIdTests;
 
-public class GetCountryIdentityDocByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetCountryIdentityDocByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICountryIdentityDocRepository> _repo = new();
-
-    public GetCountryIdentityDocByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ICountryIdentityDocRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static CountryIdentityDoc Make(Guid id, string code = "COUNTRY-ID-DOC-001", string? name = null, bool enabled = true)
     {
         var countryIdentityDoc = CountryIdentityDoc.Create(
@@ -63,7 +33,7 @@ public class GetCountryIdentityDocByIdEndpointTests : IClassFixture<WebApplicati
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()))
+        _countryIdentityDocRepoMock.Setup(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((CountryIdentityDoc?)null);
 
         var res = await _client.GetAsync($"/api/countryidentitydocs/{id}");
@@ -75,7 +45,7 @@ public class GetCountryIdentityDocByIdEndpointTests : IClassFixture<WebApplicati
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _countryIdentityDocRepoMock.Verify(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/countryidentitydocs/{id} → 404 when id is malformed")]
@@ -87,7 +57,7 @@ public class GetCountryIdentityDocByIdEndpointTests : IClassFixture<WebApplicati
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<CountryIdentityDocId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _countryIdentityDocRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<CountryIdentityDocId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/countryidentitydocs/{id} → 200 for disabled CountryIdentityDoc")]
@@ -96,7 +66,7 @@ public class GetCountryIdentityDocByIdEndpointTests : IClassFixture<WebApplicati
         var id = Guid.NewGuid();
         var entity = Make(id, "COUNTRY-ID-DOC-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()))
+        _countryIdentityDocRepoMock.Setup(r => r.GetByIdAsync(CountryIdentityDocId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/countryidentitydocs/{id}");

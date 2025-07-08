@@ -1,55 +1,17 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTests.CreateTests;
 
-public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateAgencyEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyRepository> _repo = new();
-
-    public CreateAgencyEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customised = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IAgencyRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _repo.Setup(r => r.AddAsync(It.IsAny<Agency>(),
-                                            It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((Agency a, CancellationToken _) => a);
-
-                _repo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                     .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customised.CreateClient();
-    }
-
-
     private static Agency MakeAgency(string code) =>
         Agency.Create(
             id: AgencyId.Of(Guid.NewGuid()),
@@ -105,7 +67,7 @@ public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Pro
                 .Should()
                 .Be("Agency code must be exactly 6 digits when provided.");
 
-        _repo.Verify(r => r.AddAsync(It.IsAny<Agency>(), It.IsAny<CancellationToken>()),
+        _agencyRepoMock.Verify(r => r.AddAsync(It.IsAny<Agency>(), It.IsAny<CancellationToken>()),
                      Times.Never);
     }
 
@@ -113,7 +75,7 @@ public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Pro
     public async Task Post_ShouldReturn409_WhenDuplicateCode()
     {
         const string duplicate = "123456";
-        _repo.Setup(r => r.GetOneByConditionAsync(
+        _agencyRepoMock.Setup(r => r.GetOneByConditionAsync(
                         It.IsAny<Expression<Func<Agency, bool>>>(),
                         It.IsAny<CancellationToken>()))
              .ReturnsAsync(MakeAgency(duplicate));
@@ -140,7 +102,7 @@ public class CreateAgencyEndpointTests : IClassFixture<WebApplicationFactory<Pro
                 .GetProperty("message").GetString()
            .Should().Be($"Agency with code {duplicate} already exists.");
 
-        _repo.Verify(r => r.AddAsync(It.IsAny<Agency>(), It.IsAny<CancellationToken>()),
+        _agencyRepoMock.Verify(r => r.AddAsync(It.IsAny<Agency>(), It.IsAny<CancellationToken>()),
                      Times.Never);
     }
 }

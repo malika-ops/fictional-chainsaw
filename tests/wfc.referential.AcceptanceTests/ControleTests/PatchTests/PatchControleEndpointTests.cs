@@ -1,50 +1,17 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ControleAggregate;
 using Xunit;
 
 
 namespace wfc.referential.AcceptanceTests.ControleTests.PatchTests;
 
-public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchControleEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IControleRepository> _repo = new();
-
-    public PatchControleEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IControleRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _repo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                     .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
-
     private static Controle MakeControle(Guid id, string code = "OLD", string name = "Old-Name", bool enabled = true)
     {
         var c = Controle.Create(ControleId.Of(id), code, name);
@@ -76,10 +43,10 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         var id = Guid.NewGuid();
         var entity = MakeControle(id, code: "AAA");
-        _repo.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
-        _repo.Setup(r => r.GetOneByConditionAsync(
+        _controleRepoMock.Setup(r => r.GetOneByConditionAsync(
                         It.IsAny<System.Linq.Expressions.Expression<Func<Controle, bool>>>(),
                         It.IsAny<CancellationToken>()))
              .ReturnsAsync((Controle?)null);
@@ -95,7 +62,7 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
         entity.Code.Should().Be("NEW");
         entity.Name.Should().Be("Old-Name");
         entity.IsEnabled.Should().BeTrue();
-        _repo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/controles/{id} → 200 when toggling IsEnabled")]
@@ -103,7 +70,7 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         var id = Guid.NewGuid();
         var entity = MakeControle(id, enabled: true);
-        _repo.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var payload = new { ControleId = id, IsEnabled = false };
@@ -116,7 +83,7 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         entity.IsEnabled.Should().BeFalse();
         entity.Code.Should().Be("OLD");
-        _repo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/controles/{id} → 200 when patching multiple fields")]
@@ -124,9 +91,9 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         var id = Guid.NewGuid();
         var entity = MakeControle(id);
-        _repo.SetupSequence(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.SetupSequence(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);          
-        _repo.Setup(r => r.GetOneByConditionAsync(
+        _controleRepoMock.Setup(r => r.GetOneByConditionAsync(
                         It.IsAny<System.Linq.Expressions.Expression<Func<Controle, bool>>>(),
                         It.IsAny<CancellationToken>()))
              .ReturnsAsync((Controle?)null);
@@ -149,7 +116,7 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
     public async Task Patch_ShouldReturn404_WhenNotFound()
     {
         var id = Guid.NewGuid();
-        _repo.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Controle?)null);
 
         var payload = new { ControleId = id, Code = "ANY" };
@@ -157,7 +124,7 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var resp = await PatchAsync(_client, $"/api/controles/{id}", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _repo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/controles/{id} → 409 when Code duplicates another Controle")]
@@ -169,10 +136,10 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var entity = MakeControle(id, code: "AAA");
         var other = MakeControle(duplicate, code: "NEW");
 
-        _repo.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
-        _repo.Setup(r => r.GetOneByConditionAsync(
+        _controleRepoMock.Setup(r => r.GetOneByConditionAsync(
                         It.IsAny<System.Linq.Expressions.Expression<Func<Controle, bool>>>(),
                         It.IsAny<CancellationToken>()))
              .ReturnsAsync(other);
@@ -182,7 +149,7 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var resp = await PatchAsync(_client, $"/api/controles/{id}", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _repo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/controles/{id} → 400 when Code > 50 chars")]
@@ -191,7 +158,7 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var entity = MakeControle(id);
 
-        _repo.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var longCode = new string('X', 51);
@@ -206,7 +173,7 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
             .GetProperty("Code")[0].GetString()
             .Should().Be("Code max length = 50.");
 
-        _repo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/controles/{id} → 400 when ControleId is empty GUID")]
@@ -218,7 +185,7 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var resp = await PatchAsync(_client, $"/api/controles/{empty}", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/controles/{id} → 404 when route id malformed")]
@@ -230,6 +197,6 @@ public class PatchControleEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var resp = await PatchAsync(_client, $"/api/controles/{bad}", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _repo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

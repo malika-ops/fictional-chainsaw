@@ -1,15 +1,9 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.Regions.Dtos;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CurrencyAggregate;
@@ -19,35 +13,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.RegionTests.UpdateTests;
 
-public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateRegionEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IRegionRepository> _repoMock = new();
-    private readonly Mock<ICountryRepository> _repoCountryMock = new();
-
-    public UpdateRegionEndpointTests(WebApplicationFactory<Program> factory)
-    {
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IRegionRepository>();
-                services.RemoveAll<ICountryRepository>();
-
-                //_repoMock
-                //    .Setup(r => r.Update(It.IsAny<Region>()));
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_repoCountryMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static Region DummyRegion(Guid id, string code, string name) =>
         Region.Create(RegionId.Of(id), code, name, CountryId.Of(Guid.NewGuid()));
 
@@ -57,7 +24,7 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var id = Guid.NewGuid();
         var oldRegion = DummyRegion(id, "NA", "North America");
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+        _regionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Expression<Func<Region, bool>> predicate, CancellationToken _) =>
             {
                 var func = predicate.Compile();
@@ -67,7 +34,7 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
                 return null;
             });
-        _repoCountryMock.Setup(
+        _countryRepoMock.Setup(
             r => r.GetByIdAsync(It.IsAny<CountryId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Country.Create(
                 CountryId.Of(Guid.NewGuid()),
@@ -77,7 +44,7 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
                 MonetaryZoneId.Of(Guid.NewGuid()), CurrencyId.Of(Guid.NewGuid())));
 
         Region? updated = null;
-        _repoMock.Setup(r => r.Update(oldRegion))
+        _regionRepoMock.Setup(r => r.Update(oldRegion))
                  .Callback<Region>((rg) => updated = rg);
 
         var payload = new UpdateRegionRequest
@@ -97,7 +64,7 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         updated!.Code.Should().Be("SA");
         updated.Name.Should().Be("South America");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Once);
+        _regionRepoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Once);
     }
 
     [Fact(DisplayName = "PUT /api/regions/{id} returns 400 when Name is missing")]
@@ -119,7 +86,7 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Never);
+        _regionRepoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/regions/{id} returns 409 Conflict when new code already exists")]
@@ -130,7 +97,7 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var target = DummyRegion(id, "AS", "Asia");
 
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+        _regionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Expression<Func<Region, bool>> predicate, CancellationToken _) =>
             {
                 var func = predicate.Compile();
@@ -157,6 +124,6 @@ public class UpdateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"{nameof(Region)} with code : {payload.Code} already exist");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Never);
+        _regionRepoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Never);
     }
 }

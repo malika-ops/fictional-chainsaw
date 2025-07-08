@@ -1,73 +1,19 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Net.Http;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.PartnerAggregate;
+using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
+using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
-using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
-using System.Text.Json;
 
 namespace wfc.referential.AcceptanceTests.PartnersTests.UpdateTests;
 
-public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdatePartnerEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPartnerRepository> _repoMock = new();
-    private readonly Mock<IParamTypeRepository> _paramTypeRepoMock = new();
-    private readonly Mock<IPartnerAccountRepository> _partnerAccountRepoMock = new();
-    private readonly Mock<ISupportAccountRepository> _supportAccountRepoMock = new();
-
-    public UpdatePartnerEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IPartnerRepository>();
-                services.RemoveAll<IParamTypeRepository>();
-                services.RemoveAll<IPartnerAccountRepository>();
-                services.RemoveAll<ISupportAccountRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // Setup repository mocks
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                // Setup ParamType repository to return valid entities
-                _paramTypeRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<ParamTypeId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((ParamTypeId id, CancellationToken _) => CreateMockParamType());
-
-                _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<PartnerAccountId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((PartnerAccountId id, CancellationToken _) => CreateMockPartnerAccount());
-
-                _supportAccountRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<SupportAccountId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((SupportAccountId id, CancellationToken _) => CreateMockSupportAccount());
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_paramTypeRepoMock.Object);
-                services.AddSingleton(_partnerAccountRepoMock.Object);
-                services.AddSingleton(_supportAccountRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "PUT /api/partners/{id} returns 200 when update succeeds with all fields")]
     public async Task Put_ShouldReturn200_WhenUpdateIsSuccessfulWithAllFields()
@@ -86,15 +32,15 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var supportAccountId = Guid.NewGuid();
         var parentId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(oldPartner);
 
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new List<Partner>()); // No conflicts
 
         // Setup parent partner mock
         var parentPartner = CreateTestPartner(parentId, "PTN_PARENT", "Parent Partner");
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(parentId), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(parentId), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(parentPartner);
 
         // Setup ParamType mocks for specific IDs
@@ -122,7 +68,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
                                .ReturnsAsync(CreateMockSupportAccount());
 
         Partner? updated = null;
-        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
                  .Callback(() => updated = oldPartner)
                  .Returns(Task.CompletedTask);
 
@@ -133,12 +79,6 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Act
         var response = await _client.PutAsJsonAsync($"/api/partners/{id}", payload);
 
-        // Debug output if test fails
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Error response: Status {response.StatusCode}: {errorContent}");
-        }
 
         // Read the response as boolean
         var returned = await response.Content.ReadFromJsonAsync<bool>();
@@ -168,7 +108,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         updated.Logo.Should().Be("/logos/partner002.png");
         updated.IsEnabled.Should().BeTrue();
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _partnerRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // Helper method to create payload with specific IDs
@@ -225,10 +165,10 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var partner = CreateTestPartner(id, "PTN001", "Test Partner");
 
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(partner);
 
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new List<Partner>());
 
         var networkModeId = Guid.NewGuid();
@@ -240,12 +180,6 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Act
         var response = await _client.PutAsJsonAsync($"/api/partners/{id}", payload);
 
-        // Debug output if test fails
-        if (response.StatusCode != HttpStatusCode.BadRequest)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Unexpected status {response.StatusCode}: {errorContent}");
-        }
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -253,7 +187,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Network Mode with ID {networkModeId} not found");
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/partners/{id} validates PaymentMode exists")]
@@ -263,10 +197,10 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var partner = CreateTestPartner(id, "PTN001", "Test Partner");
 
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(partner);
 
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new List<Partner>());
 
         var paymentModeId = Guid.NewGuid();
@@ -284,7 +218,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Payment Mode with ID {paymentModeId} not found");
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/partners/{id} validates CommissionAccount exists")]
@@ -294,10 +228,10 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var partner = CreateTestPartner(id, "PTN001", "Test Partner");
 
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(partner);
 
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new List<Partner>());
 
         var commissionAccountId = Guid.NewGuid();
@@ -315,7 +249,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Commission Account with ID {commissionAccountId} not found");
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/partners/{id} validates SupportAccount exists")]
@@ -325,10 +259,10 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var partner = CreateTestPartner(id, "PTN001", "Test Partner");
 
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(partner);
 
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new List<Partner>());
 
         var supportAccountId = Guid.NewGuid();
@@ -346,7 +280,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Support Account with ID {supportAccountId} not found");
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/partners/{id} validates Parent Partner exists")]
@@ -356,14 +290,14 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var partner = CreateTestPartner(id, "PTN001", "Test Partner");
 
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(partner);
 
         var parentId = Guid.NewGuid();
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(parentId), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(parentId), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Partner?)null); // Parent not found
 
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new List<Partner>());
 
         var payload = CreateBasicUpdatePayloadWithParent(id, parentId);
@@ -377,7 +311,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Parent Partner with ID {parentId} not found");
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/partners/{id} returns 400 when Code is missing")]
@@ -420,7 +354,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("Code is required");
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/partners/{id} returns 409 when Code already exists")]
@@ -433,10 +367,10 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var targetPartner = CreateTestPartner(id, "PTN001", "Target Partner");
         var conflictingPartner = CreateTestPartner(existingId, "PTN002", "Existing Partner");
 
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(targetPartner);
 
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Partner, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new List<Partner> { conflictingPartner });
 
         var payload = CreateBasicUpdatePayloadWithCode(id, "PTN002");
@@ -446,7 +380,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PUT /api/partners/{id} returns 400 when partner doesn't exist")]
@@ -455,7 +389,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Arrange
         var id = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Partner?)null);
 
         var payload = CreateBasicUpdatePayload(id);
@@ -469,7 +403,7 @@ public class UpdatePartnerEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Partner [{id}] not found");
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // Helper methods - Using strongly typed anonymous objects instead of dynamic

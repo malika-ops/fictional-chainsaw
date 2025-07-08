@@ -2,46 +2,22 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.IdentityDocumentAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.IdentityDocumentTests.CreateTests;
 
-public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateIdentityDocumentEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IIdentityDocumentRepository> _repoMock = new();
-
-    public CreateIdentityDocumentEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IIdentityDocumentRepository>();
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "POST /api/identitydocuments returns 200 and Guid")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
     {
-        _repoMock.Setup(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()))
+        _identityDocumentRepoMock.Setup(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IdentityDocument e, CancellationToken _) => e);
 
-        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        _identityDocumentRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(1));
 
         var payload = new
@@ -57,12 +33,12 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         returnedId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r =>
+        _identityDocumentRepoMock.Verify(r =>
             r.AddAsync(It.Is<IdentityDocument>(d =>
                 d.Code == payload.Code && d.Name == payload.Name && d.Description == payload.Description),
                 It.IsAny<CancellationToken>()), Times.Once);
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _identityDocumentRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "POST /api/identitydocuments returns 400 when Code is missing")]
@@ -82,7 +58,7 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
             .GetProperty("Code")[0].GetString()
             .Should().Be("Identity document code is required.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
+        _identityDocumentRepoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/identitydocuments returns 400 when Name and Code are missing")]
@@ -99,7 +75,7 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         errors.GetProperty("Name")[0].GetString().Should().Be("Identity document name is required.");
         errors.GetProperty("Code")[0].GetString().Should().Be("Identity document code is required.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
+        _identityDocumentRepoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/identitydocuments returns 409 when Code already exists")]
@@ -114,7 +90,7 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
             null
         );
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(
+        _identityDocumentRepoMock.Setup(r => r.GetOneByConditionAsync(
                 It.Is<System.Linq.Expressions.Expression<System.Func<IdentityDocument, bool>>>(
                     expr => expr.ToString().Contains("Code")),
                 It.IsAny<CancellationToken>()))
@@ -135,6 +111,6 @@ public class CreateIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
                 .GetProperty("message").GetString()
             .Should().Contain($"Identity document with code {duplicateCode} already exists");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
+        _identityDocumentRepoMock.Verify(r => r.AddAsync(It.IsAny<IdentityDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

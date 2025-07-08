@@ -3,12 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
@@ -18,39 +13,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.RegionTests.CreateTests;
 
-public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateRegionEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IRegionRepository> _repoMock = new();
-    private readonly Mock<ICountryRepository> _repoCountryMock = new();
-
-    public CreateRegionEndpointTests(WebApplicationFactory<Program> factory)
-    {
-
-        // clone the factory and customise the host
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                // 🧹 Remove concrete registrations that hit the DB / Redis
-                services.RemoveAll<IRegionRepository>();
-                services.RemoveAll<ICountryRepository>();
-
-                // 🪄  Set up mock behaviour (echoes entity back, as if EF saved it)
-                //_repoMock
-                //    .Setup(r => r.AddAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()))
-                //    .ReturnsAsync((Region r, CancellationToken _) => r);
-
-                // 🔌 Plug mocks back in
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_repoCountryMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "POST /api/regions returns 200 and Guid (fixture version)")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
@@ -63,7 +27,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             CountryId = Guid.Parse("50ed04f5-d16b-49c6-af46-b3ea7dfb8cb1")
         };
 
-        _repoCountryMock.Setup(
+        _countryRepoMock.Setup(
             r => r.GetByIdAsync(It.IsAny<CountryId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Country.Create(
                 CountryId.Of(payload.CountryId),
@@ -81,7 +45,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         returnedId.Should().NotBeEmpty();
 
         // verify repository interaction using *FluentAssertions on Moq invocations
-        _repoMock.Verify(r =>
+        _regionRepoMock.Verify(r =>
             r.AddAsync(It.Is<Region>(r =>
                     r.Code == payload.Code &&
                     r.Name == payload.Name &&
@@ -120,7 +84,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             .Should().Be("Code is required");
 
         // the handler must NOT be reached
-        _repoMock.Verify(r =>
+        _regionRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "when validation fails, the command handler should not be executed");
@@ -156,7 +120,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
               .Should().Be("Code is required");
 
         // handler must NOT run on validation failure
-        _repoMock.Verify(r =>
+        _regionRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
@@ -174,7 +138,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             "Swiss Franc",
             CountryId.Of(Guid.NewGuid()));
 
-        _repoMock
+        _regionRepoMock
             .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(region);
 
@@ -198,7 +162,7 @@ public class CreateRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         error.Should().Be($"Region with code : {duplicateCode} already exist");
 
         // Handler must NOT attempt to add the entity
-        _repoMock.Verify(r =>
+        _regionRepoMock.Verify(r =>
             r.AddAsync(It.IsAny<Region>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "no insertion should happen when the code is already taken");

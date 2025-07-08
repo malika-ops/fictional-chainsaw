@@ -1,16 +1,10 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Pagination;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.Pricings.Queries.GetFiltredPricings;
 using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.CorridorAggregate;
@@ -20,32 +14,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PricingTests.GetFiltredTests;
 
-public class GetFiltredPricingsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredPricingsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)  
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPricingRepository> _repoMock = new();
-
-    public GetFiltredPricingsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customised = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IPricingRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customised.CreateClient();
-    }
-
-
     private static Pricing CreatePricing(
         string code,
         string channel = "Branch",
@@ -85,7 +55,7 @@ public class GetFiltredPricingsEndpointTests : IClassFixture<WebApplicationFacto
 
         var paged = new PagedResult<Pricing>(items.ToList(), 5, 1, 2);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _pricingRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPricingsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1, 2, It.IsAny<CancellationToken>(), It.IsAny<Expression<Func<Pricing, object>>[]>()))
                  .ReturnsAsync(paged);
@@ -97,7 +67,7 @@ public class GetFiltredPricingsEndpointTests : IClassFixture<WebApplicationFacto
         dto!.Items.Should().HaveCount(2);
         dto.TotalPages.Should().Be(3);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _pricingRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPricingsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1, 2, It.IsAny<CancellationToken>(), It.IsAny<Expression<Func<Pricing, object>>[]>()), Times.Once);
     }
@@ -109,7 +79,7 @@ public class GetFiltredPricingsEndpointTests : IClassFixture<WebApplicationFacto
         var pricing = CreatePricing(code);
         var paged = new PagedResult<Pricing>(new List<Pricing> { pricing }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _pricingRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPricingsQuery>(q => q.Code == code),
                             1, 10, It.IsAny<CancellationToken>(), It.IsAny<Expression<Func<Pricing, object>>[]>()))
                  .ReturnsAsync(paged);
@@ -128,7 +98,7 @@ public class GetFiltredPricingsEndpointTests : IClassFixture<WebApplicationFacto
         var pricing = CreatePricing("C1", channel);
         var paged = new PagedResult<Pricing>(new List<Pricing> { pricing }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _pricingRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPricingsQuery>(q => q.Channel == channel),
                             1, 10, It.IsAny<CancellationToken>(), It.IsAny<Expression<Func<Pricing, object>>[]>()))
                  .ReturnsAsync(paged);
@@ -147,7 +117,7 @@ public class GetFiltredPricingsEndpointTests : IClassFixture<WebApplicationFacto
         var disabled = CreatePricing("X", enabled: false);
         var paged = new PagedResult<Pricing>(new List<Pricing> { disabled }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _pricingRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPricingsQuery>(q => q.IsEnabled == false),
                             1, 10, It.IsAny<CancellationToken>(), It.IsAny<Expression<Func<Pricing, object>>[]>()))
                  .ReturnsAsync(paged);
@@ -168,7 +138,7 @@ public class GetFiltredPricingsEndpointTests : IClassFixture<WebApplicationFacto
             };
         var paged = new PagedResult<Pricing>(list.ToList(), 3, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _pricingRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                       It.Is<GetFiltredPricingsQuery>(q => q.PageNumber == 1 && q.PageSize == 10 && q.IsEnabled == true),
                       1,
                       10,
@@ -195,7 +165,7 @@ public class GetFiltredPricingsEndpointTests : IClassFixture<WebApplicationFacto
         var pricing = CreatePricing(code, chan);
         var paged = new PagedResult<Pricing>(new List<Pricing> { pricing }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _pricingRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPricingsQuery>(q =>
                                 q.Code == code &&
                                 q.Channel == chan &&
@@ -217,7 +187,7 @@ public class GetFiltredPricingsEndpointTests : IClassFixture<WebApplicationFacto
     {
         var paged = new PagedResult<Pricing>(new List<Pricing>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _pricingRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredPricingsQuery>(q => q.Code == "NONE"),
                             1, 10, It.IsAny<CancellationToken>(), It.IsAny<Expression<Func<Pricing, object>>[]>()))
                  .ReturnsAsync(paged);

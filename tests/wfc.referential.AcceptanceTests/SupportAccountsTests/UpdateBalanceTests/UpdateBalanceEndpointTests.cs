@@ -1,40 +1,14 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.SupportAccountsTests.UpdateBalanceTests;
 
-public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateBalanceEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ISupportAccountRepository> _repoMock = new();
-
-    public UpdateBalanceEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ISupportAccountRepository>();
-
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-        _client = customisedFactory.CreateClient();
-    }
-
     private static SupportAccount CreateTestSupportAccount(Guid id, string code, string description, decimal threshold, decimal limit, decimal balance)
     {
         return SupportAccount.Create(
@@ -55,7 +29,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var supportAccount = CreateTestSupportAccount(id, "SA001", "Support Account 1", 10000.00m, 20000.00m, 5000.00m);
 
-        _repoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
+        _supportAccountRepoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(supportAccount);
 
         var payload = new
@@ -80,8 +54,8 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         supportAccount.Threshold.Should().Be(10000.00m);
         supportAccount.Limit.Should().Be(20000.00m);
 
-        _repoMock.Verify(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _supportAccountRepoMock.Verify(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _supportAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/support-accounts/{id}/balance returns 400 when account doesn't exist")]
@@ -90,7 +64,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Arrange
         var id = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
+        _supportAccountRepoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((SupportAccount)null);
 
         var payload = new
@@ -104,7 +78,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _supportAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/support-accounts/{id}/balance returns 400 when balance is negative")]
@@ -114,7 +88,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var supportAccount = CreateTestSupportAccount(id, "SA001", "Support Account 1", 10000.00m, 20000.00m, 5000.00m);
 
-        _repoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
+        _supportAccountRepoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(supportAccount);
 
         var payload = new
@@ -128,7 +102,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _supportAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/support-accounts/{id}/balance doesn't affect other field values")]
@@ -140,7 +114,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var originalThreshold = 10000.00m;
         var supportAccount = CreateTestSupportAccount(id, "SA001", "Support Account 1", originalThreshold, originalLimit, 5000.00m);
 
-        _repoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
+        _supportAccountRepoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(supportAccount);
 
         var payload = new
@@ -158,7 +132,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         supportAccount.Threshold.Should().Be(originalThreshold); // Threshold should remain unchanged
         supportAccount.AccountBalance.Should().Be(10000.00m);  // Balance should change
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _supportAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/support-accounts/{id}/balance validates support account exists before update")]
@@ -167,7 +141,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         // Arrange
         var nonExistentId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(nonExistentId), It.IsAny<CancellationToken>()))
+        _supportAccountRepoMock.Setup(r => r.GetByIdAsync(SupportAccountId.Of(nonExistentId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((SupportAccount)null);
 
         var payload = new
@@ -183,6 +157,6 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         // Verify no save operation was attempted
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _supportAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

@@ -1,15 +1,8 @@
-﻿using BuildingBlocks.Application.Interfaces;
+﻿using System.Net;
+using System.Net.Http.Json;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.PartnerAccounts.Dtos;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
@@ -19,29 +12,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.GetFiltredTests;
 
-public class GetFiltredPartnerAccountsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredPartnerAccountsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPartnerAccountRepository> _repoMock = new();
-
-    public GetFiltredPartnerAccountsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IPartnerAccountRepository>();
-                services.RemoveAll<ICacheService>();
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     private static PartnerAccount CreateTestPartnerAccount(string accountNumber, string rib, string businessName, string accountTypeName)
     {
@@ -85,7 +57,7 @@ public class GetFiltredPartnerAccountsEndpointTests : IClassFixture<WebApplicati
 
         var pagedResult = new PagedResult<PartnerAccount>(allAccounts.ToList(), 2, 1, 2);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerAccountRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(pagedResult);
 
@@ -100,7 +72,7 @@ public class GetFiltredPartnerAccountsEndpointTests : IClassFixture<WebApplicati
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerAccountRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                          Times.Once);
     }

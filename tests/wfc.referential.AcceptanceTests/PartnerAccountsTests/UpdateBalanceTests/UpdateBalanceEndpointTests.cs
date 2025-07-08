@@ -1,14 +1,7 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
@@ -17,36 +10,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.UpdateBalanceTests;
 
-public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateBalanceEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPartnerAccountRepository> _repoMock = new();
-
-    public UpdateBalanceEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IPartnerAccountRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // Updated to use BaseRepository methods
-                _repoMock.Setup(r => r.Update(It.IsAny<PartnerAccount>()));
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static PartnerAccount CreateTestPartnerAccount(Guid id, string accountNumber, string rib, decimal balance)
     {
         var bankId = Guid.NewGuid();
@@ -78,11 +43,11 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var partnerAccount = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", 50000.00m);
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
+        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(partnerAccount);
 
         PartnerAccount? updated = null;
-        _repoMock.Setup(r => r.Update(It.IsAny<PartnerAccount>()))
+        _partnerAccountRepoMock.Setup(r => r.Update(It.IsAny<PartnerAccount>()))
                  .Callback<PartnerAccount>(p => updated = p);
 
         var payload = new
@@ -103,7 +68,7 @@ public class UpdateBalanceEndpointTests : IClassFixture<WebApplicationFactory<Pr
         updated.AccountNumber.Should().Be("000123456789");
         updated.RIB.Should().Be("12345678901234567890123");
 
-        _repoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _partnerAccountRepoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Once);
+        _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

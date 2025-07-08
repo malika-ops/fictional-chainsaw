@@ -1,49 +1,15 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ControleAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ControleTests.DeleteTests;
 
-public class DeleteControleEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteControleEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IControleRepository> _repoMock = new();
-
-    public DeleteControleEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customised = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IControleRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _repoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customised.CreateClient();
-    }
-
-
     private static Controle MakeControle(Guid id, string code = "CODE")
         => Controle.Create(ControleId.Of(id), code, "Some-Name");
 
@@ -54,11 +20,11 @@ public class DeleteControleEndpointTests : IClassFixture<WebApplicationFactory<P
         var id = Guid.NewGuid();
         var controle = MakeControle(id);
 
-        _repoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(controle);
 
         Controle? captured = null;
-        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
                  .Callback(() => captured = controle)
                  .Returns(Task.CompletedTask);
 
@@ -69,7 +35,7 @@ public class DeleteControleEndpointTests : IClassFixture<WebApplicationFactory<P
         ok.Should().BeTrue();
 
         captured!.IsEnabled.Should().BeFalse();   
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
 
@@ -78,7 +44,7 @@ public class DeleteControleEndpointTests : IClassFixture<WebApplicationFactory<P
     {
         var missingId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(ControleId.Of(missingId), It.IsAny<CancellationToken>()))
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(missingId), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((Controle?)null);
 
         var resp = await _client.DeleteAsync($"/api/controles/{missingId}");
@@ -89,7 +55,7 @@ public class DeleteControleEndpointTests : IClassFixture<WebApplicationFactory<P
         doc!.RootElement.GetProperty("title").GetString().Should().Be("Resource Not Found");
         doc.RootElement.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -107,8 +73,8 @@ public class DeleteControleEndpointTests : IClassFixture<WebApplicationFactory<P
             .GetProperty("ControleId")[0].GetString()
             .Should().Be("ControleId must be a non-empty GUID.");
 
-        _repoMock.Verify(r => r.GetByIdAsync(It.IsAny<ControleId>(), It.IsAny<CancellationToken>()), Times.Never);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<ControleId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -121,6 +87,6 @@ public class DeleteControleEndpointTests : IClassFixture<WebApplicationFactory<P
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

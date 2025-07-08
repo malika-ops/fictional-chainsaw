@@ -1,46 +1,16 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.RegionAggregate;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.RegionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.RegionTests.GetByIdTests;
 
-public class GetRegionByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetRegionByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IRegionRepository> _repo = new();
-
-    public GetRegionByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IRegionRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Region Make(Guid id, string code = "REGION-001", string? name = null, bool enabled = true)
     {
         var region = Region.Create(
@@ -63,7 +33,7 @@ public class GetRegionByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(RegionId.Of(id), It.IsAny<CancellationToken>()))
+        _regionRepoMock.Setup(r => r.GetByIdAsync(RegionId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Region?)null);
 
         var res = await _client.GetAsync($"/api/regions/{id}");
@@ -75,7 +45,7 @@ public class GetRegionByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(RegionId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _regionRepoMock.Verify(r => r.GetByIdAsync(RegionId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/regions/{id} → 404 when id is malformed")]
@@ -87,7 +57,7 @@ public class GetRegionByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<RegionId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _regionRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<RegionId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/regions/{id} → 200 for disabled Region")]
@@ -96,7 +66,7 @@ public class GetRegionByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var entity = Make(id, "REGION-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(RegionId.Of(id), It.IsAny<CancellationToken>()))
+        _regionRepoMock.Setup(r => r.GetByIdAsync(RegionId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/regions/{id}");

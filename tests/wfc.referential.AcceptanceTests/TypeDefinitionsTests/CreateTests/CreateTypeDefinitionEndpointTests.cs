@@ -1,60 +1,15 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Constants;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TypeDefinitionsTests.CreateTests;
 
-public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateTypeDefinitionEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITypeDefinitionRepository> _repoMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
-
-    public CreateTypeDefinitionEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        // Clone the factory and customize the host
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                // Remove concrete registrations that hit the DB / Redis
-                services.RemoveAll<ITypeDefinitionRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // Set up mock behavior (echoes entity back, as if EF saved it)
-                _repoMock
-                    .Setup(r => r.AddAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((TypeDefinition td, CancellationToken _) => td);
-
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                // Setup duplicate check to return null by default (no duplicates)
-                _repoMock
-                    .Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((TypeDefinition?)null);
-
-                // Plug mocks back in
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "POST /api/type-definitions returns 200 and Guid when request is valid")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
@@ -75,8 +30,8 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         returnedId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.AddAsync(It.Is<TypeDefinition>(td =>
+        _typeDefinitionRepoMock.Verify(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()), Times.Once);
+        _typeDefinitionRepoMock.Verify(r => r.AddAsync(It.Is<TypeDefinition>(td =>
             td.Libelle == payload.Libelle &&
             td.Description == payload.Description), It.IsAny<CancellationToken>()), Times.Once);
 
@@ -100,7 +55,7 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
             payload.Libelle,
             payload.Description);
 
-        _repoMock
+        _typeDefinitionRepoMock
             .Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TypeDefinition, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
@@ -110,7 +65,7 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
+        _typeDefinitionRepoMock.Verify(r => r.AddAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/type-definitions returns 400 when Description is missing")]
@@ -129,7 +84,7 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
+        _typeDefinitionRepoMock.Verify(r => r.AddAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/type-definitions returns 400 when Libelle is missing")]
@@ -148,7 +103,7 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
+        _typeDefinitionRepoMock.Verify(r => r.AddAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/type-definitions auto-generates typeDefinition ID")]
@@ -170,7 +125,7 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         typeDefinitionId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<TypeDefinition>(td =>
+        _typeDefinitionRepoMock.Verify(r => r.AddAsync(It.Is<TypeDefinition>(td =>
             td.Id != null && td.Id.Value != Guid.Empty), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -191,7 +146,7 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        _repoMock.Verify(r => r.AddAsync(It.Is<TypeDefinition>(td =>
+        _typeDefinitionRepoMock.Verify(r => r.AddAsync(It.Is<TypeDefinition>(td =>
             td.IsEnabled == true), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -213,6 +168,6 @@ public class CreateTypeDefinitionEndpointTests : IClassFixture<WebApplicationFac
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
+        _typeDefinitionRepoMock.Verify(r => r.AddAsync(It.IsAny<TypeDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

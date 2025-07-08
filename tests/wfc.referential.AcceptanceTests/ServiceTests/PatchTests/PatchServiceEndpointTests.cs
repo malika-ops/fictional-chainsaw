@@ -1,14 +1,8 @@
 ﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Services.Dtos;
 using wfc.referential.Domain.ProductAggregate;
 using wfc.referential.Domain.ServiceAggregate;
@@ -16,32 +10,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ServiceTests.PatchTests;
 
-public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchServiceEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IServiceRepository> _repoMock = new();
-
-    public PatchServiceEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IServiceRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "PATCH /api/services/{id} updates the Service successfully")]
     public async Task PatchService_ShouldReturnUpdatedServiceId_WhenServiceExists()
     {
@@ -61,7 +31,7 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
             ProductId.Of(Guid.NewGuid())
         );
 
-        _repoMock.SetupSequence(r => r.GetOneByConditionAsync(
+        _serviceRepoMock.SetupSequence(r => r.GetOneByConditionAsync(
             It.IsAny<Expression<Func<Service, bool>>>(),
             It.IsAny<CancellationToken>()))
         .Returns(Task.FromResult<Service?>(service)) 
@@ -85,7 +55,7 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
             Name = "Non-existing Service",
         };
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+        _serviceRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
            .ReturnsAsync((Service)null);
 
         var response = await _client.PatchAsync($"/api/services/{serviceId}", JsonContent.Create(patchRequest));
@@ -103,7 +73,7 @@ public class PatchServiceEndpointTests : IClassFixture<WebApplicationFactory<Pro
             Name = "Invalid Service",
         };
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+        _serviceRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Service.Create(ServiceId.Of(serviceId), "code", "name", true,ProductId.Of(Guid.NewGuid())));
 
         var response = await _client.PatchAsync($"/api/services/{serviceId}", JsonContent.Create(patchRequest));

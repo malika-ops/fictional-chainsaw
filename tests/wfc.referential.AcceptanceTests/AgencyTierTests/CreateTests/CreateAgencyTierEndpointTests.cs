@@ -1,15 +1,9 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using AutoFixture;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.AgencyTierAggregate;
 using wfc.referential.Domain.TierAggregate;
@@ -17,59 +11,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTierTests.CreateTests;
 
-public class CreateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateAgencyTierEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyTierRepository> _agencyTierRepoMock = new();
-    private readonly Mock<IAgencyRepository> _agencyRepoMock = new();
-    private readonly Mock<ITierRepository> _tierRepoMock = new();
-
-    public CreateAgencyTierEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-
-                services.RemoveAll<IAgencyTierRepository>();
-                services.RemoveAll<IAgencyRepository>();
-                services.RemoveAll<ITierRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _agencyTierRepoMock
-                    .Setup(r => r.AddAsync(It.IsAny<AgencyTier>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((AgencyTier at, CancellationToken _) => at);
-
-                _agencyTierRepoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                var dummyAgency = FormatterServices.GetUninitializedObject(typeof(Agency)) as Agency;
-                var dummyTier = FormatterServices.GetUninitializedObject(typeof(Tier)) as Tier;
-
-                _agencyRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<AgencyId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(dummyAgency);
-
-                _tierRepoMock
-                    .Setup(r => r.GetByIdAsync(It.IsAny<TierId>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(dummyTier);
-
-                services.AddSingleton(_agencyTierRepoMock.Object);
-                services.AddSingleton(_agencyRepoMock.Object);
-                services.AddSingleton(_tierRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
-
     [Fact(DisplayName = "POST /api/agencyTiers → 200 + Guid on valid request")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
     {
@@ -81,7 +24,12 @@ public class CreateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
             Code = "AG-TIER-001",
             Password = "s3cr3t"
         };
-
+        var dummyAgency = _fixture.Create<Agency>();
+        _agencyRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<AgencyId>(), It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(dummyAgency);
+        var dummyTier = _fixture.Create<Tier>();
+        _tierRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<TierId>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(dummyTier);
         // Act
         var response = await _client.PostAsJsonAsync("/api/agencyTiers", payload);
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
@@ -142,7 +90,12 @@ public class CreateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
             TierId.Of(tierId),
             code,
             null);
-
+        var dummyAgency = _fixture.Create<Agency>();
+        _agencyRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<AgencyId>(), It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(dummyAgency);
+        var dummyTier = _fixture.Create<Tier>();
+        _tierRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<TierId>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(dummyTier);
         _agencyTierRepoMock
             .Setup(r => r.GetOneByConditionAsync(It.IsAny<
                     System.Linq.Expressions.Expression<Func<AgencyTier, bool>>>(),
@@ -189,7 +142,7 @@ public class CreateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
     [Fact(DisplayName = "POST /api/agencyTiers → 404 when Tier does not exist")]
     public async Task Post_ShouldReturn404_WhenTierNotFound()
     {
-        var dummyAgency = FormatterServices.GetUninitializedObject(typeof(Agency)) as Agency;
+        var dummyAgency = _fixture.Create<Agency>();
         _agencyRepoMock
             .Setup(r => r.GetByIdAsync(It.IsAny<AgencyId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(dummyAgency);

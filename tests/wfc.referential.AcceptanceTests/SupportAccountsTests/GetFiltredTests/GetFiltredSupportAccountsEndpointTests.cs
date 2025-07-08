@@ -1,42 +1,16 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.SupportAccounts.Dtos;
-using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.SupportAccountsTests.GetFiltredTests;
 
-public class GetFiltredSupportAccountsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredSupportAccountsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ISupportAccountRepository> _repoMock = new();
-
-    public GetFiltredSupportAccountsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ISupportAccountRepository>();
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static SupportAccount CreateTestSupportAccount(string code, string description, decimal threshold, decimal limit, string accountingNumber)
     {
         var partnerId = Guid.NewGuid();
@@ -66,7 +40,7 @@ public class GetFiltredSupportAccountsEndpointTests : IClassFixture<WebApplicati
 
         var pagedResult = new PagedResult<SupportAccount>(allAccounts.Take(2).ToList(), allAccounts.Length, 1, 2);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _supportAccountRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -86,7 +60,7 @@ public class GetFiltredSupportAccountsEndpointTests : IClassFixture<WebApplicati
         result.PageNumber.Should().Be(1);
         result.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _supportAccountRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -102,7 +76,7 @@ public class GetFiltredSupportAccountsEndpointTests : IClassFixture<WebApplicati
         var account = CreateTestSupportAccount("SA001", "Support Account 1", 10000.00m, 20000.00m, "ACC001");
         var pagedResult = new PagedResult<SupportAccount>(new List<SupportAccount> { account }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _supportAccountRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -119,7 +93,7 @@ public class GetFiltredSupportAccountsEndpointTests : IClassFixture<WebApplicati
         result!.Items.Should().HaveCount(1);
         result.Items.First().Code.Should().Be("SA001");
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _supportAccountRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -137,7 +111,7 @@ public class GetFiltredSupportAccountsEndpointTests : IClassFixture<WebApplicati
 
         var pagedResult = new PagedResult<SupportAccount>(new List<SupportAccount> { disabledAccount }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _supportAccountRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(pagedResult);
 
@@ -150,7 +124,7 @@ public class GetFiltredSupportAccountsEndpointTests : IClassFixture<WebApplicati
         result!.Items.Should().HaveCount(1);
         result.Items.First().IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _supportAccountRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                          Times.Once);
     }
@@ -161,7 +135,7 @@ public class GetFiltredSupportAccountsEndpointTests : IClassFixture<WebApplicati
         // Arrange
         var emptyResult = new PagedResult<SupportAccount>(new List<SupportAccount>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _supportAccountRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),

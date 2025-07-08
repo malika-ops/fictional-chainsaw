@@ -1,48 +1,18 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.PartnerAccountAggregate;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
+using wfc.referential.Domain.PartnerAccountAggregate;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.GetByIdTests;
 
-public class GetPartnerAccountByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetPartnerAccountByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPartnerAccountRepository> _repo = new();
-
-    public GetPartnerAccountByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IPartnerAccountRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static PartnerAccount Make(Guid id, string code = "PARTNER-ACCOUNT-001", string? name = null, bool enabled = true)
     {
         var bank = Bank.Create(
@@ -83,7 +53,7 @@ public class GetPartnerAccountByIdEndpointTests : IClassFixture<WebApplicationFa
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(PartnerAccountId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(PartnerAccountId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((PartnerAccount?)null);
 
         var res = await _client.GetAsync($"/api/partner-accounts/{id}");
@@ -95,7 +65,7 @@ public class GetPartnerAccountByIdEndpointTests : IClassFixture<WebApplicationFa
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(PartnerAccountId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _partnerAccountRepoMock.Verify(r => r.GetByIdAsync(PartnerAccountId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/partner-accounts/{id} → 404 when id is malformed")]
@@ -107,7 +77,7 @@ public class GetPartnerAccountByIdEndpointTests : IClassFixture<WebApplicationFa
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<PartnerAccountId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _partnerAccountRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<PartnerAccountId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/partner-accounts/{id} → 200 for disabled PartnerAccount")]
@@ -116,7 +86,7 @@ public class GetPartnerAccountByIdEndpointTests : IClassFixture<WebApplicationFa
         var id = Guid.NewGuid();
         var entity = Make(id, "PARTNER-ACCOUNT-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(PartnerAccountId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(PartnerAccountId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/partner-accounts/{id}");

@@ -1,47 +1,16 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
-using wfc.referential.Domain.SectorAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTests.GetByIdTests;
 
-public class GetAgencyByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetAgencyByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyRepository> _repo = new();
-
-    public GetAgencyByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IAgencyRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Agency Make(Guid id, string code = "AGENCY-001", string? name = null, bool enabled = true)
     {
         var agency = Agency.Create(
@@ -86,7 +55,7 @@ public class GetAgencyByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var entity = Make(id, "AGENCY-123", "Test Agency");
 
-        _repo.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/agencies/{id}");
@@ -98,7 +67,7 @@ public class GetAgencyByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
         body.Name.Should().Be("Test Agency");
         body.IsEnabled.Should().BeTrue();
 
-        _repo.Verify(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _agencyRepoMock.Verify(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/agencies/{id} → 404 when Agency not found")]
@@ -106,7 +75,7 @@ public class GetAgencyByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Agency?)null);
 
         var res = await _client.GetAsync($"/api/agencies/{id}");
@@ -118,7 +87,7 @@ public class GetAgencyByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _agencyRepoMock.Verify(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/agencies/{id} → 404 when id is malformed")]
@@ -130,7 +99,7 @@ public class GetAgencyByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<AgencyId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _agencyRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<AgencyId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/agencies/{id} → 200 for disabled Agency")]
@@ -139,7 +108,7 @@ public class GetAgencyByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var entity = Make(id, "AGENCY-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/agencies/{id}");

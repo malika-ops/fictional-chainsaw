@@ -2,15 +2,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Cities.Dtos;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.RegionAggregate;
@@ -18,42 +12,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CityTests.UpdateTests;
 
-public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateCityEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICityRepository> _repoCityMock = new();
-    private readonly Mock<IRegionRepository> _repoRegionMock = new();
-
-
-    public UpdateCityEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IRegionRepository>();
-                services.RemoveAll<ICityRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // default noop for Update
-                //_repoCityMock
-                //    .Setup(r => r.UpdateCityAsync(It.IsAny<City>(),
-                //                                          It.IsAny<CancellationToken>()))
-                //    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoCityMock.Object);
-                services.AddSingleton(_repoRegionMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     // helper to create a City quickly
     private static City DummyCity(Guid id, string code, string name) =>
         City.Create(CityId.Of(id), code, name, "timezone", RegionId.Of(Guid.NewGuid()), "abbrev");
@@ -76,11 +36,11 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             TimeZone= "America/New_York",
             IsEnabled = true
         };
-        _repoRegionMock
+        _regionRepoMock
             .Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Region.Create(RegionId.Of(oldCity.RegionId.Value), "code", "name", CountryId.Of(Guid.NewGuid())));
 
-        _repoCityMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))
+        _cityRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Expression<Func<City, bool>> predicate, CancellationToken _) =>
             {
                 var func = predicate.Compile();
@@ -101,7 +61,7 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         oldCity!.Code.Should().Be("codeAAB");
         oldCity.Name.Should().Be("nameAAB");
 
-        _repoCityMock.Verify(r => r.Update(It.IsAny<City>()),
+        _cityRepoMock.Verify(r => r.Update(It.IsAny<City>()),
                          Times.Once);
     }
 
@@ -160,7 +120,7 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             RegionId.Of(Guid.Parse("a3b8b953-2489-49c5-aac4-c97df06d5060")),
             "America/New_York"
         ); 
-        _repoCityMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))
+        _cityRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Expression<Func<City, bool>> predicate, CancellationToken _) =>
             {
                 var func = predicate.Compile();
@@ -184,7 +144,7 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
             IsEnabled = true
         };
         var regionId = RegionId.Of(payload.RegionId.Value);
-        _repoRegionMock
+        _regionRepoMock
             .Setup(r => r.GetOneByConditionAsync(r => r.Id == regionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Region.Create(regionId, "code", "name", CountryId.Of(Guid.NewGuid())));
 
@@ -199,7 +159,7 @@ public class UpdateCityEndpointTests : IClassFixture<WebApplicationFactory<Progr
         doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"{nameof(Region)} with code : {payload.Code} already exist");
 
-        _repoCityMock.Verify(r => r.Update(It.IsAny<City>()),
+        _cityRepoMock.Verify(r => r.Update(It.IsAny<City>()),
                          Times.Never);
     }
 }

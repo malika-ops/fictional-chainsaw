@@ -1,14 +1,8 @@
-﻿using BuildingBlocks.Application.Interfaces;
+﻿using System.Net;
+using System.Net.Http.Json;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using System.Net;
-using System.Net.Http.Json;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.ParamTypes.Dtos;
 using wfc.referential.Application.ParamTypes.Queries.GetFiltredParamTypes;
 using wfc.referential.Domain.ParamTypeAggregate;
@@ -17,32 +11,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ParamTypesTests.GetFiltredTests;
 
-public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredParamTypesEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IParamTypeRepository> _repoMock = new();
-
-    public GetFiltredParamTypesEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IParamTypeRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
-    }
-
     // Helper to build test ParamTypes
     private static ParamType CreateTestParamType(string value, bool isEnabled = true)
     {
@@ -75,7 +45,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         var pagedResult = new PagedResult<ParamType>(paramTypes, paramTypes.Count, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<GetFiltredParamTypesQuery>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -107,7 +77,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         var pagedResult = new PagedResult<ParamType>(filteredParamTypes, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.Is<GetFiltredParamTypesQuery>(q => q.Value == "Value1"), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -134,7 +104,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         var pagedResult = new PagedResult<ParamType>(disabledParamTypes, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.Is<GetFiltredParamTypesQuery>(q => q.IsEnabled == false), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -162,7 +132,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         var pagedResult = new PagedResult<ParamType>(paramTypes, 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.Is<GetFiltredParamTypesQuery>(q => q.TypeDefinitionId.Value == typeDefinitionId.Value),
             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
@@ -191,7 +161,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         var pagedResult = new PagedResult<ParamType>(paramTypes, 25, 2, 10); // Page 2 of 3 pages (25 total items)
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.Is<GetFiltredParamTypesQuery>(q => q.PageNumber == 2 && q.PageSize == 10),
             2, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
@@ -224,7 +194,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         var pagedResult = new PagedResult<ParamType>(paramTypes, paramTypes.Count, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.Is<GetFiltredParamTypesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
             1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
@@ -242,7 +212,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
         result.Items.Should().HaveCount(3);
 
         // Repository must have been called with default paging values
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
             It.Is<GetFiltredParamTypesQuery>(q => q.PageNumber == 1 && q.PageSize == 10),
             1, 10, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -254,7 +224,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
         var typeDefinitionId = TypeDefinitionId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
         var emptyResult = new PagedResult<ParamType>(new List<ParamType>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<GetFiltredParamTypesQuery>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(emptyResult);
 
@@ -281,7 +251,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         var pagedResult = new PagedResult<ParamType>(filteredParamTypes, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.Is<GetFiltredParamTypesQuery>(q =>
                 q.Value == "TestValue" &&
                 q.IsEnabled == true &&
@@ -319,7 +289,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         var pagedResult = new PagedResult<ParamType>(paramTypes, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<GetFiltredParamTypesQuery>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -332,7 +302,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
         result.Should().NotBeNull();
         result.Items.Should().HaveCount(1);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
             It.IsAny<GetFiltredParamTypesQuery>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -348,7 +318,7 @@ public class GetFiltredParamTypesEndpointTests : IClassFixture<WebApplicationFac
 
         var pagedResult = new PagedResult<ParamType>(paramTypes, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _paramTypeRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<GetFiltredParamTypesQuery>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 

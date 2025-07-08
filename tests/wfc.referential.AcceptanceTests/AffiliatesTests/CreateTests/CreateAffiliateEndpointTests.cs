@@ -1,68 +1,27 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AffiliateAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.Countries;
-using wfc.referential.Domain.TypeDefinitionAggregate;
-using Xunit;
 using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
+using wfc.referential.Domain.ParamTypeAggregate;
+using wfc.referential.Domain.TypeDefinitionAggregate;
+using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AffiliatesTests.CreateTests;
 
-public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateAffiliateEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAffiliateRepository> _repoMock = new();
-    private readonly Mock<IParamTypeRepository> _paramTypeRepoMock = new();
-    private readonly Mock<ICountryRepository> _countryRepoMock = new();
-
-    public CreateAffiliateEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                // Remove all the services we want to mock
-                services.RemoveAll<IAffiliateRepository>();
-                services.RemoveAll<IParamTypeRepository>();
-                services.RemoveAll<ICountryRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // Setup default mocks that return success for valid scenarios
-                SetupDefaultMocks();
-
-                // Register mocked services
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_paramTypeRepoMock.Object);
-                services.AddSingleton(_countryRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
-    }
-
     private void SetupDefaultMocks()
     {
-        // Setup Affiliate Repository - default behavior for successful scenarios
-        _repoMock.Setup(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()))
+         //Setup Affiliate Repository - default behavior for successful scenarios
+        _affiliateRepoMock.Setup(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Affiliate a, CancellationToken _) => a);
-        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Affiliate, bool>>>(), It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Affiliate, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Affiliate>());
 
         // Setup ParamType repository - return valid entities by default
@@ -81,15 +40,11 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         Affiliate capturedCreateAffiliate = null;
 
         // Reset mocks to ensure clean state
-        _repoMock.Reset();
-        _paramTypeRepoMock.Reset();
-        _countryRepoMock.Reset();
         SetupDefaultMocks();
 
-        _repoMock.Setup(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()))
             .Callback<Affiliate, CancellationToken>((a, _) => capturedCreateAffiliate = a)
             .ReturnsAsync((Affiliate a, CancellationToken _) => a);
-
         var payload = CreateCompleteValidPayload();
 
         // Act
@@ -101,8 +56,8 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
         returnedId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Once);
+        _affiliateRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
         capturedCreateAffiliate.Should().NotBeNull();
         capturedCreateAffiliate.Code.Should().Be((string)payload["Code"]);
@@ -127,7 +82,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("Code is required");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 400 when Name is missing")]
@@ -146,7 +101,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("Name is required");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 400 when OpeningDate is missing")]
@@ -165,7 +120,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("OpeningDate is required");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 400 when AffiliateTypeId is missing")]
@@ -184,7 +139,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("AffiliateTypeId is required");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 400 when AccountingAccountNumber is missing")]
@@ -203,7 +158,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("AccountingAccountNumber is required");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 400 when CountryId is missing")]
@@ -222,7 +177,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("CountryId must be a valid GUID");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 409 when Code already exists")]
@@ -232,14 +187,14 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         const string duplicateCode = "AFF001";
 
         // Reset mocks and setup for conflict scenario
-        _repoMock.Reset();
+        _affiliateRepoMock.Reset();
         _paramTypeRepoMock.Reset();
         _countryRepoMock.Reset();
 
         var existingAffiliate = CreateTestAffiliate(duplicateCode, "Existing Affiliate");
 
         // Setup to return existing affiliate with same code
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Affiliate, bool>>>(), It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Affiliate, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Affiliate> { existingAffiliate });
 
         // Setup other dependencies to succeed (shouldn't be reached)
@@ -261,7 +216,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Affiliate with code {duplicateCode} already exists");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 404 when Country does not exist")]
@@ -271,12 +226,12 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var invalidCountryId = Guid.NewGuid();
 
         // Reset mocks and setup for country not found scenario
-        _repoMock.Reset();
+        _affiliateRepoMock.Reset();
         _paramTypeRepoMock.Reset();
         _countryRepoMock.Reset();
 
         // Setup successful affiliate code check (no duplicates)
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Affiliate, bool>>>(), It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Affiliate, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Affiliate>());
 
         // Setup successful param type check
@@ -299,7 +254,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Country with ID {invalidCountryId} not found");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 404 when AffiliateType does not exist")]
@@ -311,14 +266,14 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Reset and setup specific mock behavior for this test
         _paramTypeRepoMock.Reset();
         _countryRepoMock.Reset();
-        _repoMock.Reset();
+        _affiliateRepoMock.Reset();
 
         // Setup successful country lookup
         _countryRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<CountryId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((CountryId id, CancellationToken _) => CreateMockCountry(id.Value));
 
         // Setup successful affiliate code check (no duplicates)
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Affiliate, bool>>>(), It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Affiliate, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Affiliate>());
 
         // Setup ParamType to return null for the specific invalid ID
@@ -337,7 +292,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Affiliate Type with ID {invalidAffiliateTypeId} not found");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates validates ThresholdBilling is not negative")]
@@ -384,13 +339,9 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         Affiliate capturedCreateAffiliate = null;
 
-        // Reset mocks to ensure clean state
-        _repoMock.Reset();
-        _paramTypeRepoMock.Reset();
-        _countryRepoMock.Reset();
         SetupDefaultMocks();
 
-        _repoMock.Setup(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()))
+        _affiliateRepoMock.Setup(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()))
             .Callback<Affiliate, CancellationToken>((a, _) => capturedCreateAffiliate = a)
             .ReturnsAsync((Affiliate a, CancellationToken _) => a);
 
@@ -427,7 +378,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("CountryId must be a valid GUID");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 400 when AffiliateTypeId is empty")]
@@ -446,7 +397,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("AffiliateTypeId is required and must be a valid GUID");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 400 when Code is empty")]
@@ -465,7 +416,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("Code is required");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 400 when Name is empty")]
@@ -484,7 +435,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("Name is required");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/affiliates returns 400 when AccountingAccountNumber is empty")]
@@ -503,7 +454,7 @@ public class CreateAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("AccountingAccountNumber is required");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
+        _affiliateRepoMock.Verify(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // Helper Methods

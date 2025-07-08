@@ -1,66 +1,18 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTests.PatchTests;
 
-public class PatchAgencyEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchAgencyEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyRepository> _agencyRepo = new();
-    private readonly Mock<ICityRepository> _cityRepo = new();
-    private readonly Mock<ISectorRepository> _sectorRepo = new();
-    private readonly Mock<IParamTypeRepository> _paramRepo = new();
-    private readonly Mock<IPartnerRepository> _partnerRepo = new();
-    private readonly Mock<ISupportAccountRepository> _supportRepo = new();
-
-    public PatchAgencyEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IAgencyRepository>();
-                s.RemoveAll<ICityRepository>();
-                s.RemoveAll<ISectorRepository>();
-                s.RemoveAll<IParamTypeRepository>();
-                s.RemoveAll<IPartnerRepository>();
-                s.RemoveAll<ISupportAccountRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _agencyRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                           .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_agencyRepo.Object);
-                s.AddSingleton(_cityRepo.Object);
-                s.AddSingleton(_sectorRepo.Object);
-                s.AddSingleton(_paramRepo.Object);
-                s.AddSingleton(_partnerRepo.Object);
-                s.AddSingleton(_supportRepo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
-
     private static Agency MakeAgency(Guid id, string code = "ABC123") =>
         Agency.Create(
             AgencyId.Of(id), code, "Agency Name", "AGN",
@@ -122,16 +74,16 @@ public class PatchAgencyEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var id = Guid.NewGuid();
         var orig = MakeAgency(id);
 
-        _agencyRepo.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
                    .ReturnsAsync(orig);
 
-        _agencyRepo.Setup(r => r.GetOneByConditionAsync(
+        _agencyRepoMock.Setup(r => r.GetOneByConditionAsync(
                                 It.IsAny<Expression<Func<Agency, bool>>>(),
                                 It.IsAny<CancellationToken>()))
                    .ReturnsAsync((Agency?)null);
 
         Agency? saved = null;
-        _agencyRepo.Setup(r => r.Update(It.IsAny<Agency>()))
+        _agencyRepoMock.Setup(r => r.Update(It.IsAny<Agency>()))
                    .Callback<Agency>(a => saved = a);
 
         var payload = new
@@ -153,7 +105,7 @@ public class PatchAgencyEndpointTests : IClassFixture<WebApplicationFactory<Prog
         saved.CashTransporter.Should().Be("BRINKS");
         saved.Name.Should().Be("Agency Name");    // unchanged
 
-        _agencyRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _agencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/agencies/{id} returns 400 when agency not found")]
@@ -161,7 +113,7 @@ public class PatchAgencyEndpointTests : IClassFixture<WebApplicationFactory<Prog
     {
         var id = Guid.NewGuid();
 
-        _agencyRepo.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
+        _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(id), It.IsAny<CancellationToken>()))
                    .ReturnsAsync((Agency?)null);
 
         var payload = new { AgencyId = id, Name = "Nope" };
@@ -171,7 +123,7 @@ public class PatchAgencyEndpointTests : IClassFixture<WebApplicationFactory<Prog
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _agencyRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _agencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/agencies/{id} returns 400 when new Code duplicates another agency")]
@@ -181,10 +133,10 @@ public class PatchAgencyEndpointTests : IClassFixture<WebApplicationFactory<Prog
         var target = MakeAgency(idTarget, "ABC123");
         var dup = MakeAgency(Guid.NewGuid(), "XYZ999");
 
-        _agencyRepo.Setup(r => r.GetByIdAsync(AgencyId.Of(idTarget), It.IsAny<CancellationToken>()))
+        _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(idTarget), It.IsAny<CancellationToken>()))
                    .ReturnsAsync(target);
 
-        _agencyRepo.Setup(r => r.GetOneByConditionAsync(
+        _agencyRepoMock.Setup(r => r.GetOneByConditionAsync(
                                 It.IsAny<Expression<Func<Agency, bool>>>(),
                                 It.IsAny<CancellationToken>()))
                    .ReturnsAsync(dup);
@@ -199,7 +151,7 @@ public class PatchAgencyEndpointTests : IClassFixture<WebApplicationFactory<Prog
                 .GetProperty("message").GetString()
            .Should().Be("Agency with code XYZ999 already exists.");
 
-        _agencyRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _agencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/agencies/{id} returns 400 when AgencyId is empty GUID")]
@@ -219,6 +171,6 @@ public class PatchAgencyEndpointTests : IClassFixture<WebApplicationFactory<Prog
         FirstErr(doc!.RootElement.GetProperty("errors"), "AgencyId")
             .Should().Be("AgencyId cannot be empty.");
 
-        _agencyRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _agencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

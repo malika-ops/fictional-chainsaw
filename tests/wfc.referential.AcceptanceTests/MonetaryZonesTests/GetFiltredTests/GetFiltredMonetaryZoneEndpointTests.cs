@@ -1,46 +1,18 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Pagination;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using BuildingBlocks.Core.Pagination;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.MonetaryZones.Queries.GetFiltredMonetaryZones;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.MonetaryZonesTests.GetFiltredTests;
 
-public class GetFiltredMonetaryZoneEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredMonetaryZoneEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IMonetaryZoneRepository> _repoMock = new();
-
-    public GetFiltredMonetaryZoneEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customised = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IMonetaryZoneRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customised.CreateClient();
-    }
     private static MonetaryZone MakeZone(string code, bool enabled = true)
     {
         return MonetaryZone.Create(
@@ -71,7 +43,7 @@ public class GetFiltredMonetaryZoneEndpointTests : IClassFixture<WebApplicationF
 
         var paged = new PagedResult<MonetaryZone>(zones.ToList(), totalCount: 5, 1, 2);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredMonetaryZonesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1, 2, It.IsAny<CancellationToken>(),
                     It.IsAny<Expression<Func<MonetaryZone, object>>[]>()))
@@ -97,7 +69,7 @@ public class GetFiltredMonetaryZoneEndpointTests : IClassFixture<WebApplicationF
         var zone = MakeZone(code);
         var paged = new PagedResult<MonetaryZone>(new List<MonetaryZone> { zone }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredMonetaryZonesQuery>(q => q.Code == code),
                             1, 10, It.IsAny<CancellationToken>(),
                     It.IsAny<Expression<Func<MonetaryZone, object>>[]>()))
@@ -120,7 +92,7 @@ public class GetFiltredMonetaryZoneEndpointTests : IClassFixture<WebApplicationF
 
         var paged = new PagedResult<MonetaryZone>(new List<MonetaryZone> { zone }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredMonetaryZonesQuery>(q => q.Name == name),
                             1, 10, It.IsAny<CancellationToken>(), 
                             It.IsAny<Expression<Func<MonetaryZone, object>>[]>()))
@@ -143,7 +115,7 @@ public class GetFiltredMonetaryZoneEndpointTests : IClassFixture<WebApplicationF
 
         var paged = new PagedResult<MonetaryZone>(new List<MonetaryZone> { zone }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredMonetaryZonesQuery>(q => q.Description == desc),
                             1, 10, It.IsAny<CancellationToken>(), 
                             It.IsAny<Expression<Func<MonetaryZone, object>>[]>()))
@@ -163,7 +135,7 @@ public class GetFiltredMonetaryZoneEndpointTests : IClassFixture<WebApplicationF
         var disabled = MakeZone("DIS", enabled: false);
         var paged = new PagedResult<MonetaryZone>(new List<MonetaryZone> { disabled }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredMonetaryZonesQuery>(q => q.IsEnabled == false),
                             1, 10, It.IsAny<CancellationToken>(), 
                             It.IsAny<Expression<Func<MonetaryZone, object>>[]>()))
@@ -186,7 +158,7 @@ public class GetFiltredMonetaryZoneEndpointTests : IClassFixture<WebApplicationF
             };
         var paged = new PagedResult<MonetaryZone>(zones.ToList(), 3, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredMonetaryZonesQuery>(q => q.PageNumber == 1 && q.PageSize == 10 && q.IsEnabled == true),
                             1, 10, It.IsAny<CancellationToken>(), It.IsAny<Expression<Func<MonetaryZone, object>>[]>()))
                  .ReturnsAsync(paged);
@@ -210,7 +182,7 @@ public class GetFiltredMonetaryZoneEndpointTests : IClassFixture<WebApplicationF
 
         var paged = new PagedResult<MonetaryZone>(new List<MonetaryZone> { zone }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredMonetaryZonesQuery>(q =>
                                 q.Code == code && q.Name == name && q.IsEnabled == true),
                             1, 10, It.IsAny<CancellationToken>(), It.IsAny<Expression<Func<MonetaryZone, object>>[]>()))
@@ -229,7 +201,7 @@ public class GetFiltredMonetaryZoneEndpointTests : IClassFixture<WebApplicationF
     {
         var paged = new PagedResult<MonetaryZone>(new List<MonetaryZone>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredMonetaryZonesQuery>(q => q.Code == "NONE"),
                             1, 10, It.IsAny<CancellationToken>(), 
                             It.IsAny<Expression<Func<MonetaryZone, object>>[]>()))

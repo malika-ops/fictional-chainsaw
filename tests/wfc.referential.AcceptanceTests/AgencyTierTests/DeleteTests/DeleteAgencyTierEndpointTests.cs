@@ -1,48 +1,15 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AgencyTierAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTierTests.DeleteTests;
 
-public class DeleteAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteAgencyTierEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyTierRepository> _agencyTierRepoMock = new();
-
-    public DeleteAgencyTierEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();  
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IAgencyTierRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _agencyTierRepoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_agencyTierRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "DELETE /api/agencyTiers/{id} returns 200 when AgencyTier exists")]
     public async Task Delete_ShouldReturn200_WhenAgencyTierExists()

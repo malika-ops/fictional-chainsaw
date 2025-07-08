@@ -1,15 +1,9 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using AutoFixture;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ControleAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.ServiceAggregate;
@@ -18,48 +12,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ServiceControleTests.CreateTests;
 
-public class CreateServiceControleEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateServiceControleEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-
-    private readonly Mock<IServiceControleRepository> _linkRepo = new();
-    private readonly Mock<IServiceRepository> _svcRepo = new();
-    private readonly Mock<IControleRepository> _ctrlRepo = new();
-    private readonly Mock<IParamTypeRepository> _chanRepo = new();
-
-    public CreateServiceControleEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customised = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IServiceControleRepository>();
-                s.RemoveAll<IServiceRepository>();
-                s.RemoveAll<IControleRepository>();
-                s.RemoveAll<IParamTypeRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _linkRepo.Setup(r => r.AddAsync(It.IsAny<ServiceControle>(), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync((ServiceControle sc, CancellationToken _) => sc);
-
-                _linkRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_linkRepo.Object);
-                s.AddSingleton(_svcRepo.Object);
-                s.AddSingleton(_ctrlRepo.Object);
-                s.AddSingleton(_chanRepo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customised.CreateClient();
-    }
-
-
     private static object ValidPayload(Guid? svc = null, Guid? ctrl = null,
                                        Guid? chan = null, int exec = 0) =>
         new
@@ -85,14 +39,14 @@ public class CreateServiceControleEndpointTests : IClassFixture<WebApplicationFa
         // Arrange 
         var payload = ValidPayload();
 
-        _svcRepo.Setup(r => r.GetByIdAsync(ServiceId.Of((Guid)payload.GetType().GetProperty("ServiceId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Service)) as Service);
+        _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of((Guid)payload.GetType().GetProperty("ServiceId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_fixture.Create<Service>());
 
-        _ctrlRepo.Setup(r => r.GetByIdAsync(ControleId.Of((Guid)payload.GetType().GetProperty("ControleId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Controle)) as Controle);
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of((Guid)payload.GetType().GetProperty("ControleId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(_fixture.Create<Controle>());
 
-        _chanRepo.Setup(r => r.GetByIdAsync(ParamTypeId.Of((Guid)payload.GetType().GetProperty("ChannelId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(ParamType)) as ParamType);
+        _paramTypeRepoMock.Setup(r => r.GetByIdAsync(ParamTypeId.Of((Guid)payload.GetType().GetProperty("ChannelId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(_fixture.Create<ParamType>());
 
         // Act
         var resp = await _client.PostAsJsonAsync("/api/serviceControles", payload);
@@ -102,7 +56,7 @@ public class CreateServiceControleEndpointTests : IClassFixture<WebApplicationFa
         resp.StatusCode.Should().Be(HttpStatusCode.Created);
         id.Should().NotBeEmpty();
 
-        _linkRepo.Verify(r =>
+        _serviceControlRepoMock.Verify(r =>
             r.AddAsync(It.Is<ServiceControle>(sc =>
                     sc.ServiceId.Value == (Guid)payload.GetType().GetProperty("ServiceId")!.GetValue(payload)! &&
                     sc.ControleId.Value == (Guid)payload.GetType().GetProperty("ControleId")!.GetValue(payload)! &&
@@ -111,7 +65,7 @@ public class CreateServiceControleEndpointTests : IClassFixture<WebApplicationFa
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
-        _linkRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _serviceControlRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
 
@@ -128,7 +82,7 @@ public class CreateServiceControleEndpointTests : IClassFixture<WebApplicationFa
             .GetProperty("ServiceId")[0].GetString()
             .Should().Be("ServiceId must not be empty.");
 
-        _linkRepo.Verify(r => r.AddAsync(It.IsAny<ServiceControle>(), It.IsAny<CancellationToken>()), Times.Never);
+        _serviceControlRepoMock.Verify(r => r.AddAsync(It.IsAny<ServiceControle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/serviceControles → 400 when ExecOrder < 0")]
@@ -144,7 +98,7 @@ public class CreateServiceControleEndpointTests : IClassFixture<WebApplicationFa
             .GetProperty("ExecOrder")[0].GetString()
             .Should().Be("ExecOrder must be greater than or equal to 0.");
 
-        _linkRepo.Verify(r => r.AddAsync(It.IsAny<ServiceControle>(), It.IsAny<CancellationToken>()), Times.Never);
+        _serviceControlRepoMock.Verify(r => r.AddAsync(It.IsAny<ServiceControle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -158,21 +112,21 @@ public class CreateServiceControleEndpointTests : IClassFixture<WebApplicationFa
 
         // Only set up the *existing* ones
         if (missing != "Service")
-            _svcRepo.Setup(r => r.GetByIdAsync(ServiceId.Of((Guid)payload.GetType().GetProperty("ServiceId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Service)) as Service);
+            _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of((Guid)payload.GetType().GetProperty("ServiceId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Service>());
 
         if (missing != "Controle")
-            _ctrlRepo.Setup(r => r.GetByIdAsync(ControleId.Of((Guid)payload.GetType().GetProperty("ControleId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Controle)) as Controle);
+            _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of((Guid)payload.GetType().GetProperty("ControleId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(_fixture.Create<Controle>());
 
         if (missing != "Channel")
-            _chanRepo.Setup(r => r.GetByIdAsync(ParamTypeId.Of((Guid)payload.GetType().GetProperty("ChannelId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(ParamType)) as ParamType);
+            _paramTypeRepoMock.Setup(r => r.GetByIdAsync(ParamTypeId.Of((Guid)payload.GetType().GetProperty("ChannelId")!.GetValue(payload)!), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(_fixture.Create<ParamType>());
 
         var resp = await _client.PostAsJsonAsync("/api/serviceControles", payload);
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _linkRepo.Verify(r => r.AddAsync(It.IsAny<ServiceControle>(), It.IsAny<CancellationToken>()), Times.Never);
+        _serviceControlRepoMock.Verify(r => r.AddAsync(It.IsAny<ServiceControle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -183,14 +137,14 @@ public class CreateServiceControleEndpointTests : IClassFixture<WebApplicationFa
         var ctrl = Guid.NewGuid();
         var chan = Guid.NewGuid();
 
-        _svcRepo.Setup(r => r.GetByIdAsync(ServiceId.Of(svc), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Service)) as Service);
-        _ctrlRepo.Setup(r => r.GetByIdAsync(ControleId.Of(ctrl), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Controle)) as Controle);
-        _chanRepo.Setup(r => r.GetByIdAsync(ParamTypeId.Of(chan), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(ParamType)) as ParamType);
+        _serviceRepoMock.Setup(r => r.GetByIdAsync(ServiceId.Of(svc), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_fixture.Create<Service>());
+        _controleRepoMock.Setup(r => r.GetByIdAsync(ControleId.Of(ctrl), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(_fixture.Create<Controle>());
+        _paramTypeRepoMock.Setup(r => r.GetByIdAsync(ParamTypeId.Of(chan), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(_fixture.Create<ParamType>());
 
-        _linkRepo.Setup(r => r.GetOneByConditionAsync(
+        _serviceControlRepoMock.Setup(r => r.GetOneByConditionAsync(
                             It.IsAny<System.Linq.Expressions.Expression<Func<ServiceControle, bool>>>(),
                             It.IsAny<CancellationToken>()))
                  .ReturnsAsync(MakeLink(svc, ctrl, chan));
@@ -200,6 +154,6 @@ public class CreateServiceControleEndpointTests : IClassFixture<WebApplicationFa
         var resp = await _client.PostAsJsonAsync("/api/serviceControles", payload);
 
         resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _linkRepo.Verify(r => r.AddAsync(It.IsAny<ServiceControle>(), It.IsAny<CancellationToken>()), Times.Never);
+        _serviceControlRepoMock.Verify(r => r.AddAsync(It.IsAny<ServiceControle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

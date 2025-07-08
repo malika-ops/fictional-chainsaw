@@ -1,52 +1,15 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ControleAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ControleTests.CreateTests;
 
-public class CreateControleEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateControleEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IControleRepository> _repoMock = new();
-
-    public CreateControleEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customised = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IControleRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _repoMock
-                    .Setup(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((Controle c, CancellationToken _) => c);
-
-                _repoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customised.CreateClient();
-    }
-
     private static object ValidPayload(string? code = null, string? name = null) =>
         new
         {
@@ -69,14 +32,14 @@ public class CreateControleEndpointTests : IClassFixture<WebApplicationFactory<P
         resp.StatusCode.Should().Be(HttpStatusCode.Created);
         id.Should().NotBeEmpty();
 
-        _repoMock.Verify(r =>
+        _controleRepoMock.Verify(r =>
             r.AddAsync(It.Is<Controle>(c =>
                     c.Code == payload.GetType().GetProperty("Code")!.GetValue(payload)!.ToString() &&
                     c.Name == payload.GetType().GetProperty("Name")!.GetValue(payload)!.ToString()),
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _controleRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
 
@@ -93,7 +56,7 @@ public class CreateControleEndpointTests : IClassFixture<WebApplicationFactory<P
             .GetProperty("Code")[0].GetString()
             .Should().Be("Code is required.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/controles → 400 when Code > 50 chars")]
@@ -109,7 +72,7 @@ public class CreateControleEndpointTests : IClassFixture<WebApplicationFactory<P
             .GetProperty("Code")[0].GetString()
             .Should().Be("Code max length = 50.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -126,7 +89,7 @@ public class CreateControleEndpointTests : IClassFixture<WebApplicationFactory<P
             .GetProperty("Name")[0].GetString()
             .Should().Be("Name is required.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/controles → 400 when Name > 100 chars")]
@@ -142,7 +105,7 @@ public class CreateControleEndpointTests : IClassFixture<WebApplicationFactory<P
             .GetProperty("Name")[0].GetString()
             .Should().Be("Name max length = 100.");
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -151,7 +114,7 @@ public class CreateControleEndpointTests : IClassFixture<WebApplicationFactory<P
     {
         const string dupCode = "DUPLICATE";
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(
+        _controleRepoMock.Setup(r => r.GetOneByConditionAsync(
                     It.IsAny<System.Linq.Expressions.Expression<Func<Controle, bool>>>(),
                     It.IsAny<CancellationToken>()))
                  .ReturnsAsync(MakeControle(dupCode, "Whatever"));
@@ -159,6 +122,6 @@ public class CreateControleEndpointTests : IClassFixture<WebApplicationFactory<P
         var resp = await _client.PostAsJsonAsync("/api/controles", ValidPayload(code: dupCode.ToLower()));
         resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
+        _controleRepoMock.Verify(r => r.AddAsync(It.IsAny<Controle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

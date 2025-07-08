@@ -1,47 +1,15 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.ContractAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ContractsTests.DeleteTests;
 
-public class DeleteContractEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteContractEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IContractRepository> _contractRepoMock = new();
-
-    public DeleteContractEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IContractRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _contractRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_contractRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "DELETE /api/contracts/{id} returns 200 when contract exists")]
     public async Task Delete_ShouldReturn200_WhenContractExists()

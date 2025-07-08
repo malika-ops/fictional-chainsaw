@@ -1,48 +1,18 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
+using wfc.referential.Domain.AgencyAggregate;
+using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.Countries;
-using wfc.referential.Domain.CityAggregate;
-using wfc.referential.Domain.AgencyAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CorridorTests.GetByIdTests;
 
-public class GetCorridorByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetCorridorByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICorridorRepository> _repo = new();
-
-    public GetCorridorByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ICorridorRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Corridor Make(Guid id, string code = "CORRIDOR-001", string? name = null, bool enabled = true)
     {
         var corridor = Corridor.Create(
@@ -68,7 +38,7 @@ public class GetCorridorByIdEndpointTests : IClassFixture<WebApplicationFactory<
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(CorridorId.Of(id), It.IsAny<CancellationToken>()))
+        _corridorRepoMock.Setup(r => r.GetByIdAsync(CorridorId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Corridor?)null);
 
         var res = await _client.GetAsync($"/api/corridors/{id}");
@@ -80,7 +50,7 @@ public class GetCorridorByIdEndpointTests : IClassFixture<WebApplicationFactory<
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(CorridorId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _corridorRepoMock.Verify(r => r.GetByIdAsync(CorridorId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/corridors/{id} → 404 when id is malformed")]
@@ -92,7 +62,7 @@ public class GetCorridorByIdEndpointTests : IClassFixture<WebApplicationFactory<
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<CorridorId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _corridorRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<CorridorId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/corridors/{id} → 200 for disabled Corridor")]
@@ -101,7 +71,7 @@ public class GetCorridorByIdEndpointTests : IClassFixture<WebApplicationFactory<
         var id = Guid.NewGuid();
         var entity = Make(id, "CORRIDOR-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(CorridorId.Of(id), It.IsAny<CancellationToken>()))
+        _corridorRepoMock.Setup(r => r.GetByIdAsync(CorridorId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/corridors/{id}");

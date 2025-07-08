@@ -1,14 +1,8 @@
 ﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.Countries;
@@ -19,58 +13,26 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AffiliatesTests.DeleteTests;
 
-public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteAffiliateEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly WebApplicationFactory<Program> _factory;
-    private readonly Mock<IAffiliateRepository> _affiliateRepoMock = new();
-    private readonly Mock<IPricingRepository> _pricingRepoMock = new();
-
-    public DeleteAffiliateEndpointTests(WebApplicationFactory<Program> factory)
+    private void SetupDefaultMocks(bool hasPricingDependencies = false)
     {
-        _factory = factory;
-    }
-
-    private HttpClient CreateClientWithMocks(bool hasPricingDependencies = false)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = _factory.WithWebHostBuilder(builder =>
+        // Configure pricing dependencies based on test needs
+        if (hasPricingDependencies)
         {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IAffiliateRepository>();
-                services.RemoveAll<IPricingRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _affiliateRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                // Configure pricing dependencies based on test needs
-                if (hasPricingDependencies)
-                {
-                    var mockPricing = CreateTestPricing(AffiliateId.Of(Guid.NewGuid()));
-                    _pricingRepoMock.Setup(r => r.GetByConditionAsync(
-                            It.IsAny<Expression<Func<Pricing, bool>>>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(new List<Pricing> { mockPricing });
-                }
-                else
-                {
-                    _pricingRepoMock.Setup(r => r.GetByConditionAsync(
-                            It.IsAny<Expression<Func<Pricing, bool>>>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(new List<Pricing>());
-                }
-
-                services.AddSingleton(_affiliateRepoMock.Object);
-                services.AddSingleton(_pricingRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        return customisedFactory.CreateClient();
+            var mockPricing = CreateTestPricing(AffiliateId.Of(Guid.NewGuid()));
+            _pricingRepoMock.Setup(r => r.GetByConditionAsync(
+                    It.IsAny<Expression<Func<Pricing, bool>>>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Pricing> { mockPricing });
+        }
+        else
+        {
+            _pricingRepoMock.Setup(r => r.GetByConditionAsync(
+                    It.IsAny<Expression<Func<Pricing, bool>>>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Pricing>());
+        }
     }
 
     [Fact(DisplayName = "DELETE /api/affiliates/{id} returns 200 when affiliate exists and has no dependencies")]
@@ -79,13 +41,13 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-        var client = CreateClientWithMocks(hasPricingDependencies: false);
+        SetupDefaultMocks(hasPricingDependencies: false);
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(affiliate);
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
         var body = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
@@ -101,16 +63,16 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-        var client = CreateClientWithMocks(hasPricingDependencies: true);
+        SetupDefaultMocks(hasPricingDependencies: true);
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(affiliate);
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict); 
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("Cannot delete affiliate with ID");
@@ -126,13 +88,13 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
     {
         // Arrange
         var id = Guid.NewGuid();
-        var client = CreateClientWithMocks();
+        SetupDefaultMocks();
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Affiliate?)null);
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -146,7 +108,7 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-        var client = CreateClientWithMocks(hasPricingDependencies: false);
+        SetupDefaultMocks(hasPricingDependencies: false);
 
         // Verify affiliate starts as enabled
         affiliate.IsEnabled.Should().BeTrue();
@@ -155,7 +117,7 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
             .ReturnsAsync(affiliate);
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -175,10 +137,10 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
     public async Task Delete_ShouldReturnBadRequest_ForInvalidGuidFormat()
     {
         // Arrange
-        var client = CreateClientWithMocks();
+        SetupDefaultMocks();
 
         // Act
-        var response = await client.DeleteAsync("/api/affiliates/invalid-guid-format");
+        var response = await _client.DeleteAsync("/api/affiliates/invalid-guid-format");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -194,7 +156,7 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
         var affiliate = CreateTestAffiliate(id, "AFF001", "Active Affiliate");
-        var client = CreateClientWithMocks(hasPricingDependencies: false);
+        SetupDefaultMocks(hasPricingDependencies: false);
 
         // Ensure affiliate starts enabled
         affiliate.IsEnabled.Should().BeTrue("Affiliate should start as enabled");
@@ -203,7 +165,7 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
             .ReturnsAsync(affiliate);
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
         var result = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
@@ -225,10 +187,10 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
     public async Task Delete_ShouldReturn400_ForEmptyGuid()
     {
         // Arrange
-        var client = CreateClientWithMocks();
+        SetupDefaultMocks();
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{Guid.Empty}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{Guid.Empty}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -247,7 +209,7 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-        var client = CreateClientWithMocks(hasPricingDependencies: false);
+        SetupDefaultMocks(hasPricingDependencies: false);
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(affiliate);
@@ -264,7 +226,7 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
             .Returns(Task.CompletedTask);
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -286,7 +248,7 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var id2 = Guid.NewGuid();
         var affiliate1 = CreateTestAffiliate(id1, "AFF001", "Affiliate 1");
         var affiliate2 = CreateTestAffiliate(id2, "AFF002", "Affiliate 2");
-        var client = CreateClientWithMocks(hasPricingDependencies: false);
+        SetupDefaultMocks(hasPricingDependencies: false);
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id1), It.IsAny<CancellationToken>()))
             .ReturnsAsync(affiliate1);
@@ -296,8 +258,8 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Act - Simulate concurrent requests
         var tasks = new[]
         {
-            client.DeleteAsync($"/api/affiliates/{id1}"),
-            client.DeleteAsync($"/api/affiliates/{id2}")
+            _client.DeleteAsync($"/api/affiliates/{id1}"),
+            _client.DeleteAsync($"/api/affiliates/{id2}")
         };
 
         var responses = await Task.WhenAll(tasks);
@@ -325,7 +287,7 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-        var client = CreateClientWithMocks(hasPricingDependencies: false);
+        SetupDefaultMocks(hasPricingDependencies: false);
 
         // Set some additional properties to verify they remain intact
         affiliate.SetAffiliateType(ParamTypeId.Of(Guid.NewGuid()));
@@ -340,7 +302,7 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         var originalCountryId = affiliate.CountryId;
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -361,17 +323,17 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-        var client = CreateClientWithMocks(hasPricingDependencies: false);
+        SetupDefaultMocks(hasPricingDependencies: false);
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(affiliate);
 
         // Act - First delete
-        var response1 = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response1 = await _client.DeleteAsync($"/api/affiliates/{id}");
         var result1 = await response1.Content.ReadFromJsonAsync<bool>();
 
         // Act - Second delete (should still work, idempotent)
-        var response2 = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response2 = await _client.DeleteAsync($"/api/affiliates/{id}");
         var result2 = await response2.Content.ReadFromJsonAsync<bool>();
 
         // Assert
@@ -395,13 +357,13 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-        var client = CreateClientWithMocks(hasPricingDependencies: false);
+        SetupDefaultMocks(hasPricingDependencies: false);
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(affiliate);
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -415,13 +377,13 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
     {
         // Arrange
         var id = Guid.NewGuid();
-        var client = CreateClientWithMocks();
+        SetupDefaultMocks();
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database connection failed"));
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
@@ -436,13 +398,13 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var id = Guid.NewGuid();
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-        var client = CreateClientWithMocks(hasPricingDependencies: false);
+        SetupDefaultMocks(hasPricingDependencies: false);
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(affiliate);
 
         // Act
-        var response = await client.DeleteAsync($"/api/affiliates/{id}");
+        var response = await _client.DeleteAsync($"/api/affiliates/{id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -477,10 +439,10 @@ public class DeleteAffiliateEndpointTests : IClassFixture<WebApplicationFactory<
             PricingId.Of(Guid.NewGuid()),
             "Test Pricing Code",
             "Test Pricing Name",
-            100.00m,    
-            200.00m,   
-            50.00m,   
-            25.00m,   
+            100.00m,
+            200.00m,
+            50.00m,
+            25.00m,
             CorridorId.Of(Guid.NewGuid()),
             ServiceId.Of(Guid.NewGuid()),
             affiliateId);

@@ -1,46 +1,16 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using BuildingBlocks.Core.Pagination;
-using BuildingBlocks.Application.Interfaces;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Partners.Dtos;
 using wfc.referential.Domain.PartnerAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnersTests.GetFiltredTests;
 
-public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredPartnersEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPartnerRepository> _repoMock = new();
-
-    public GetFiltredPartnersEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IPartnerRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "GET /api/partners returns paged list with default parameters")]
     public async Task Get_ShouldReturnPagedList_WithDefaultParameters()
     {
@@ -55,7 +25,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(allPartners.Take(10).ToList(), allPartners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -73,7 +43,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         result.PageNumber.Should().Be(1);
         result.PageSize.Should().Be(10);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 1, // default pageNumber
                                 10, // default pageSize
@@ -95,7 +65,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(allPartners.Skip(2).Take(2).ToList(), allPartners.Length, 2, 2);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -114,7 +84,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         result.PageNumber.Should().Be(2);
         result.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 2, // pageNumber
                                 2, // pageSize
@@ -129,7 +99,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         var partner = CreateTestPartner("PTN001", "Partner 1", "Natural Person");
         var pagedResult = new PagedResult<Partner>(new List<Partner> { partner }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -146,7 +116,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         result.Items.First().Code.Should().Be("PTN001");
         result.TotalCount.Should().Be(1);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -165,7 +135,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(naturalPersonPartners.ToList(), naturalPersonPartners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -185,7 +155,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
             item.PersonType.Should().Be("Natural Person");
         }
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -202,7 +172,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(new List<Partner> { disabledPartner }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -218,7 +188,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         result!.Items.Should().HaveCount(1);
         result.Items.First().IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -237,7 +207,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partners.ToList(), partners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -256,7 +226,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
             item.Name.Should().Contain("Express");
         }
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -275,7 +245,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(casablancaPartners.ToList(), casablancaPartners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -294,7 +264,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
             item.HeadquartersCity.Should().Be("Casablanca");
         }
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -313,7 +283,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partners.ToList(), partners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -332,7 +302,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
             item.ProfessionalTaxNumber.Should().Contain("PTX123");
         }
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -351,7 +321,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partners.ToList(), partners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -370,7 +340,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
             item.TaxIdentificationNumber.Should().Contain("TAX123");
         }
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -389,7 +359,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partners.ToList(), partners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -408,7 +378,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
             item.ICE.Should().Contain("ICE123");
         }
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -422,7 +392,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         // Arrange
         var emptyResult = new PagedResult<Partner>(new List<Partner>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -450,7 +420,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partners.ToList(), 1, 1, 1);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -468,7 +438,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         result.TotalCount.Should().Be(1);
         result.TotalPages.Should().Be(1);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 1, // pageNumber
                                 1, // pageSize
@@ -486,7 +456,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(filteredPartners.ToList(), 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -505,7 +475,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         result.Items.First().IsEnabled.Should().BeTrue();
         result.Items.First().HeadquartersCity.Should().Be("Casablanca");
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -523,7 +493,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partners.Take(50).ToList(), partners.Length, 1, 50);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -542,7 +512,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         result.PageNumber.Should().Be(1);
         result.PageSize.Should().Be(50);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 1, // pageNumber
                                 50, // pageSize
@@ -557,7 +527,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         var partner = CreateTestPartner("PTN001", "Test Partner", "Natural Person");
         var pagedResult = new PagedResult<Partner>(new List<Partner> { partner }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -604,7 +574,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         // Arrange
         var emptyResult = new PagedResult<Partner>(new List<Partner>(), 0, 1, 0);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -629,7 +599,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         var partner = CreateTestPartner("PTN001", "Partner & Associates", "Natural Person");
         var pagedResult = new PagedResult<Partner>(new List<Partner> { partner }, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -657,7 +627,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partners.ToList(), 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -680,7 +650,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         }
 
         // Verify repository was called for each request
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 It.IsAny<int>(),
                                 It.IsAny<int>(),
@@ -694,7 +664,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         // Arrange
         var emptyResult = new PagedResult<Partner>(new List<Partner>(), 0, 0, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -722,7 +692,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partners.ToList(), 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -750,7 +720,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(enabledPartners.ToList(), 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -779,7 +749,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(allPartners.ToList(), 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -808,7 +778,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partners.ToList(), 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -838,7 +808,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         var filteredPartners = partners.Where(p => p.Name.Contains("Express")).ToArray();
         var pagedResult = new PagedResult<Partner>(filteredPartners.ToList(), filteredPartners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -869,7 +839,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(allPartners.ToList(), allPartners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -899,7 +869,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
         var sortedPartners = partners.OrderBy(p => p.Code).ToArray();
         var pagedResult = new PagedResult<Partner>(sortedPartners.ToList(), sortedPartners.Length, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -932,7 +902,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(partnersPage, totalCount, pageNumber, pageSize);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -967,7 +937,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
 
         var pagedResult = new PagedResult<Partner>(complexFilteredPartners.ToList(), 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<object>(),
                             It.IsAny<int>(),
                             It.IsAny<int>(),
@@ -996,7 +966,7 @@ public class GetFiltredPartnersEndpointTests : IClassFixture<WebApplicationFacto
             p.IsEnabled == true);
 
         // Verify repository was called once (efficient query)
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _partnerRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.IsAny<object>(),
                                 1,
                                 10,

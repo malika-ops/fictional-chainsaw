@@ -1,47 +1,18 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.Taxes.Queries.GetFiltredTaxes;
 using wfc.referential.Domain.TaxAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TaxTests.GetFiltredTests;
 
-public class GetFiltredTaxesEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredTaxesEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITaxRepository> _repoMock = new();
     private const string BaseUrl  = "api/taxes";
-
-    public GetFiltredTaxesEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ITaxRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     private static Tax DummyTax(string code, string description) =>
         Tax.Create(TaxId.Of(Guid.NewGuid()), code, $"{code}AR", $"{code}EN", description, 42, 20);
@@ -61,7 +32,7 @@ public class GetFiltredTaxesEndpointTests : IClassFixture<WebApplicationFactory<
         };
 
         // repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _taxRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredTaxesQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                             1,2,
                             It.IsAny<CancellationToken>()))
@@ -87,7 +58,7 @@ public class GetFiltredTaxesEndpointTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var tax = DummyTax("VAT_DE", "Germany VAT - Standard Rate");
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _taxRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<GetFiltredTaxesQuery>(),
             It.IsAny<int>(),
             It.IsAny<int>(),

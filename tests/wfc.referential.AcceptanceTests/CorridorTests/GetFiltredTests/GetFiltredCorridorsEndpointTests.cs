@@ -1,16 +1,10 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Pagination;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BuildingBlocks.Core.Pagination;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.Corridors.Queries.GetFiltredCorridors;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.CorridorAggregate;
@@ -19,32 +13,9 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CorridorTests
 {
-    public class GetFiltredCorridorsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+    public class GetFiltredCorridorsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
     {
-        private readonly HttpClient _client;
-        private readonly Mock<ICorridorRepository> _repoMock = new();
-        private readonly Mock<ICacheService> _cacheMock = new();
         private const string BaseUrl = "api/corridors";
-
-        public GetFiltredCorridorsEndpointTests(WebApplicationFactory<Program> factory)
-        {
-            var customizedFactory = factory.WithWebHostBuilder(builder =>
-            {
-                builder.UseEnvironment("Testing");
-
-                builder.ConfigureServices(services =>
-                {
-                    services.RemoveAll<ICorridorRepository>();
-                    services.RemoveAll<ICacheService>();
-
-                    services.AddSingleton(_repoMock.Object);
-                    services.AddSingleton(_cacheMock.Object);
-                });
-            });
-
-            _client = customizedFactory.CreateClient();
-        }
-
         private static Corridor CreateDummyCorridor(Guid id, Guid sourceCountryId, Guid destinationCountryId)
         {
             return Corridor.Create(
@@ -72,7 +43,7 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
                 CreateDummyCorridor(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid())
             };
 
-            _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+            _corridorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredCorridorsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                 1,2,
                                 It.IsAny<CancellationToken>()))
@@ -93,7 +64,7 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             dto.PageNumber.Should().Be(1);
             dto.PageSize.Should().Be(2);
 
-            _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+            _corridorRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                     It.Is<GetFiltredCorridorsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                     1, 2,
                                     It.IsAny<CancellationToken>()),
@@ -107,7 +78,7 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             var sourceCountryId = Guid.NewGuid();
             var filteredCorridor = CreateDummyCorridor(Guid.NewGuid(), sourceCountryId, Guid.NewGuid());
 
-            _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+            _corridorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredCorridorsQuery>(q => q.SourceCountryId != null && q.SourceCountryId.Value == sourceCountryId),
                                 1, 10,
                                 It.IsAny<CancellationToken>()))
@@ -124,7 +95,7 @@ namespace wfc.referential.AcceptanceTests.CorridorTests
             dto!.Items.Should().HaveCount(1);
             dto.Items[0].GetProperty("sourceCountryId").GetGuid().Should().Be(sourceCountryId);
 
-            _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+            _corridorRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                     It.Is<GetFiltredCorridorsQuery>(q => q.SourceCountryId != null && q.SourceCountryId.Value == sourceCountryId),
                                     1, 10,
                                     It.IsAny<CancellationToken>()),

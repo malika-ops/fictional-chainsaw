@@ -1,46 +1,16 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.SectorAggregate;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.CityAggregate;
+using wfc.referential.Domain.SectorAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.SectorsTests.GetByIdTests;
 
-public class GetSectorByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetSectorByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ISectorRepository> _repo = new();
-
-    public GetSectorByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ISectorRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Sector Make(Guid id, string code = "SECTOR-001", string? name = null, bool enabled = true)
     {
         var sector = Sector.Create(
@@ -63,7 +33,7 @@ public class GetSectorByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(SectorId.Of(id), It.IsAny<CancellationToken>()))
+        _sectorRepoMock.Setup(r => r.GetByIdAsync(SectorId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Sector?)null);
 
         var res = await _client.GetAsync($"/api/sectors/{id}");
@@ -75,7 +45,7 @@ public class GetSectorByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(SectorId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _sectorRepoMock.Verify(r => r.GetByIdAsync(SectorId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/sectors/{id} → 404 when id is malformed")]
@@ -87,7 +57,7 @@ public class GetSectorByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<SectorId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sectorRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<SectorId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/sectors/{id} → 200 for disabled Sector")]
@@ -96,7 +66,7 @@ public class GetSectorByIdEndpointTests : IClassFixture<WebApplicationFactory<Pr
         var id = Guid.NewGuid();
         var entity = Make(id, "SECTOR-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(SectorId.Of(id), It.IsAny<CancellationToken>()))
+        _sectorRepoMock.Setup(r => r.GetByIdAsync(SectorId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/sectors/{id}");

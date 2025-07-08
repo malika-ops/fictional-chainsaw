@@ -1,38 +1,14 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.IdentityDocumentAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.IdentityDocumentTests.DeleteTests;
 
-public class DeleteIdentityDocumentEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteIdentityDocumentEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IIdentityDocumentRepository> _repoMock = new();
-
-    public DeleteIdentityDocumentEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IIdentityDocumentRepository>();
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "DELETE /api/identitydocuments/{id} returns true when document exists")]
     public async Task Delete_ShouldReturnTrue_WhenDocumentExists()
@@ -46,10 +22,10 @@ public class DeleteIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
             "Valid doc"
         );
 
-        _repoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
+        _identityDocumentRepoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
-        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        _identityDocumentRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(1));
 
         var response = await _client.DeleteAsync($"/api/identitydocuments/{docId}");
@@ -61,7 +37,7 @@ public class DeleteIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         // Verify that Disable() was called (entity should not be enabled)
         entity.IsEnabled.Should().BeFalse();
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _identityDocumentRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "DELETE /api/identitydocuments/{id} returns 404 when document does not exist")]
@@ -70,7 +46,7 @@ public class DeleteIdentityDocumentEndpointTests : IClassFixture<WebApplicationF
         var docId = Guid.NewGuid(); // Use a valid GUID, not Empty
         var identityDocumentId = IdentityDocumentId.Of(docId);
 
-        _repoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
+        _identityDocumentRepoMock.Setup(r => r.GetByIdAsync(identityDocumentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((IdentityDocument?)null);
 
         var response = await _client.DeleteAsync($"/api/identitydocuments/{docId}");

@@ -2,37 +2,15 @@
 using System.Net.Http.Json;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Banks.Dtos;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
 using Xunit;
 
-namespace wfc.referential.AcceptanceTests.BanksTests.SearchTests;
+namespace wfc.referential.AcceptanceTests.BanksTests.GetFiltredTests;
 
-public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredBanksAcceptanceTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IBankRepository> _repoMock = new();
-
-    public GetFiltredBanksAcceptanceTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IBankRepository>();
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "GET /api/banks returns all banks using search criteria")]
     public async Task GetFiltredBanks_Should_ReturnAllBanks_UsingSearchCriteria()
     {
@@ -46,7 +24,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
 
         var pagedResult = new PagedResult<Bank>(banks, banks.Count, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -77,7 +55,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
 
         var pagedResult = new PagedResult<Bank>(filteredBanks, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -104,7 +82,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
 
         var pagedResult = new PagedResult<Bank>(filteredBanks, 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -131,7 +109,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
 
         var pagedResult = new PagedResult<Bank>(activeBanks, 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -158,7 +136,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
 
         var pagedResult = new PagedResult<Bank>(banks, 25, 2, 10); // Page 2 of 3 pages (25 total items)
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -181,7 +159,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
         // Arrange
         var emptyResult = new PagedResult<Bank>(new List<Bank>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(emptyResult);
 
@@ -207,7 +185,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
 
         var pagedResult = new PagedResult<Bank>(filteredBanks, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -240,7 +218,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
 
         var pagedResult = new PagedResult<Bank>(banks, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -253,7 +231,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
         result.Should().NotBeNull();
         result.Items.Should().HaveCount(1);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -268,7 +246,7 @@ public class GetFiltredBanksAcceptanceTests : IClassFixture<WebApplicationFactor
 
         var pagedResult = new PagedResult<Bank>(banks, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _bankRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 

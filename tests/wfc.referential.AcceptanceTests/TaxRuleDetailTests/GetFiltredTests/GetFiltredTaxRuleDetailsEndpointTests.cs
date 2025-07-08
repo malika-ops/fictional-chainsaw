@@ -1,15 +1,9 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Application.TaxRuleDetails.Dtos;
 using wfc.referential.Application.TaxRuleDetails.Queries.GetFiltredTaxeRuleDetails;
 using wfc.referential.Domain.CorridorAggregate;
@@ -20,32 +14,9 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TaxRuleDetailTests;
 
-public class GetFiltredTaxRuleDetailsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredTaxRuleDetailsEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITaxRuleDetailRepository> _repoMock = new();
-    private readonly Mock<ICacheService> _cacheMock = new();
     private const string BaseUrl = "api/tax-rule-details";
-
-    public GetFiltredTaxRuleDetailsEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ITaxRuleDetailRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_cacheMock.Object);
-            });
-        });
-
-        _client = customizedFactory.CreateClient();
-    }
-
     private static TaxRuleDetail CreateDummyTaxRuleDetail(Guid id)
     {
         return TaxRuleDetail.Create(
@@ -72,7 +43,7 @@ public class GetFiltredTaxRuleDetailsEndpointTests : IClassFixture<WebApplicatio
         };
 
         // Repository returns first 2 items for page=1 size=2
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _taxRuleDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.IsAny<GetFiltredTaxRuleDetailsQuery>(),
                             It.IsAny<int>(), It.IsAny<int>(),
                             It.IsAny<CancellationToken>()))
@@ -90,7 +61,7 @@ public class GetFiltredTaxRuleDetailsEndpointTests : IClassFixture<WebApplicatio
         dto.PageNumber.Should().Be(1);
         dto.PageSize.Should().Be(2);
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _taxRuleDetailsRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
                                 It.Is<GetFiltredTaxRuleDetailsQuery>(q => q.PageNumber == 1 && q.PageSize == 2),
                                 1, 2,
                                 It.IsAny<CancellationToken>()),
@@ -103,7 +74,7 @@ public class GetFiltredTaxRuleDetailsEndpointTests : IClassFixture<WebApplicatio
         // Arrange
         var filteredTaxRuleDetail = CreateDummyTaxRuleDetail(Guid.NewGuid());
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _taxRuleDetailsRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredTaxRuleDetailsQuery>(q => q.AppliedOn == ApplicationRule.Fees),
                             1, 10,
                             It.IsAny<CancellationToken>()))

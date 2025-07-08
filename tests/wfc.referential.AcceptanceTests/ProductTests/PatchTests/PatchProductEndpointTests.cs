@@ -1,49 +1,16 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.Products.Dtos;
 using wfc.referential.Domain.ProductAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ProductTests.PatchTests;
 
-public class PatchProductEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchProductEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IProductRepository> _repoMock = new();
-
-    public PatchProductEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        // Clone the factory and customize the host
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                // 🧹 Remove concrete registrations that hit the DB / Redis
-                services.RemoveAll<IProductRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // 🔌 Plug mocks back in
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "PATCH /api/products/{id} updates the Product successfully")]
     public async Task PatchProduct_ShouldReturnUpdatedProductId_WhenProductExists()
     {
@@ -62,7 +29,7 @@ public class PatchProductEndpointTests : IClassFixture<WebApplicationFactory<Pro
             "Old Name",
             true
         );
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+        _productRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Expression<Func<Product, bool>> predicate, CancellationToken _) =>
             {
                 var func = predicate.Compile();
@@ -96,7 +63,7 @@ public class PatchProductEndpointTests : IClassFixture<WebApplicationFactory<Pro
             Name = "Non-existing Product",
         };
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+        _productRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product)null); 
 
         // Act
@@ -117,7 +84,7 @@ public class PatchProductEndpointTests : IClassFixture<WebApplicationFactory<Pro
             Name = "Invalid Product",
         };
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+        _productRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Product.Create(ProductId.Of(productId), "code", "name", true));
 
         // Act

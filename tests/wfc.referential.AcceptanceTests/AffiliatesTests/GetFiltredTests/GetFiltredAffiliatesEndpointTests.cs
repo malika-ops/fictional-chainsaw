@@ -1,48 +1,17 @@
 ﻿using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
 using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Affiliates.Dtos;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.Countries;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AffiliatesTests.GetFiltredTests;
 
-public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetFiltredAffiliatesEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAffiliateRepository> _repoMock = new();
-
-    public GetFiltredAffiliatesEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IAffiliateRepository>();
-                services.RemoveAll<ICacheService>();
-
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "GET /api/affiliates returns 200 with default pagination")]
     public async Task Get_ShouldReturn200_WithDefaultPagination()
     {
@@ -50,7 +19,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(5);
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 5, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -76,7 +45,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         result.PageSize.Should().Be(10);
 
         // Verify repository was called with default parameters
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(),
             1, // Default page number
             10, // Default page size
@@ -90,7 +59,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(3);
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 15, 2, 5);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -116,7 +85,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         result.PageSize.Should().Be(5);
 
         // Verify repository was called with custom parameters
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(),
             2, // Custom page number
             5, // Custom page size
@@ -130,7 +99,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(1, "AFF001");
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -153,7 +122,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         result.Items.Should().HaveCount(1);
         result.Items.First().Code.Should().Be("AFF001");
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(),
             It.IsAny<int>(),
             It.IsAny<int>(),
@@ -167,7 +136,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(1, name: "Wafacash");
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -190,7 +159,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         result.Items.Should().HaveCount(1);
         result.Items.First().Name.Should().Be("Wafacash");
 
-        _repoMock.Verify(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Verify(r => r.GetPagedByCriteriaAsync(
             It.IsAny<object>(),
             It.IsAny<int>(),
             It.IsAny<int>(),
@@ -205,7 +174,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(1, openingDate: openingDate);
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -237,7 +206,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(1, cancellationDay: cancellationDay);
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -269,7 +238,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(2, countryId: countryId);
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 2, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -300,7 +269,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(3, isEnabled: false);
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 3, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -334,7 +303,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(1, "AFF001", "Wafacash", openingDate, cancellationDay, countryId, true);
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -371,7 +340,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         // Arrange
         var pagedResult = new PagedResult<Affiliate>(new List<Affiliate>(), 0, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -404,7 +373,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(100);
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 1000, 1, 100);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -432,7 +401,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
     public async Task Get_ShouldHandleRepositoryExceptionsGracefully()
     {
         // Arrange
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
@@ -453,7 +422,7 @@ public class GetFiltredAffiliatesEndpointTests : IClassFixture<WebApplicationFac
         var mockAffiliates = CreateMockAffiliatesList(1, "AFF001", "Wafacash");
         var pagedResult = new PagedResult<Affiliate>(mockAffiliates, 1, 1, 10);
 
-        _repoMock.Setup(r => r.GetPagedByCriteriaAsync(
+        _affiliateRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                 It.IsAny<object>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),

@@ -1,47 +1,17 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Domain.PartnerCountryAggregate;
-using wfc.referential.Domain.PartnerAggregate;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.PartnerAggregate;
+using wfc.referential.Domain.PartnerCountryAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerCountryTests.GetByIdTests;
 
-public class GetPartnerCountryByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetPartnerCountryByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPartnerCountryRepository> _repo = new();
-
-    public GetPartnerCountryByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IPartnerCountryRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static PartnerCountry Make(Guid id, string code = "PARTNER-COUNTRY-001", string? name = null, bool enabled = true)
     {
         var partnerCountry = PartnerCountry.Create(
@@ -63,7 +33,7 @@ public class GetPartnerCountryByIdEndpointTests : IClassFixture<WebApplicationFa
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerCountryRepoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((PartnerCountry?)null);
 
         var res = await _client.GetAsync($"/api/partner-countries/{id}");
@@ -75,7 +45,7 @@ public class GetPartnerCountryByIdEndpointTests : IClassFixture<WebApplicationFa
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _partnerCountryRepoMock.Verify(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/partner-countries/{id} → 404 when id is malformed")]
@@ -87,7 +57,7 @@ public class GetPartnerCountryByIdEndpointTests : IClassFixture<WebApplicationFa
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<PartnerCountryId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _partnerCountryRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<PartnerCountryId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/partner-countries/{id} → 200 for disabled PartnerCountry")]
@@ -96,7 +66,7 @@ public class GetPartnerCountryByIdEndpointTests : IClassFixture<WebApplicationFa
         var id = Guid.NewGuid();
         var entity = Make(id, "PARTNER-COUNTRY-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerCountryRepoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/partner-countries/{id}");

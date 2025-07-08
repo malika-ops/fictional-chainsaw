@@ -1,41 +1,15 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using wfc.referential.Application.Currencies.Dtos;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.CurrencyAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.CurrencyTests.PatchTests;
 
-public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchCurrencyAcceptanceTests (TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ICurrencyRepository> _repoMock = new();
-
-    public PatchCurrencyAcceptanceTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ICurrencyRepository>();
-
-                _repoMock.Setup(r => r.Update(It.IsAny<Currency>()));
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "PATCH /api/currencies/{id} modifies only provided fields")]
     public async Task PatchCurrency_Should_ModifyOnlyProvidedFields_WhenPartialDataSent()
@@ -46,9 +20,9 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
             CurrencyId.Of(currencyId),
             "USD", "دولار أمريكي", "US Dollar", "US Dollar", 840);
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(originalCurrency);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency)null);
 
         var patchRequest = new PatchCurrencyRequest
@@ -70,8 +44,8 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
         originalCurrency.Code.Should().Be("USD"); // Unchanged
         originalCurrency.CodeIso.Should().Be(840); // Unchanged
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _currencyRepoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Once);
+        _currencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/currencies/{id} validates duplicates for changed fields only")]
@@ -84,9 +58,9 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
         var targetCurrency = Currency.Create(CurrencyId.Of(currencyId), "USD", "دولار", "Dollar", "Dollar", 840);
         var conflictingCurrency = Currency.Create(CurrencyId.Of(existingCurrencyId), "EUR", "يورو", "Euro", "Euro", 978);
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(targetCurrency);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(conflictingCurrency);
 
         var patchRequest = new PatchCurrencyRequest
@@ -99,7 +73,7 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/currencies/{id} allows same values in unchanged fields")]
@@ -111,9 +85,9 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
             CurrencyId.Of(currencyId),
             "USD", "دولار أمريكي", "US Dollar", "US Dollar", 840);
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency)null);
 
         var patchRequest = new PatchCurrencyRequest
@@ -130,8 +104,8 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _currencyRepoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Once);
+        _currencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/currencies/{id} returns 400 when currency not found")]
@@ -140,7 +114,7 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
         // Arrange
         var currencyId = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency)null);
 
         var patchRequest = new PatchCurrencyRequest
@@ -153,7 +127,7 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Never);
+        _currencyRepoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Never);
     }
 
     [Theory(DisplayName = "PATCH /api/currencies/{id} updates individual fields correctly")]
@@ -172,9 +146,9 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
             CurrencyId.Of(currencyId),
             "USD", "دولار", "Dollar", "Dollar", 840);
 
-        _repoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetByIdAsync(It.Is<CurrencyId>(id => id.Value == currencyId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
+        _currencyRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Currency, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency)null);
 
         var patchRequest = new PatchCurrencyRequest
@@ -195,7 +169,7 @@ public class PatchCurrencyAcceptanceTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _repoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _currencyRepoMock.Verify(r => r.Update(It.IsAny<Currency>()), Times.Once);
+        _currencyRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

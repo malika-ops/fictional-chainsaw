@@ -1,16 +1,10 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
 using System.Text.Json;
+using AutoFixture;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Application.AgencyTiers.Commands.UpdateAgencyTier;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.AgencyTierAggregate;
 using wfc.referential.Domain.TierAggregate;
@@ -18,42 +12,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AgencyTierTests.UpdateTests;
 
-public class UpdateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdateAgencyTierEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IAgencyTierRepository> _agencyTierRepoMock = new();
-    private readonly Mock<IAgencyRepository> _agencyRepoMock = new();
-    private readonly Mock<ITierRepository> _tierRepoMock = new();
-
-    public UpdateAgencyTierEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IAgencyTierRepository>();
-                services.RemoveAll<IAgencyRepository>();
-                services.RemoveAll<ITierRepository>();
-                services.RemoveAll<ICacheService>();
-
-                _agencyTierRepoMock
-                    .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                services.AddSingleton(_agencyTierRepoMock.Object);
-                services.AddSingleton(_agencyRepoMock.Object);
-                services.AddSingleton(_tierRepoMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     private static AgencyTier CreateAgencyTier(Guid id, Guid agencyId, Guid tierId,
                                                string code, string pwd, bool enabled = true)
     {
@@ -84,11 +44,12 @@ public class UpdateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
                            .ReturnsAsync(existing);
 
         // Agency & Tier existence checks
+
         _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(agencyId), It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Agency)) as Agency);
+                       .ReturnsAsync(_fixture.Create<Agency>());
 
         _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(tierId), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Tier)) as Tier);
+                     .ReturnsAsync(_fixture.Create<Tier>());
 
         _agencyTierRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                  System.Linq.Expressions.Expression<Func<AgencyTier, bool>>>(),
@@ -183,12 +144,12 @@ public class UpdateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
             _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(agencyId), It.IsAny<CancellationToken>()))
                            .ReturnsAsync((Agency?)null);
             _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(tierId), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Tier)) as Tier);
+                         .ReturnsAsync(_fixture.Create<Tier>());
         }
         else
         {
             _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(agencyId), It.IsAny<CancellationToken>()))
-                           .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Agency)) as Agency);
+                           .ReturnsAsync(_fixture.Create<Agency>());
             _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(tierId), It.IsAny<CancellationToken>()))
                          .ReturnsAsync((Tier?)null);
         }
@@ -223,10 +184,10 @@ public class UpdateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
                            .ReturnsAsync(link);
 
         _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(agencyId), It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Agency)) as Agency);
+                       .ReturnsAsync(_fixture.Create<Agency>());
 
         _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(tierId), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Tier)) as Tier);
+                     .ReturnsAsync(_fixture.Create<Tier>());
 
         _agencyTierRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                  System.Linq.Expressions.Expression<Func<AgencyTier, bool>>>(),
@@ -260,10 +221,10 @@ public class UpdateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
                            .ReturnsAsync(link);
 
         _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(agencyId), It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Agency)) as Agency);
+                       .ReturnsAsync(_fixture.Create<Agency>());
 
         _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(tierId), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Tier)) as Tier);
+                     .ReturnsAsync(_fixture.Create<Tier>());
 
         _agencyTierRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                  System.Linq.Expressions.Expression<Func<AgencyTier, bool>>>(),
@@ -301,10 +262,10 @@ public class UpdateAgencyTierEndpointTests : IClassFixture<WebApplicationFactory
                            .ReturnsAsync(link);
 
         _agencyRepoMock.Setup(r => r.GetByIdAsync(AgencyId.Of(agencyId), It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Agency)) as Agency);
+                       .ReturnsAsync(_fixture.Create<Agency>());
 
         _tierRepoMock.Setup(r => r.GetByIdAsync(TierId.Of(tierId), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Tier)) as Tier);
+                     .ReturnsAsync(_fixture.Create<Tier>());
 
         _agencyTierRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<
                                  System.Linq.Expressions.Expression<Func<AgencyTier, bool>>>(),

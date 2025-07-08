@@ -1,45 +1,15 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.TypeDefinitionsTests.GetByIdTests;
 
-public class GetTypeDefinitionByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetTypeDefinitionByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ITypeDefinitionRepository> _repo = new();
-
-    public GetTypeDefinitionByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<ITypeDefinitionRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static TypeDefinition Make(Guid id, string code = "TYPE-001", string? name = null, bool enabled = true)
     {
         var typeDefinition = TypeDefinition.Create(TypeDefinitionId.Of(id), code, name ?? $"Type-{code}");
@@ -54,7 +24,7 @@ public class GetTypeDefinitionByIdEndpointTests : IClassFixture<WebApplicationFa
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(TypeDefinitionId.Of(id), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetByIdAsync(TypeDefinitionId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((TypeDefinition?)null);
 
         var res = await _client.GetAsync($"/api/type-definitions/{id}");
@@ -66,7 +36,7 @@ public class GetTypeDefinitionByIdEndpointTests : IClassFixture<WebApplicationFa
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(TypeDefinitionId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _typeDefinitionRepoMock.Verify(r => r.GetByIdAsync(TypeDefinitionId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/type-definitions/{id} → 404 when id is malformed")]
@@ -78,7 +48,7 @@ public class GetTypeDefinitionByIdEndpointTests : IClassFixture<WebApplicationFa
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<TypeDefinitionId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _typeDefinitionRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<TypeDefinitionId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/type-definitions/{id} → 200 for disabled TypeDefinition")]
@@ -87,7 +57,7 @@ public class GetTypeDefinitionByIdEndpointTests : IClassFixture<WebApplicationFa
         var id = Guid.NewGuid();
         var entity = Make(id, "TYPE-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(TypeDefinitionId.Of(id), It.IsAny<CancellationToken>()))
+        _typeDefinitionRepoMock.Setup(r => r.GetByIdAsync(TypeDefinitionId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/type-definitions/{id}");

@@ -1,44 +1,14 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.SupportAccountAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.SupportAccountsTests.CreateTests;
 
-public class CreateSupportAccountEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class CreateSupportAccountEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<ISupportAccountRepository> _repoMock = new();
-
-    public CreateSupportAccountEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var customizedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<ISupportAccountRepository>();
-
-                _repoMock.Setup(r => r.AddAsync(It.IsAny<SupportAccount>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((SupportAccount sa, CancellationToken _) => sa);
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-                _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, bool>>>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync((SupportAccount)null);
-
-                services.AddSingleton(_repoMock.Object);
-            });
-        });
-        _client = customizedFactory.CreateClient();
-    }
 
     [Fact(DisplayName = "POST /api/support-accounts returns 200 and Guid when request is valid")]
     public async Task Post_ShouldReturn200_AndId_WhenRequestIsValid()
@@ -64,7 +34,7 @@ public class CreateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         returnedId.Should().NotBeEmpty();
 
-        _repoMock.Verify(r =>
+        _supportAccountRepoMock.Verify(r =>
             r.AddAsync(It.Is<SupportAccount>(s =>
                     s.Code == payload.Code &&
                     s.Description == payload.Description &&
@@ -99,7 +69,7 @@ public class CreateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<SupportAccount>(), It.IsAny<CancellationToken>()), Times.Never);
+        _supportAccountRepoMock.Verify(r => r.AddAsync(It.IsAny<SupportAccount>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "POST /api/support-accounts returns 409 when Code already exists")]
@@ -117,7 +87,7 @@ public class CreateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
             "ACC001"
         );
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, bool>>>(), It.IsAny<CancellationToken>()))
+        _supportAccountRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAccount);
 
         var payload = new
@@ -137,7 +107,7 @@ public class CreateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<SupportAccount>(), It.IsAny<CancellationToken>()), Times.Never);
+        _supportAccountRepoMock.Verify(r => r.AddAsync(It.IsAny<SupportAccount>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory(DisplayName = "POST /api/support-accounts validates all required fields")]
@@ -164,6 +134,6 @@ public class CreateSupportAccountEndpointTests : IClassFixture<WebApplicationFac
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        _repoMock.Verify(r => r.AddAsync(It.IsAny<SupportAccount>(), It.IsAny<CancellationToken>()), Times.Never);
+        _supportAccountRepoMock.Verify(r => r.AddAsync(It.IsAny<SupportAccount>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

@@ -1,14 +1,8 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
-using wfc.referential.Application.Interfaces;
+using AutoFixture;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.PartnerCountryAggregate;
@@ -16,41 +10,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerCountryTests.UpdateTests;
 
-public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class UpdatePartnerCountryEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-
-    private readonly Mock<IPartnerCountryRepository> _pcRepo = new();
-    private readonly Mock<IPartnerRepository> _partnerRepo = new();
-    private readonly Mock<ICountryRepository> _countryRepo = new();
-
-    public UpdatePartnerCountryEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IPartnerCountryRepository>();
-                s.RemoveAll<IPartnerRepository>();
-                s.RemoveAll<ICountryRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _pcRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                       .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_pcRepo.Object);
-                s.AddSingleton(_partnerRepo.Object);
-                s.AddSingleton(_countryRepo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static PartnerCountry Make(Guid id, Guid partner, Guid country, bool enabled = true)
     {
         var pc = PartnerCountry.Create(
@@ -74,16 +35,16 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
 
         var entity = Make(id, oldP, oldC, enabled: true);
 
-        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerCountryRepoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
                .ReturnsAsync(entity);
 
-        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(newP), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(newP), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Partner>());
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(newC), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(newC), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Country>());
 
-        _pcRepo.Setup(r => r.GetOneByConditionAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetOneByConditionAsync(
                         It.IsAny<System.Linq.Expressions.Expression<Func<PartnerCountry, bool>>>(),
                         It.IsAny<CancellationToken>()))
                .ReturnsAsync((PartnerCountry?)null);   
@@ -106,7 +67,7 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
         entity.CountryId.Value.Should().Be(newC);
         entity.IsEnabled.Should().BeFalse();
 
-        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _partnerCountryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
 
@@ -115,7 +76,7 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
     {
         var id = Guid.NewGuid();
 
-        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerCountryRepoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
                .ReturnsAsync((PartnerCountry?)null);
 
         var payload = new
@@ -140,21 +101,21 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
 
         var entity = Make(id, Guid.NewGuid(), Guid.NewGuid());
 
-        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerCountryRepoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
                .ReturnsAsync(entity);
 
-        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(partId), It.IsAny<CancellationToken>()))
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(partId), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Domain.PartnerAggregate.Partner?)null);    
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(ctryId), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(ctryId), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Country>());
 
         var payload = new { PartnerCountryId = id, PartnerId = partId, CountryId = ctryId };
 
         var res = await _client.PutAsJsonAsync($"/api/partner-countries/{id}", payload);
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerCountryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -167,13 +128,13 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
 
         var entity = Make(id, Guid.NewGuid(), Guid.NewGuid());
 
-        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerCountryRepoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
                .ReturnsAsync(entity);
 
-        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(partId), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(partId), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Partner>());
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(ctryId), It.IsAny<CancellationToken>()))
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(ctryId), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Domain.Countries.Country?)null);
 
         var payload = new { PartnerCountryId = id, PartnerId = partId, CountryId = ctryId };
@@ -181,7 +142,7 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
         var res = await _client.PutAsJsonAsync($"/api/partner-countries/{id}", payload);
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerCountryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -195,16 +156,16 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
         var target = Make(idTarget, partner, country);
         var existing = Make(Guid.NewGuid(), partner, country);
 
-        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(idTarget), It.IsAny<CancellationToken>()))
+        _partnerCountryRepoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(idTarget), It.IsAny<CancellationToken>()))
                .ReturnsAsync(target);
 
-        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(partner), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(partner), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Partner>());
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(country), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(country), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Country>());
 
-        _pcRepo.Setup(r => r.GetOneByConditionAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetOneByConditionAsync(
                         It.IsAny<System.Linq.Expressions.Expression<Func<PartnerCountry, bool>>>(),
                         It.IsAny<CancellationToken>()))
                .ReturnsAsync(existing);
@@ -214,7 +175,7 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
         var res = await _client.PutAsJsonAsync($"/api/partner-countries/{idTarget}", payload);
         res.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _partnerCountryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
 
@@ -227,16 +188,16 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
 
         var link = Make(id, pid, cid, enabled: true);
 
-        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerCountryRepoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
                .ReturnsAsync(link);
 
-        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(pid), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(pid), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Partner>());
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(cid), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(cid), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Country>());
 
-        _pcRepo.Setup(r => r.GetOneByConditionAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetOneByConditionAsync(
                         It.IsAny<System.Linq.Expressions.Expression<Func<PartnerCountry, bool>>>(),
                         It.IsAny<CancellationToken>()))
                .ReturnsAsync((PartnerCountry?)null);
@@ -262,16 +223,16 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
 
         var link = Make(id, pid, cid);
 
-        _pcRepo.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
+        _partnerCountryRepoMock.Setup(r => r.GetByIdAsync(PartnerCountryId.Of(id), It.IsAny<CancellationToken>()))
                .ReturnsAsync(link);
 
-        _partnerRepo.Setup(r => r.GetByIdAsync(PartnerId.Of(pid), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.PartnerAggregate.Partner)) as Domain.PartnerAggregate.Partner);
+        _partnerRepoMock.Setup(r => r.GetByIdAsync(PartnerId.Of(pid), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Partner>());
 
-        _countryRepo.Setup(r => r.GetByIdAsync(CountryId.Of(cid), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(FormatterServices.GetUninitializedObject(typeof(Domain.Countries.Country)) as Domain.Countries.Country);
+        _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(cid), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_fixture.Create<Country>());
 
-        _pcRepo.Setup(r => r.GetOneByConditionAsync(
+        _partnerCountryRepoMock.Setup(r => r.GetOneByConditionAsync(
                         It.IsAny<System.Linq.Expressions.Expression<Func<PartnerCountry, bool>>>(),
                         It.IsAny<CancellationToken>()))
                .ReturnsAsync(link);  
@@ -284,7 +245,7 @@ public class UpdatePartnerCountryEndpointTests : IClassFixture<WebApplicationFac
         res.StatusCode.Should().Be(HttpStatusCode.OK);
         ok.Should().BeTrue();
 
-        _pcRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _partnerCountryRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
 

@@ -2,17 +2,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BuildingBlocks.Application.Interfaces;
-using BuildingBlocks.Core.Abstraction.Domain;
-using BuildingBlocks.Core.Pagination;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
-using wfc.referential.Application.Interfaces;
-using wfc.referential.Application.RegionManagement.Queries.GetFiltredRegions;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.RegionAggregate;
@@ -20,38 +11,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.RegionTests.DeleteTests;
 
-public class DeleteRegionEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteRegionEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IRegionRepository> _repoMock = new();
-    private readonly Mock<ICityRepository> _repoCityMock = new();
-
-    public DeleteRegionEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        // Clone the factory and customize the host
-        var customisedFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-
-            builder.ConfigureServices(services =>
-            {
-                // 🧹 Remove concrete registrations that hit the DB / Redis
-                services.RemoveAll<IRegionRepository>();
-                services.RemoveAll<ICityRepository>();
-                services.RemoveAll<ICacheService>();
-
-                // 🔌 Plug mocks back in
-                services.AddSingleton(_repoMock.Object);
-                services.AddSingleton(_repoCityMock.Object);
-                services.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customisedFactory.CreateClient();
-    }
-
     [Fact(DisplayName = "DELETE /api/regions/{id} returns true when region is deleted successfully")]
     public async Task Delete_ShouldReturnTrue_WhenRegionExistsAndHasNoCities()
     {
@@ -63,9 +24,9 @@ public class DeleteRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             "testAAB",
             CountryId.Of(Guid.NewGuid()));
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+        _regionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(region);
-        _repoMock.Setup(r => r.GetByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+        _regionRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Enumerable.Empty<Region>()); // No cities
 
         // Act
@@ -76,7 +37,7 @@ public class DeleteRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().BeTrue();
 
-        _repoMock.Verify(r => r.Update(It.Is<Region>(r => r.Id == RegionId.Of(regionId) && !r.IsEnabled.Equals(true))), Times.Once);
+        _regionRepoMock.Verify(r => r.Update(It.Is<Region>(r => r.Id == RegionId.Of(regionId) && !r.IsEnabled.Equals(true))), Times.Once);
     }
 
     [Fact(DisplayName = "DELETE /api/regions/{id} returns 404 when region does not exist")]
@@ -84,7 +45,7 @@ public class DeleteRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
     {
         // Arrange
         var regionId = Guid.NewGuid();
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+        _regionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Region)null); // Region not found
 
         // Act
@@ -105,9 +66,9 @@ public class DeleteRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
             City.Create(CityId.Of(Guid.NewGuid()), "code", "name", "timezone", region.Id, "abbreviation")
         };
 
-        _repoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
+        _regionRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Region, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(region);
-        _repoCityMock.Setup(r => r.GetByConditionAsync(
+        _cityRepoMock.Setup(r => r.GetByConditionAsync(
             It.IsAny<Expression<Func<City, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(cities);// Region has cities
 
@@ -124,6 +85,6 @@ public class DeleteRegionEndpointTests : IClassFixture<WebApplicationFactory<Pro
         root.GetProperty("errors").GetProperty("message").GetString().Should().StartWith("Cannot delete the region because it has associated cities.");
 
         // Verify that the update method was not called
-        _repoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Never);
+        _regionRepoMock.Verify(r => r.Update(It.IsAny<Region>()), Times.Never);
     }
 }

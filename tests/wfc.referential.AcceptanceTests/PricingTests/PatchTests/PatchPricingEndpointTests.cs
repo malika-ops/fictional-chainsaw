@@ -1,16 +1,10 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.PricingAggregate;
@@ -19,44 +13,8 @@ using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PricingTests.PatchTests;
 
-public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class PatchPricingEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IPricingRepository> _pricingRepo = new();
-    private readonly Mock<IServiceRepository> _serviceRepo = new();
-    private readonly Mock<ICorridorRepository> _corridorRepo = new();
-    private readonly Mock<IAffiliateRepository> _affiliateRepo = new();
-
-    public PatchPricingEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IPricingRepository>();
-                s.RemoveAll<IServiceRepository>();
-                s.RemoveAll<ICorridorRepository>();
-                s.RemoveAll<IAffiliateRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _pricingRepo.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                            .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_pricingRepo.Object);
-                s.AddSingleton(_serviceRepo.Object);
-                s.AddSingleton(_corridorRepo.Object);
-                s.AddSingleton(_affiliateRepo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
-
     private static Pricing MakePricing(Guid id,
                                        string code = "CODE1",
                                        string chan = "Branch",
@@ -118,10 +76,10 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var id = Guid.NewGuid();
         var price = MakePricing(id, "OLD");
 
-        _pricingRepo.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
+        _pricingRepoMock.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(price);
 
-        _pricingRepo.Setup(r => r.GetOneByConditionAsync(
+        _pricingRepoMock.Setup(r => r.GetOneByConditionAsync(
                               It.IsAny<Expression<Func<Pricing, bool>>>(),
                               It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Pricing?)null);
@@ -135,7 +93,7 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
         ok.Should().BeTrue();
         price.Code.Should().Be("NEW");
 
-        _pricingRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _pricingRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "PATCH /api/pricings/{id} → 200 when disabling pricing")]
@@ -144,7 +102,7 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var id = Guid.NewGuid();
         var price = MakePricing(id);
 
-        _pricingRepo.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
+        _pricingRepoMock.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(price);
 
         var payload = new { PricingId = id, IsEnabled = false };
@@ -162,13 +120,13 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
     {
         var id = Guid.NewGuid();
 
-        _pricingRepo.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
+        _pricingRepoMock.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((Pricing?)null);
 
         var resp = await PatchJsonAsync(_client, $"/api/pricings/{id}", new { PricingId = id });
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _pricingRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _pricingRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
    
@@ -182,10 +140,10 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var price = MakePricing(id, "OLD");
         var dupe = MakePricing(otherId, dupCode);
 
-        _pricingRepo.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
+        _pricingRepoMock.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(price);
 
-        _pricingRepo.Setup(r => r.GetOneByConditionAsync(
+        _pricingRepoMock.Setup(r => r.GetOneByConditionAsync(
                               It.IsAny<Expression<Func<Pricing, bool>>>(),
                               It.IsAny<CancellationToken>()))
                     .ReturnsAsync(dupe); // conflict
@@ -193,7 +151,7 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var resp = await PatchJsonAsync(_client, $"/api/pricings/{id}", new { PricingId = id, Code = dupCode });
         resp.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        _pricingRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _pricingRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/pricings/{id} → 400 when Code > 50 chars")]
@@ -211,7 +169,7 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
            .GetProperty("Code")[0].GetString()
            .Should().Be("Code max length = 50.");
 
-        _pricingRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _pricingRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/pricings/{id} → 400 when Max ≤ Min")]
@@ -231,7 +189,7 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
 
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _pricingRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _pricingRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "PATCH /api/pricings/{id} allows same Code for same row")]
@@ -240,10 +198,10 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
         var id = Guid.NewGuid();
         var price = MakePricing(id, "SAME");
 
-        _pricingRepo.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
+        _pricingRepoMock.Setup(r => r.GetByIdAsync(PricingId.Of(id), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(price);
 
-        _pricingRepo.Setup(r => r.GetOneByConditionAsync(
+        _pricingRepoMock.Setup(r => r.GetOneByConditionAsync(
                               It.IsAny<Expression<Func<Pricing, bool>>>(),
                               It.IsAny<CancellationToken>()))
                     .ReturnsAsync(price); // same entity
@@ -254,6 +212,6 @@ public class PatchPricingEndpointTests : IClassFixture<WebApplicationFactory<Pro
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
         ok.Should().BeTrue();
 
-        _pricingRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _pricingRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

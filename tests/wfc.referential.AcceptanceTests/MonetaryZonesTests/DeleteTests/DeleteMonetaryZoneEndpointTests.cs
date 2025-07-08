@@ -1,49 +1,17 @@
-﻿using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using AutoFixture;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.MonetaryZonesTests.DeleteTests;
 
-public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class DeleteMonetaryZoneEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IMonetaryZoneRepository> _repoMock = new();
-
-    public DeleteMonetaryZoneEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var customised = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IMonetaryZoneRepository>();
-                s.RemoveAll<ICacheService>();
-
-                _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                         .Returns(Task.CompletedTask);
-
-                s.AddSingleton(_repoMock.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = customised.CreateClient();
-    }
-
     private static MonetaryZone MakeZone(Guid id, string code = "EU")
     {
         return MonetaryZone.Create(
@@ -54,11 +22,6 @@ public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
         );
     }
 
-    private static Country DummyCountry()
-        => FormatterServices.GetUninitializedObject(typeof(Country)) as Country
-           ?? throw new InvalidOperationException("Failed to create dummy Country");
-
-
     [Fact(DisplayName = "DELETE /api/monetaryZones/{id} → 200 when zone exists & has no countries")]
     public async Task Delete_ShouldReturn200_WhenZoneExistsWithoutCountries()
     {
@@ -66,14 +29,14 @@ public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
         var id = Guid.NewGuid();
         var zone = MakeZone(id);                    
 
-        _repoMock.Setup(r => r.GetByIdWithIncludesAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetByIdWithIncludesAsync(
                             MonetaryZoneId.Of(id),
                             It.IsAny<CancellationToken>(),
                             It.IsAny<System.Linq.Expressions.Expression<Func<MonetaryZone, object>>[]>()))
                  .ReturnsAsync(zone);
 
         MonetaryZone? captured = null;
-        _repoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        _monetaryZoneRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
                  .Callback(() => captured = zone)
                  .Returns(Task.CompletedTask);
 
@@ -86,7 +49,7 @@ public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
         ok.Should().BeTrue();
 
         captured!.IsEnabled.Should().BeFalse();
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _monetaryZoneRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "DELETE /api/monetaryZones/{id} → 400 when zone has countries")]
@@ -94,9 +57,10 @@ public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
     {
         var id = Guid.NewGuid();
         var zone = MakeZone(id);
-        zone.Countries.Add(DummyCountry());
+        var dummyCountry = _fixture.Create<Country>();
+        zone.Countries.Add(dummyCountry);
 
-        _repoMock.Setup(r => r.GetByIdWithIncludesAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetByIdWithIncludesAsync(
                             MonetaryZoneId.Of(id),
                             It.IsAny<CancellationToken>(),
                             It.IsAny<System.Linq.Expressions.Expression<Func<MonetaryZone, object>>[]>()))
@@ -112,7 +76,7 @@ public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
         var root = doc!.RootElement;
         root.GetProperty("title").GetString().Should().Be("Bad Request");
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _monetaryZoneRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "DELETE /api/monetaryZones/{id} → 404 when zone not found")]
@@ -120,7 +84,7 @@ public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
     {
         var id = Guid.NewGuid();
 
-        _repoMock.Setup(r => r.GetByIdWithIncludesAsync(
+        _monetaryZoneRepoMock.Setup(r => r.GetByIdWithIncludesAsync(
                             MonetaryZoneId.Of(id),
                             It.IsAny<CancellationToken>(),
                             It.IsAny<System.Linq.Expressions.Expression<Func<MonetaryZone, object>>[]>()))
@@ -131,7 +95,7 @@ public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
 
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _monetaryZoneRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "DELETE /api/monetaryZones/{id} → 400 when id is Guid.Empty")]
@@ -148,7 +112,7 @@ public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
            .GetProperty("MonetaryZoneId")[0].GetString()
            .Should().Be("MonetaryZoneId must be a non-empty GUID.");
 
-        _repoMock.Verify(r => r.GetByIdWithIncludesAsync(
+        _monetaryZoneRepoMock.Verify(r => r.GetByIdWithIncludesAsync(
                             It.IsAny<MonetaryZoneId>(),
                             It.IsAny<CancellationToken>(),
                             It.IsAny<System.Linq.Expressions.Expression<Func<MonetaryZone, object>>[]>()),
@@ -164,6 +128,6 @@ public class DeleteMonetaryZoneEndpointTests : IClassFixture<WebApplicationFacto
 
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _monetaryZoneRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

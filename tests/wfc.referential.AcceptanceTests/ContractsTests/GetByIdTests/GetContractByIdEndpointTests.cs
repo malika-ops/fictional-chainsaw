@@ -1,46 +1,16 @@
-using BuildingBlocks.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using wfc.referential.Application.Interfaces;
+using FluentAssertions;
+using Moq;
 using wfc.referential.Domain.ContractAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.ContractsTests.GetByIdTests;
 
-public class GetContractByIdEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class GetContractByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private readonly HttpClient _client;
-    private readonly Mock<IContractRepository> _repo = new();
-
-    public GetContractByIdEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        var cacheMock = new Mock<ICacheService>();
-
-        var custom = factory.WithWebHostBuilder(b =>
-        {
-            b.UseEnvironment("Testing");
-
-            b.ConfigureServices(s =>
-            {
-                s.RemoveAll<IContractRepository>();
-                s.RemoveAll<ICacheService>();
-
-                s.AddSingleton(_repo.Object);
-                s.AddSingleton(cacheMock.Object);
-            });
-        });
-
-        _client = custom.CreateClient();
-    }
-
     private static Contract Make(Guid id, string code = "CONTRACT-001", string? name = null, bool enabled = true)
     {
         var contract = Contract.Create(
@@ -64,7 +34,7 @@ public class GetContractByIdEndpointTests : IClassFixture<WebApplicationFactory<
     {
         var id = Guid.NewGuid();
 
-        _repo.Setup(r => r.GetByIdAsync(ContractId.Of(id), It.IsAny<CancellationToken>()))
+        _contractRepoMock.Setup(r => r.GetByIdAsync(ContractId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync((Contract?)null);
 
         var res = await _client.GetAsync($"/api/contracts/{id}");
@@ -76,7 +46,7 @@ public class GetContractByIdEndpointTests : IClassFixture<WebApplicationFactory<
         root.GetProperty("title").GetString().Should().Be("Resource Not Found");
         root.GetProperty("status").GetInt32().Should().Be(404);
 
-        _repo.Verify(r => r.GetByIdAsync(ContractId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
+        _contractRepoMock.Verify(r => r.GetByIdAsync(ContractId.Of(id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "GET /api/contracts/{id} → 404 when id is malformed")]
@@ -88,7 +58,7 @@ public class GetContractByIdEndpointTests : IClassFixture<WebApplicationFactory<
 
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _repo.Verify(r => r.GetByIdAsync(It.IsAny<ContractId>(), It.IsAny<CancellationToken>()), Times.Never);
+        _contractRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<ContractId>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "GET /api/contracts/{id} → 200 for disabled Contract")]
@@ -97,7 +67,7 @@ public class GetContractByIdEndpointTests : IClassFixture<WebApplicationFactory<
         var id = Guid.NewGuid();
         var entity = Make(id, "CONTRACT-DIS", enabled: false);
 
-        _repo.Setup(r => r.GetByIdAsync(ContractId.Of(id), It.IsAny<CancellationToken>()))
+        _contractRepoMock.Setup(r => r.GetByIdAsync(ContractId.Of(id), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         var res = await _client.GetAsync($"/api/contracts/{id}");
