@@ -64,7 +64,7 @@ public class GetFiltredCurrenciesAcceptanceTests(TestWebApplicationFactory facto
         var result = await response.Content.ReadFromJsonAsync<PagedResult<GetCurrenciesResponse>>();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         result.Should().NotBeNull();
         result.Items.Should().HaveCount(1);
         result.Items.First().Code.Should().Be("USD");
