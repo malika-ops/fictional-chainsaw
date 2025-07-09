@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Xml.XPath;
 using BuildingBlocks.Core.CoreServices;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using wfc.referential.API;
 using wfc.referential.Application;
@@ -12,26 +13,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.AddServiceDefaults("ReferentialApi");
-//Log.Logger = new LoggerConfiguration()
 
-//    .MinimumLevel.Information()
-//    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-//    .Enrich.FromLogContext()
-//    .WriteTo.File("/app/logs/app-.log",
-
-//        rollingInterval: RollingInterval.Day,
-
-//        retainedFileCountLimit: 30,
-
-//        shared: true,
-
-//        flushToDiskInterval: TimeSpan.FromSeconds(1))
-
-//    .CreateLogger();
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("ServiceName", "ReferentialApi")
+    .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
+    .CreateLogger();
 
 
-
-//builder.Host.UseSerilog();
+builder.Host.UseSerilog();
 builder.Services.AddAuthorization();
 
 
@@ -70,6 +61,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 var app = builder.Build();
 
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseHttpsRedirection();
 //app.UseAuthentication();
