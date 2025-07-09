@@ -85,12 +85,12 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Run Unit Tests'
-      timeoutInMinutes: 10  # Add timeout
+      timeoutInMinutes: 10
       inputs:
         command: 'test'
         projects: '**/*[Tt]ests.csproj'
-        arguments: '--configuration $(buildConfiguration) --logger "trx;LogFileName=testresults.trx" --collect:"XPlat Code Coverage"'
-        publishTestResults: true
+        arguments: '--configuration $(buildConfiguration) --logger "trx" --collect:"XPlat Code Coverage" --results-directory $(Agent.TempDirectory)/TestResults'
+        publishTestResults: false  # Changed to false - we'll publish manually
         failTaskOnFailedTests: true
         workingDirectory: '$(Build.SourcesDirectory)'
 
@@ -99,8 +99,8 @@ stages:
       displayName: 'Publish Test Results'
       inputs:
         testResultsFormat: 'VSTest'
-        testResultsFiles: '*.trx'
-        searchFolder: '$(Agent.TempDirectory)'
+        testResultsFiles: '**/*.trx'  # Changed to search for all .trx files
+        searchFolder: '$(Agent.TempDirectory)/TestResults'  # Specific folder
         mergeTestResults: true
         failTaskOnFailedTests: true
         testRunTitle: 'Unit Tests - $(Build.BuildNumber)'
