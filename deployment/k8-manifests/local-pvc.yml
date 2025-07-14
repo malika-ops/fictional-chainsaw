@@ -9,4 +9,4 @@ spec:
   storageClassName: local-storage
   resources:
     requests:
-      storage: 3Gi
+      storage: 2Gi
