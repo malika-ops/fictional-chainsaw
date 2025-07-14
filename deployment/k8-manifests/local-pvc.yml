@@ -7,7 +7,6 @@ spec:
   accessModes:
     - ReadWriteMany
   storageClassName: local-storage
-  volumeName: local-pv-vol1
   resources:
     requests:
       storage: 3Gi
