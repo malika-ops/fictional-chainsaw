@@ -145,20 +145,6 @@ stages:
           latest
           $(tag)
 
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Kubernetes manifests'
-      inputs:
-        PathtoPublish: '$(Build.SourcesDirectory)/deployment/k8-manifests'
-        ArtifactName: 'k8s-manifests'
-        publishLocation: 'Container'
-
-    - task: PublishBuildArtifacts@1
-      displayName: Publish files
-      inputs:
-        PathtoPublish: "$(Build.SourcesDirectory)/deployment/phoenix"
-        ArtifactName: "phoenix"
-        publishLocation: "Container"
-
 - stage: DeployDev
   displayName: Deploy to Development
   dependsOn: Build_CI
@@ -178,18 +164,21 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download Kubernetes manifests'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'k8s-manifests'
-              downloadPath: '$(System.ArtifactsDirectory)'
+          # Work directly with source files - no artifacts needed
+          - checkout: self
+            clean: true
+            displayName: 'Checkout source code'
+
+          - script: |
+              echo "=== Checking deployment files ==="
+              ls -la $(Build.SourcesDirectory)/deployment/k8-manifests/ || echo "k8-manifests not found"
+              ls -la $(Build.SourcesDirectory)/deployment/phoenix/ || echo "phoenix not found"
+            displayName: 'Verify deployment files exist'
 
           - task: qetza.replacetokens.replacetokens-task.replacetokens@6
             displayName: 'Replace tokens in manifests'
             inputs:
-              rootDirectory: '$(System.ArtifactsDirectory)/k8s-manifests'
+              rootDirectory: '$(Build.SourcesDirectory)/deployment/k8-manifests'
               targetFiles: '**/*.yml'
               encoding: 'auto'
               tokenPattern: 'default'
@@ -207,32 +196,71 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-storageclass.yml
-                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pv.yml
-                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/namespace.yml                
-                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pvc.yml
-                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/configmap.yml
-                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/secret.yml
-                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/service.yml
-                kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/deployment.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/ingress.yml
-                # free space on the agent
-                docker rmi -f $(docker images -q)
-                docker system prune -a --volumes --force
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download file'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'phoenix'
-              downloadPath: '$(System.ArtifactsDirectory)'
+                MANIFEST_DIR="$(Build.SourcesDirectory)/deployment/k8-manifests/"
+                
+                echo "=== Verifying manifest files exist ==="
+                if [ ! -d "$MANIFEST_DIR" ]; then
+                    echo "ERROR: Manifest directory not found at $MANIFEST_DIR"
+                    exit 1
+                fi
+                
+                echo "Files in manifest directory:"
+                ls -la "$MANIFEST_DIR"
+                
+                echo "=== Applying Kubernetes manifests ==="
+                
+                # Apply manifests one by one with error checking
+                apply_manifest() {
+                    local file="$1"
+                    if [ -f "$file" ]; then
+                        echo "Applying $file..."
+                        kubectl apply -f "$file"
+                        if [ $? -eq 0 ]; then
+                            echo "✓ Successfully applied $file"
+                        else
+                            echo "✗ Failed to apply $file"
+                            return 1
+                        fi
+                    else
+                        echo "⚠ File $file not found, skipping..."
+                    fi
+                }
+                
+                # Apply in correct order
+                apply_manifest "$MANIFEST_DIR/local-storageclass.yml"
+                apply_manifest "$MANIFEST_DIR/local-pv.yml"
+                apply_manifest "$MANIFEST_DIR/namespace.yml"
+                apply_manifest "$MANIFEST_DIR/local-pvc.yml"
+                apply_manifest "$MANIFEST_DIR/configmap.yml"
+                apply_manifest "$MANIFEST_DIR/secret.yml"
+                apply_manifest "$MANIFEST_DIR/service.yml"
+                apply_manifest "$MANIFEST_DIR/deployment.yml"
+                # apply_manifest "$MANIFEST_DIR/ingress.yml"  # Commented out as in original
+                
+                echo "=== Cleaning up Docker resources ==="
+                echo "Removing unused Docker images..."
+                docker rmi -f $(docker images -q) 2>/dev/null || echo "No images to remove or command failed"
+                
+                echo "Pruning Docker system..."
+                docker system prune -a --volumes --force || echo "Docker system prune failed"
+                
+                echo "=== Deployment completed ==="
 
           - task: Bash@3
-            displayName: Phoenix done!
+            displayName: 'Phoenix done!'
             inputs:
               targetType: 'inline'
               script: |
-                cat $(System.ArtifactsDirectory)/phoenix/readme-dev
+                PHOENIX_FILE="$(Build.SourcesDirectory)/deployment/phoenix/readme-dev"
+                echo "=== Phoenix Phase ==="
+                if [ -f "$PHOENIX_FILE" ]; then
+                    echo "Phoenix readme-dev contents:"
+                    cat "$PHOENIX_FILE"
+                else
+                    echo "Phoenix readme-dev file not found at $PHOENIX_FILE"
+                    echo "Available files in phoenix directory:"
+                    ls -la "$(Build.SourcesDirectory)/deployment/phoenix/" 2>/dev/null || echo "Phoenix directory not found"
+                fi
                 
 - stage: DeployPprod
   displayName: Deploy to PPROD
@@ -286,18 +314,21 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download Kubernetes manifests'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'k8s-manifests'
-              downloadPath: '$(System.ArtifactsDirectory)'
+          # Work directly with source files - no artifacts needed
+          - checkout: self
+            clean: true
+            displayName: 'Checkout source code'
+
+          - script: |
+              echo "=== Checking deployment files ==="
+              ls -la $(Build.SourcesDirectory)/deployment/k8-manifests/ || echo "k8-manifests not found"
+              ls -la $(Build.SourcesDirectory)/deployment/phoenix/ || echo "phoenix not found"
+            displayName: 'Verify deployment files exist'
 
           - task: qetza.replacetokens.replacetokens-task.replacetokens@6
             displayName: 'Replace tokens in manifests'
             inputs:
-              rootDirectory: '$(System.ArtifactsDirectory)/k8s-manifests'
+              rootDirectory: '$(Build.SourcesDirectory)/deployment/k8-manifests'
               targetFiles: '**/*.yml'
               encoding: 'auto'
               tokenPattern: 'default'
@@ -315,31 +346,70 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                # use of configcontext
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-storageclass.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pv.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/namespace.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pvc.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/configmap.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/secret.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/service.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/deployment.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/ingress.yml
-          
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download file'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'phoenix'
-              downloadPath: '$(System.ArtifactsDirectory)'
+                MANIFEST_DIR="$(Build.SourcesDirectory)/deployment/k8-manifests/"
+                
+                echo "=== Verifying manifest files exist ==="
+                if [ ! -d "$MANIFEST_DIR" ]; then
+                    echo "ERROR: Manifest directory not found at $MANIFEST_DIR"
+                    exit 1
+                fi
+                
+                echo "Files in manifest directory:"
+                ls -la "$MANIFEST_DIR"
+                
+                echo "=== Applying Kubernetes manifests ==="
+                
+                # Apply manifests one by one with error checking
+                apply_manifest() {
+                    local file="$1"
+                    if [ -f "$file" ]; then
+                        echo "Applying $file..."
+                        kubectl apply -f "$file"
+                        if [ $? -eq 0 ]; then
+                            echo "✓ Successfully applied $file"
+                        else
+                            echo "✗ Failed to apply $file"
+                            return 1
+                        fi
+                    else
+                        echo "⚠ File $file not found, skipping..."
+                    fi
+                }
+                
+                # Apply in correct order
+                apply_manifest "$MANIFEST_DIR/local-storageclass.yml"
+                apply_manifest "$MANIFEST_DIR/local-pv.yml"
+                apply_manifest "$MANIFEST_DIR/namespace.yml"
+                apply_manifest "$MANIFEST_DIR/local-pvc.yml"
+                apply_manifest "$MANIFEST_DIR/configmap.yml"
+                apply_manifest "$MANIFEST_DIR/secret.yml"
+                apply_manifest "$MANIFEST_DIR/service.yml"
+                apply_manifest "$MANIFEST_DIR/deployment.yml"
+                # apply_manifest "$MANIFEST_DIR/ingress.yml"  # Commented out as in original
+                
+                echo "=== Cleaning up Docker resources ==="
+                echo "Removing unused Docker images..."
+                docker rmi -f $(docker images -q) 2>/dev/null || echo "No images to remove or command failed"
+                
+                echo "Pruning Docker system..."
+                docker system prune -a --volumes --force || echo "Docker system prune failed"
+                
+                echo "=== Deployment completed ==="
 
           - task: Bash@3
-            displayName: Phoenix done!
+            displayName: 'Phoenix done!'
             inputs:
               targetType: 'inline'
               script: |
-                cat $(System.ArtifactsDirectory)/phoenix/readme-pprd
+                PHOENIX_FILE="$(Build.SourcesDirectory)/deployment/phoenix/readme-pprd"
+                echo "=== Phoenix Phase ==="
+                if [ -f "$PHOENIX_FILE" ]; then
+                    echo "Phoenix readme-dev contents:"
+                    cat "$PHOENIX_FILE"
+                else
+                    echo "Phoenix readme-dev file not found at $PHOENIX_FILE"
+                    echo "Available files in phoenix directory:"
+                    ls -la "$(Build.SourcesDirectory)/deployment/phoenix/" 2>/dev/null || echo "Phoenix directory not found"
 
 - stage: DeployProd
   displayName: Deploy to Production
@@ -393,18 +463,21 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download Kubernetes manifests'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'k8s-manifests'
-              downloadPath: '$(System.ArtifactsDirectory)'
+          # Work directly with source files - no artifacts needed
+          - checkout: self
+            clean: true
+            displayName: 'Checkout source code'
+
+          - script: |
+              echo "=== Checking deployment files ==="
+              ls -la $(Build.SourcesDirectory)/deployment/k8-manifests/ || echo "k8-manifests not found"
+              ls -la $(Build.SourcesDirectory)/deployment/phoenix/ || echo "phoenix not found"
+            displayName: 'Verify deployment files exist'
 
           - task: qetza.replacetokens.replacetokens-task.replacetokens@6
             displayName: 'Replace tokens in manifests'
             inputs:
-              rootDirectory: '$(System.ArtifactsDirectory)/k8s-manifests'
+              rootDirectory: '$(Build.SourcesDirectory)/deployment/k8-manifests'
               targetFiles: '**/*.yml'
               encoding: 'auto'
               tokenPattern: 'default'
@@ -422,30 +495,70 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-storageclass.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pv.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/namespace.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/local-pvc.yml                
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/configmap.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/secret.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/service.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/deployment.yml
-                #kubectl apply -f $(System.ArtifactsDirectory)/k8s-manifests/ingress.yml
-          
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download file'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'phoenix'
-              downloadPath: '$(System.ArtifactsDirectory)'
+                MANIFEST_DIR="$(Build.SourcesDirectory)/deployment/k8-manifests/"
+                
+                echo "=== Verifying manifest files exist ==="
+                if [ ! -d "$MANIFEST_DIR" ]; then
+                    echo "ERROR: Manifest directory not found at $MANIFEST_DIR"
+                    exit 1
+                fi
+                
+                echo "Files in manifest directory:"
+                ls -la "$MANIFEST_DIR"
+                
+                echo "=== Applying Kubernetes manifests ==="
+                
+                # Apply manifests one by one with error checking
+                apply_manifest() {
+                    local file="$1"
+                    if [ -f "$file" ]; then
+                        echo "Applying $file..."
+                        kubectl apply -f "$file"
+                        if [ $? -eq 0 ]; then
+                            echo "✓ Successfully applied $file"
+                        else
+                            echo "✗ Failed to apply $file"
+                            return 1
+                        fi
+                    else
+                        echo "⚠ File $file not found, skipping..."
+                    fi
+                }
+                
+                # Apply in correct order
+                apply_manifest "$MANIFEST_DIR/local-storageclass.yml"
+                apply_manifest "$MANIFEST_DIR/local-pv.yml"
+                apply_manifest "$MANIFEST_DIR/namespace.yml"
+                apply_manifest "$MANIFEST_DIR/local-pvc.yml"
+                apply_manifest "$MANIFEST_DIR/configmap.yml"
+                apply_manifest "$MANIFEST_DIR/secret.yml"
+                apply_manifest "$MANIFEST_DIR/service.yml"
+                apply_manifest "$MANIFEST_DIR/deployment.yml"
+                # apply_manifest "$MANIFEST_DIR/ingress.yml"  # Commented out as in original
+                
+                echo "=== Cleaning up Docker resources ==="
+                echo "Removing unused Docker images..."
+                docker rmi -f $(docker images -q) 2>/dev/null || echo "No images to remove or command failed"
+                
+                echo "Pruning Docker system..."
+                docker system prune -a --volumes --force || echo "Docker system prune failed"
+                
+                echo "=== Deployment completed ==="
 
           - task: Bash@3
-            displayName: Phoenix done!
+            displayName: 'Phoenix done!'
             inputs:
               targetType: 'inline'
               script: |
-                cat $(System.ArtifactsDirectory)/phoenix/readme
+                PHOENIX_FILE="$(Build.SourcesDirectory)/deployment/phoenix/readme"
+                echo "=== Phoenix Phase ==="
+                if [ -f "$PHOENIX_FILE" ]; then
+                    echo "Phoenix readme-dev contents:"
+                    cat "$PHOENIX_FILE"
+                else
+                    echo "Phoenix readme-dev file not found at $PHOENIX_FILE"
+                    echo "Available files in phoenix directory:"
+                    ls -la "$(Build.SourcesDirectory)/deployment/phoenix/" 2>/dev/null || echo "Phoenix directory not found"
 
 # =====================================
 # NOTIFICATION STAGE
@@ -530,7 +643,7 @@ stages:
                       <a href="$buildUrl" class="button">View Pipeline Results</a>
                   </div>
                   <div class="footer">
-                      <p>Azure DevOps - Automated Pipeline Notification</p>
+                      <p>Azure f - Automated Pipeline Notification</p>
                   </div>
               </div>
           </body>
