@@ -12,6 +12,7 @@ public record GetFiltredServicesQuery : IQuery<PagedResult<GetServicesResponse>>
     public int PageSize { get; set; }
     public string? Code { get; init; }
     public string? Name { get; init; }
+    public FlowDirection? FlowDirection { get; init; }
     public bool? IsEnabled { get; init; }
 
     public string CacheKey => $"{nameof(Service)}_page{PageNumber}_size{PageSize}_code{Code}_name{Name}_status{IsEnabled}";

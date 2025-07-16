@@ -25,6 +25,7 @@ public class DeleteServiceEndpointTests(TestWebApplicationFactory factory) : Bas
             ServiceId.Of(serviceId),
             "SVC001",
             "ExpressService",
+            FlowDirection.None,
             true,
             ProductId.Of(Guid.NewGuid())
         );
@@ -78,6 +79,7 @@ public class DeleteServiceEndpointTests(TestWebApplicationFactory factory) : Bas
             ServiceId.Of(serviceId),
             "SVC001",
             "ExpressService",
+            FlowDirection.None,
             true,
             ProductId.Of(Guid.NewGuid())
         );

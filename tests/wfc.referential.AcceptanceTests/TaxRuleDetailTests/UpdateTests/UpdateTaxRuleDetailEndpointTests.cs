@@ -59,7 +59,7 @@ public class UpdateTaxRuleDetailEndpointTests(TestWebApplicationFactory factory)
 
         _serviceRepoMock.Setup(r =>
             r.GetByIdAsync(It.IsAny<ServiceId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name", true, ProductId.Of(Guid.NewGuid())));
+            .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name", FlowDirection.Debit, true, ProductId.Of(Guid.NewGuid())));
 
 
         TaxRuleDetail? updated = null;
@@ -168,7 +168,7 @@ public class UpdateTaxRuleDetailEndpointTests(TestWebApplicationFactory factory)
 
         _serviceRepoMock.Setup(r =>
             r.GetByIdAsync(It.IsAny<ServiceId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name", true, ProductId.Of(Guid.NewGuid())));
+            .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name", FlowDirection.Debit, true, ProductId.Of(Guid.NewGuid())));
 
 
         var payload = new UpdateTaxRuleDetailRequest

@@ -170,6 +170,7 @@ public abstract class BaseAcceptanceTests : IDisposable
              ServiceId.Of(_fixture.Create<Guid>()),
              _fixture.Create<string>().Substring(0, 6), // Code de 6 caractères
              _fixture.Create<string>(),
+             _fixture.Create<FlowDirection>(),
              _fixture.Create<bool>(),
              ProductId.Of(_fixture.Create<Guid>())
          )));

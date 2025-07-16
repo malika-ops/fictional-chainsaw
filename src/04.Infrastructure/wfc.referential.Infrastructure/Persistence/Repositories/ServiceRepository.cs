@@ -1,9 +1,5 @@
-﻿using System.Linq.Expressions;
-using BuildingBlocks.Core.Abstraction.Repositories;
-using BuildingBlocks.Core.Pagination;
-using Microsoft.EntityFrameworkCore;
+﻿using BuildingBlocks.Core.Abstraction.Repositories;
 using wfc.referential.Application.Interfaces;
-using wfc.referential.Application.Services.Queries.GetFiltredServices;
 using wfc.referential.Domain.ServiceAggregate;
 
 namespace wfc.referential.Infrastructure.Data.Repositories;

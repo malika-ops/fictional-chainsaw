@@ -27,6 +27,7 @@ public class PatchServiceEndpointTests(TestWebApplicationFactory factory) : Base
             ServiceId.Of(serviceId),
             "SVC-OLD",
             "Old Name",
+            FlowDirection.None,
             true,
             ProductId.Of(Guid.NewGuid())
         );
@@ -74,7 +75,7 @@ public class PatchServiceEndpointTests(TestWebApplicationFactory factory) : Base
         };
 
         _serviceRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Service.Create(ServiceId.Of(serviceId), "code", "name", true,ProductId.Of(Guid.NewGuid())));
+            .ReturnsAsync(Service.Create(ServiceId.Of(serviceId), "code", "name", FlowDirection.Debit, true,ProductId.Of(Guid.NewGuid())));
 
         var response = await _client.PatchAsync($"/api/services/{serviceId}", JsonContent.Create(patchRequest));
 

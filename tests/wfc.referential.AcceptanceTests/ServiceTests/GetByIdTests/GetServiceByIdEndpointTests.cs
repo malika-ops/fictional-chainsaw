@@ -12,12 +12,13 @@ namespace wfc.referential.AcceptanceTests.ServiceTests.GetByIdTests;
 
 public class GetServiceByIdEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private static Service Make(Guid id, string code = "SERVICE-001", string? name = null, bool enabled = true)
+    private static Service Make(Guid id, string code = "SERVICE-001", string? name = null,FlowDirection? flowDirection = FlowDirection.None, bool enabled = true)
     {
         var service = Service.Create(
             id: ServiceId.Of(id),
             code: code,
             name: name ?? $"Service-{code}",
+            flowDirection: flowDirection ?? FlowDirection.None,
             isEnabled: enabled,
             productId: ProductId.Of(Guid.NewGuid())
         );

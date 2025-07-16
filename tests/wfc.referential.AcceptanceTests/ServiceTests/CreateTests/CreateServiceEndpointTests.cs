@@ -106,6 +106,7 @@ public class CreateServiceEndpointTests(TestWebApplicationFactory factory) : Bas
             ServiceId.Of(Guid.NewGuid()),
             duplicateCode,
             "Express",
+            FlowDirection.None,
             true,
             ProductId.Of(Guid.NewGuid())
         );

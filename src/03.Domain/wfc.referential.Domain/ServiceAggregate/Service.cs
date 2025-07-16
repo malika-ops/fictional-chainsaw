@@ -9,6 +9,7 @@ public class Service : Aggregate<ServiceId>
 {
     public string Code { get; private set; }
     public string Name { get; private set; }
+    public FlowDirection FlowDirection { get; private set; } = FlowDirection.None;
     public bool IsEnabled { get; private set; } = true;
 
     public ProductId ProductId { get; private set; }
@@ -16,18 +17,19 @@ public class Service : Aggregate<ServiceId>
     public ICollection<TaxRuleDetail> TaxRuleDetails { get; private set; }
     private Service() { }
 
-    public static Service Create(ServiceId id, string code, string name, bool isEnabled, ProductId productId)
+    public static Service Create(ServiceId id, string code, string name, FlowDirection flowDirection, bool isEnabled, ProductId productId)
     {
         var service = new Service
         {
             Id = id,
             Code = code,
             Name = name,
+            FlowDirection = flowDirection,
             IsEnabled = isEnabled,
             ProductId = productId
         };
 
-        service.AddDomainEvent(new ServiceCreatedEvent(id.Value, code, name, isEnabled, productId.Value));
+        service.AddDomainEvent(new ServiceCreatedEvent(id.Value, code, name,flowDirection, isEnabled, productId.Value));
         return service;
     }
 
@@ -37,24 +39,26 @@ public class Service : Aggregate<ServiceId>
         AddDomainEvent(new ServiceStatusChangedEvent(Id.Value, IsEnabled, DateTime.UtcNow));
     }
 
-    public void Update(string code, string name, bool isEnabled, ProductId productId)
+    public void Update(string code, string name, FlowDirection flowDirection, bool isEnabled, ProductId productId)
     {
         Code = code;
         Name = name;
+        FlowDirection = flowDirection;
         IsEnabled = isEnabled;
         ProductId = productId;
 
-        AddDomainEvent(new ServiceUpdatedEvent(Id.Value, Code, Name, IsEnabled, DateTime.UtcNow, ProductId.Value));
+        AddDomainEvent(new ServiceUpdatedEvent(Id.Value, Code, Name, FlowDirection, IsEnabled, DateTime.UtcNow, ProductId.Value));
     }
 
-    public void Patch(string? code, string? name, bool? isEnabled, ProductId? productId)
+    public void Patch(string? code, string? name, FlowDirection? flowDirection, bool? isEnabled, ProductId? productId)
     {
         Code = code ?? Code;
         Name = name ?? Name;
+        FlowDirection = flowDirection ?? FlowDirection;
         IsEnabled = isEnabled ?? IsEnabled;
         ProductId = productId ?? ProductId;
 
-        AddDomainEvent(new ServicePatchedEvent(Id.Value, Code, Name, IsEnabled, DateTime.UtcNow, ProductId.Value));
+        AddDomainEvent(new ServicePatchedEvent(Id.Value, Code, Name, FlowDirection, IsEnabled, DateTime.UtcNow, ProductId.Value));
     }
 }
 

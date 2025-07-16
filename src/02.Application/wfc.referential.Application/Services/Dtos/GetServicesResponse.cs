@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.Services.Dtos;
+﻿using wfc.referential.Domain.ServiceAggregate;
+
+namespace wfc.referential.Application.Services.Dtos;
 
 public record GetServicesResponse
 {
@@ -19,6 +21,12 @@ public record GetServicesResponse
     /// </summary>
     /// <example>Money Transfer</example>
     public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    /// FlowDirection of the service.
+    /// </summary>
+    /// <example>Debit</example>
+    public FlowDirection FlowDirection { get; init; } = FlowDirection.None;
 
     /// <summary>
     /// Indicates whether the service is enabled ("true" or "false" as string).

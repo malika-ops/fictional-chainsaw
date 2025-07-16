@@ -42,7 +42,7 @@ public class CreateTaxRuleDetailEndpointTests(TestWebApplicationFactory factory)
             .ReturnsAsync(Tax.Create(TaxId.Create(),"code","codeEn","codeAR", "Test Tax", 20, 10));
         _serviceRepoMock.Setup(r =>
             r.GetByIdAsync(It.Is<ServiceId>(id => id.Value == payload.ServiceId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name",true, ProductId.Of(Guid.NewGuid())));
+            .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name", FlowDirection.Debit, true, ProductId.Of(Guid.NewGuid())));
 
         // Act
         var response = await _client.PostAsJsonAsync(BaseUrl, payload);

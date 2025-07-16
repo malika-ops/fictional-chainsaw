@@ -53,7 +53,7 @@ public class PatchTaxRuleDetailEndpointTests(TestWebApplicationFactory factory) 
 
         _serviceRepoMock.Setup(r =>
             r.GetByIdAsync(It.IsAny<ServiceId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name", true, ProductId.Of(Guid.NewGuid())));
+            .ReturnsAsync(Service.Create(ServiceId.Of(Guid.NewGuid()), "Test Service", "name", FlowDirection.Debit, true, ProductId.Of(Guid.NewGuid())));
 
         _taxRuleDetailsRepoMock.Setup(r => r.Update(It.IsAny<TaxRuleDetail>()));
 

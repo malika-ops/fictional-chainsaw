@@ -27,6 +27,7 @@ public class CreateServiceCommandHandler(IServiceRepository serviceRepository,IP
             ServiceId.Of(Guid.NewGuid()),
             request.Code,
             request.Name,
+            request.FlowDirection,
             request.IsEnabled,
             ProductId.Of(request.ProductId));
 

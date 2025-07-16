@@ -13,7 +13,7 @@ namespace wfc.referential.AcceptanceTests.ServiceTests.UpdateTests;
 public class UpdateServiceEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
     private static Service DummyService(Guid id, string code, string name) =>
-        Service.Create(ServiceId.Of(id), code, name, true, ProductId.Of(Guid.NewGuid()));
+        Service.Create(ServiceId.Of(id), code, name, FlowDirection.Debit, true, ProductId.Of(Guid.NewGuid()));
 
     [Fact(DisplayName = "PUT /api/services/{id} returns 200 when update succeeds")]
     public async Task Put_ShouldReturn200_WhenUpdateIsSuccessful()

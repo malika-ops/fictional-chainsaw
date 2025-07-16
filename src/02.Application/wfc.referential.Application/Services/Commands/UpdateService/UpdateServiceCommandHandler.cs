@@ -21,7 +21,7 @@ public class UpdateServiceCommandHandler(IServiceRepository serviceRepository, I
         var hasDuplicatedCode = await serviceRepository.GetOneByConditionAsync( c => c.Code == request.Code, cancellationToken);
         if (hasDuplicatedCode is not null) throw new CodeAlreadyExistException(request.Code);
 
-        entity.Update(request.Code, request.Name, request.IsEnabled, request.ProductId);
+        entity.Update(request.Code, request.Name,request.FlowDirection, request.IsEnabled, request.ProductId);
 
         serviceRepository.Update(entity);
 

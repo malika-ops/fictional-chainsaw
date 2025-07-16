@@ -13,8 +13,8 @@ namespace wfc.referential.AcceptanceTests.ServiceTests.GetFiltredTests;
 
 public class GetFiltredServiceEndpointTests(TestWebApplicationFactory factory) : BaseAcceptanceTests(factory)
 {
-    private static Service DummyService(string code, string name) =>
-        Service.Create(ServiceId.Of(Guid.NewGuid()), code, name, true, ProductId.Of(Guid.NewGuid()));
+    private static Service DummyService(string code, string name , FlowDirection flowDirection) =>
+        Service.Create(ServiceId.Of(Guid.NewGuid()), code, name, flowDirection, true, ProductId.Of(Guid.NewGuid()));
 
     private record PagedResultDto<T>(T[] Items, int PageNumber, int PageSize, int TotalCount, int TotalPages);
 
@@ -22,9 +22,9 @@ public class GetFiltredServiceEndpointTests(TestWebApplicationFactory factory) :
     public async Task Get_ShouldReturnPagedList_WhenParamsAreValid()
     {
         var allServices = new[] {
-            DummyService("SVC001", "ExpressService"),
-            DummyService("SVC002", "Floussy"),
-            DummyService("SVC003", "Jibi")
+            DummyService("SVC001", "ExpressService",FlowDirection.Debit),
+            DummyService("SVC002", "Floussy",FlowDirection.Debit),
+            DummyService("SVC003", "Jibi", FlowDirection.Debit)
         };
 
         _serviceRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
@@ -47,7 +47,7 @@ public class GetFiltredServiceEndpointTests(TestWebApplicationFactory factory) :
     [Fact(DisplayName = "GET /api/services?code=SVC001 returns only ExpressService")]
     public async Task Get_ShouldFilterByCode()
     {
-        var svc = DummyService("SVC001", "ExpressService");
+        var svc = DummyService("SVC001", "ExpressService", FlowDirection.Debit);
 
         _serviceRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
                             It.Is<GetFiltredServicesQuery>(q => q.Code == "SVC001"),
@@ -67,9 +67,9 @@ public class GetFiltredServiceEndpointTests(TestWebApplicationFactory factory) :
     public async Task Get_ShouldUseDefaultPaging_WhenNoParamsProvided()
     {
         var services = new[] {
-            DummyService("SVC001", "Express"),
-            DummyService("SVC002", "Floussy"),
-            DummyService("SVC003", "Jibi")
+            DummyService("SVC001", "Express",FlowDirection.Debit),
+            DummyService("SVC002", "Floussy",FlowDirection.Debit),
+            DummyService("SVC003", "Jibi",FlowDirection.Debit)
         };
 
         _serviceRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
