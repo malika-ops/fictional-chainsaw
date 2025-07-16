@@ -296,15 +296,55 @@ stages:
                     exit 0
                 fi
                 
-                echo "📦 Installing PostgreSQL Client Tools..."
+                echo "📦 Installing PostgreSQL Client Tools via snap..."
                 
-                # Installation optimisée
-                sudo apt-get update -qq
-                sudo apt-get install -y postgresql-client
+                # Essayer d'installer via snap (ne nécessite pas sudo sur certains systèmes)
+                if command -v snap &> /dev/null; then
+                    echo "Trying snap installation..."
+                    snap install postgresql-client-12 --classic 2>/dev/null || echo "Snap installation failed"
+                    
+                    # Vérifier si l'installation snap a fonctionné
+                    if command -v psql &> /dev/null; then
+                        echo "✅ PostgreSQL Client installed via snap"
+                        psql --version
+                        exit 0
+                    fi
+                fi
+                
+                # Si snap n'est pas disponible ou a échoué, essayer une installation locale
+                echo "Attempting local installation..."
+                
+                # Créer un répertoire temporaire pour l'installation
+                TEMP_DIR="/tmp/postgresql-client-install"
+                mkdir -p "$TEMP_DIR"
+                cd "$TEMP_DIR"
+                
+                # Télécharger les packages .deb directement
+                echo "Downloading PostgreSQL client packages..."
+                wget -q http://archive.ubuntu.com/ubuntu/pool/main/p/postgresql-14/postgresql-client-14_14.13-0ubuntu0.22.04.1_amd64.deb 2>/dev/null || echo "Download failed"
+                
+                # Si le téléchargement a échoué, utiliser une approche différente
+                if [ ! -f "postgresql-client-14_14.13-0ubuntu0.22.04.1_amd64.deb" ]; then
+                    echo "❌ Cannot install PostgreSQL client tools without sudo privileges"
+                    echo "Please install postgresql-client on your build agents manually or configure sudo"
+                    exit 1
+                fi
+                
+                # Installer le package .deb
+                dpkg -i postgresql-client-14_14.13-0ubuntu0.22.04.1_amd64.deb 2>/dev/null || echo "dpkg install failed"
                 
                 # Vérifier l'installation
-                psql --version
-                echo "✅ PostgreSQL Client Tools installed successfully"
+                if command -v psql &> /dev/null; then
+                    echo "✅ PostgreSQL Client installed successfully"
+                    psql --version
+                else
+                    echo "❌ PostgreSQL Client installation failed"
+                    exit 1
+                fi
+                
+                # Nettoyer
+                cd /
+                rm -rf "$TEMP_DIR"
             condition: succeeded()
 
           - task: Bash@3
