@@ -283,76 +283,11 @@ stages:
               downloadPath: '$(System.ArtifactsDirectory)'
 
           - task: Bash@3
-            displayName: 'Install PostgreSQL Client Tools (if needed)'
+            displayName: 'Execute EF Core Migrations via Docker'
             inputs:
               targetType: 'inline'
               script: |
-                echo "=== Checking PostgreSQL Client Tools ==="
-                
-                # Vérifier si psql est déjà installé
-                if command -v psql &> /dev/null; then
-                    echo "✅ psql is already installed"
-                    psql --version
-                    exit 0
-                fi
-                
-                echo "📦 Installing PostgreSQL Client Tools via snap..."
-                
-                # Essayer d'installer via snap (ne nécessite pas sudo sur certains systèmes)
-                if command -v snap &> /dev/null; then
-                    echo "Trying snap installation..."
-                    snap install postgresql-client-12 --classic 2>/dev/null || echo "Snap installation failed"
-                    
-                    # Vérifier si l'installation snap a fonctionné
-                    if command -v psql &> /dev/null; then
-                        echo "✅ PostgreSQL Client installed via snap"
-                        psql --version
-                        exit 0
-                    fi
-                fi
-                
-                # Si snap n'est pas disponible ou a échoué, essayer une installation locale
-                echo "Attempting local installation..."
-                
-                # Créer un répertoire temporaire pour l'installation
-                TEMP_DIR="/tmp/postgresql-client-install"
-                mkdir -p "$TEMP_DIR"
-                cd "$TEMP_DIR"
-                
-                # Télécharger les packages .deb directement
-                echo "Downloading PostgreSQL client packages..."
-                wget -q http://archive.ubuntu.com/ubuntu/pool/main/p/postgresql-14/postgresql-client-14_14.13-0ubuntu0.22.04.1_amd64.deb 2>/dev/null || echo "Download failed"
-                
-                # Si le téléchargement a échoué, utiliser une approche différente
-                if [ ! -f "postgresql-client-14_14.13-0ubuntu0.22.04.1_amd64.deb" ]; then
-                    echo "❌ Cannot install PostgreSQL client tools without sudo privileges"
-                    echo "Please install postgresql-client on your build agents manually or configure sudo"
-                    exit 1
-                fi
-                
-                # Installer le package .deb
-                dpkg -i postgresql-client-14_14.13-0ubuntu0.22.04.1_amd64.deb 2>/dev/null || echo "dpkg install failed"
-                
-                # Vérifier l'installation
-                if command -v psql &> /dev/null; then
-                    echo "✅ PostgreSQL Client installed successfully"
-                    psql --version
-                else
-                    echo "❌ PostgreSQL Client installation failed"
-                    exit 1
-                fi
-                
-                # Nettoyer
-                cd /
-                rm -rf "$TEMP_DIR"
-            condition: succeeded()
-
-          - task: Bash@3
-            displayName: 'Execute EF Core Migrations'
-            inputs:
-              targetType: 'inline'
-              script: |
-                echo "=== Executing EF Core Migrations ==="
+                echo "=== Executing EF Core Migrations via Docker ==="
                 
                 # Variables
                 MIGRATION_SCRIPT="$(System.ArtifactsDirectory)/migration-scripts/migration-script.sql"
@@ -360,19 +295,10 @@ stages:
                 # Vérifier que le script existe
                 if [ ! -f "$MIGRATION_SCRIPT" ]; then
                     echo "❌ Migration script not found at: $MIGRATION_SCRIPT"
-                    echo "Available files:"
-                    ls -la "$(System.ArtifactsDirectory)/migration-scripts/" || echo "Directory not found"
-                    exit 1
-                fi
-                
-                # Vérifier que psql existe
-                if ! command -v psql &> /dev/null; then
-                    echo "❌ psql not found in PATH"
                     exit 1
                 fi
                 
                 echo "✅ Migration script found: $MIGRATION_SCRIPT"
-                echo "✅ psql found: $(which psql)"
                 echo "Script size: $(stat -c%s "$MIGRATION_SCRIPT") bytes"
                 
                 # Vérifier que le script n'est pas vide
@@ -383,48 +309,35 @@ stages:
                 
                 # Paramètres de connexion
                 echo "=== Connection Parameters ==="
-                echo "Host: $(DB_HOST)"
-                echo "Port: $(DB_PORT)"
-                echo "Database: $(DB_NAME)"
-                echo "User: $(DB_USER)"
-                echo "Password: [MASKED]"
+                echo "Host: $(Wfc.referential.DB_HOST)"
+                echo "Port: $(Wfc.referential.DB_PORT)"
+                echo "Database: $(Wfc.referential.DB_NAME)"
+                echo "User: $(Wfc.referential.DB_USER)"
                 
-                # Construire la chaîne de connexion PostgreSQL
-                export PGPASSWORD="$(DB_PASSWORD)"
+                # Exécuter les migrations via Docker
+                echo "=== Executing migrations via Docker ==="
+                docker run --rm \
+                  -v "$MIGRATION_SCRIPT:/migration-script.sql" \
+                  postgres:14 \
+                  psql -h "$(Wfc.referential.DB_HOST)" \
+                      -p "$(Wfc.referential.DB_PORT)" \
+                      -U "$(Wfc.referential.DB_USER)" \
+                      -d "$(Wfc.referential.DB_NAME)" \
+                      -f "/migration-script.sql" \
+                      -v ON_ERROR_STOP=1 \
+                      --echo-errors
                 
-                # Test de connexion
-                echo "=== Testing database connection ==="
-                psql -h "$(DB_HOST)" -p "$(DB_PORT)" -U "$(DB_USER)" -d "$(DB_NAME)" -c "SELECT version();" -t
+                DOCKER_EXIT_CODE=$?
                 
-                if [ $? -ne 0 ]; then
-                    echo "❌ Database connection test failed"
-                    exit 1
-                fi
-                
-                echo "✅ Database connection successful"
-                
-                # Exécuter les migrations avec gestion d'erreur
-                echo "=== Executing migrations ==="
-                psql -h "$(DB_HOST)" \
-                    -p "$(DB_PORT)" \
-                    -U "$(DB_USER)" \
-                    -d "$(DB_NAME)" \
-                    -f "$MIGRATION_SCRIPT" \
-                    -v ON_ERROR_STOP=1 \
-                    --echo-errors
-                
-                PSQL_EXIT_CODE=$?
-                
-                # Nettoyer la variable de mot de passe
-                unset PGPASSWORD
-                
-                if [ $PSQL_EXIT_CODE -eq 0 ]; then
+                if [ $DOCKER_EXIT_CODE -eq 0 ]; then
                     echo "✅ Migrations executed successfully"
                 else
-                    echo "❌ Migration execution failed with exit code: $PSQL_EXIT_CODE"
+                    echo "❌ Migration execution failed with exit code: $DOCKER_EXIT_CODE"
                     exit 1
                 fi
-            condition: succeeded()
+            env:
+              PGPASSWORD: $(Wfc.referential.DB_PASSWORD)
+            condition: succeeded()        
 
           - task: Bash@3
             displayName: 'Deploy to Kubernetes cluster'
