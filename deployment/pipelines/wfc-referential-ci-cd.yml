@@ -212,10 +212,10 @@ stages:
           - task: DownloadBuildArtifacts@1
             displayName: 'Download Migration Scripts'
             inputs:
-            buildType: 'current'
-            downloadType: 'single'
-            artifactName: 'migration-scripts'
-            downloadPath: '$(System.ArtifactsDirectory)'
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'migration-scripts'
+              downloadPath: '$(System.ArtifactsDirectory)'
 
           - task: SqlAzureDacpacDeployment@1
             displayName: 'Run EF Core Migrations'
