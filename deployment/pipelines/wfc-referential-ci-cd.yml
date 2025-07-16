@@ -68,6 +68,12 @@ stages:
         nugetConfigPath: 'nuget.config'
         workingDirectory: '$(Build.SourcesDirectory)'
 
+    - task: DotNetCoreCLI@2
+      displayName: 'Build solution'
+      inputs:
+        command: 'build'
+        projects: 'src/**/**/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
     - task: Bash@3
       displayName: 'Install EF Core CLI Tools if needed'
       inputs:
@@ -86,19 +92,13 @@ stages:
           echo "Current EF Core CLI version:"
           dotnet ef --version
       condition: succeeded()
-    - task: DotNetCoreCLI@2
-      displayName: 'Build solution'
-      inputs:
-        command: 'build'
-        projects: 'src/**/**/*.csproj'
-        arguments: '--configuration $(buildConfiguration) --no-restore'
 
     - task: DotNetCoreCLI@2
       displayName: 'Generate EF Migration Scripts'
       inputs:
         command: 'custom'
         custom: 'ef'
-        arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --idempotent --no-build --startup-project src/01.InterfaceAdapter/wfc.referential.API/wfc.referential.API.csproj --project src/04.Infrastructure/wfc.referential.Infrastructure/wfc.referential.Infrastructure.csproj'
+        arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --idempotent --configuration $(buildConfiguration) --verbose --startup-project src/01.InterfaceAdapter/wfc.referential.API/wfc.referential.API.csproj --project src/04.Infrastructure/wfc.referential.Infrastructure/wfc.referential.Infrastructure.csproj'
         projects: 'src/**/**/*.csproj'
         workingDirectory: '$(Build.SourcesDirectory)'
       condition: succeeded()
