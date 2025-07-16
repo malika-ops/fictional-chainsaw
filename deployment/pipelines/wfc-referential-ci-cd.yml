@@ -78,12 +78,12 @@ stages:
     - task: DotNetCoreCLI@2
       displayName: 'Generate EF Migration Scripts'
       inputs:
-          command: 'custom'
-          custom: 'ef'
-          arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --idempotent --no-build'
-          projects: 'src/**/**/*.csproj'
-          workingDirectory: '$(Build.SourcesDirectory)'
-        condition: succeeded()
+        command: 'custom'
+        custom: 'ef'
+        arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --idempotent --no-build'
+        projects: 'src/**/**/*.csproj'
+        workingDirectory: '$(Build.SourcesDirectory)'
+      condition: succeeded()
 
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Migration Scripts'
