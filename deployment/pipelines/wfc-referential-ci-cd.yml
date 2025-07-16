@@ -74,6 +74,24 @@ stages:
         command: 'build'
         projects: 'src/**/**/*.csproj'
         arguments: '--configuration $(buildConfiguration) --no-restore'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Generate EF Migration Scripts'
+      inputs:
+          command: 'custom'
+          custom: 'ef'
+          arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --idempotent --no-build'
+          projects: 'src/**/**/*.csproj'
+          workingDirectory: '$(Build.SourcesDirectory)'
+        condition: succeeded()
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Migration Scripts'
+      inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)/migration-script.sql'
+        artifactName: 'migration-scripts'
+        publishLocation: 'Container'
+      condition: succeeded()
         
     - task: DotNetCoreCLI@2
       displayName: 'Add coverlet.collector package'
@@ -190,6 +208,25 @@ stages:
               enableRecursion: false
               useLegacyPattern: false
               enableTelemetry: true
+
+          - task: DownloadBuildArtifacts@1
+            displayName: 'Download Migration Scripts'
+            inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'migration-scripts'
+            downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: SqlAzureDacpacDeployment@1
+            displayName: 'Run EF Core Migrations'
+            inputs:
+              azureSubscription: 'azureSubscription'
+              authenticationType: 'connectionString'
+              connectionString: '$(ConnectionStrings__wfc.referential.dbc)'
+              deployType: 'SqlTask'
+              sqlFile: '$(System.ArtifactsDirectory)/migration-scripts/migration-script.sql'
+              additionalArguments: '-v'
+            condition: succeeded()
 
           - task: Bash@3
             displayName: 'Deploy to Kubernetes cluster'
