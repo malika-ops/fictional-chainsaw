@@ -1,7 +1,4 @@
 ﻿using BuildingBlocks.Application.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using wfc.referential.Domain.AgencyAggregate;
-using wfc.referential.Domain.AgencyTierAggregate;
 using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.CityAggregate;
 using wfc.referential.Domain.Countries;
@@ -10,7 +7,6 @@ using wfc.referential.Domain.MonetaryZoneAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using wfc.referential.Domain.RegionAggregate;
-using wfc.referential.Domain.TierAggregate;
 using wfc.referential.Domain.TypeDefinitionAggregate;
 
 namespace wfc.referential.Infrastructure.Data;
@@ -18,8 +14,6 @@ public static class DbInitializer
 {
     public static async Task SeedWithCache(ApplicationDbContext context, ICacheService cacheService)
     {
-        // Appliquer les migrations
-        context.Database.Migrate();
 
         if (!context.Countries.Any())
         {

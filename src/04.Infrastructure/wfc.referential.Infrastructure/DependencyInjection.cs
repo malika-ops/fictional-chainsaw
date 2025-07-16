@@ -58,22 +58,24 @@ public static class DependencyInjection
         });
 
         // 🔹 Initialiser la base de données ici
-        if (!builder.Environment.IsEnvironment("Testing"))
+        using (var scope = builder.Services.BuildServiceProvider().CreateScope())
         {
-            using (var scope = builder.Services.BuildServiceProvider().CreateScope())
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var cacheservice = scope.ServiceProvider.GetRequiredService<CacheService>();
+            try
             {
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var cacheservice = scope.ServiceProvider.GetRequiredService<CacheService>();
-                try
+                context.Database.Migrate();
+                if (builder.Environment.IsEnvironment("Testing"))
                 {
                     DbInitializer.SeedWithCache(context, cacheservice);
                     Console.WriteLine("Base de données initialisée avec succès !");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Erreur lors de l'initialisation de la base : {ex.Message}");
-                }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erreur lors de l'initialisation de la base : {ex.Message}");
+            }
+
         }
         builder.Services.AddScoped(typeof(IRepositoryBase<,>), typeof(BaseRepository<,>));
 
