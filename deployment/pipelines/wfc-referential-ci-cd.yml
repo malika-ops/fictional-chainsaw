@@ -220,7 +220,6 @@ stages:
           - task: SqlAzureDacpacDeployment@1
             displayName: 'Run EF Core Migrations'
             inputs:
-              azureSubscription: 'azureSubscription'
               authenticationType: 'connectionString'
               connectionString: '$(ConnectionStrings__wfc.referential.dbc)'
               deployType: 'SqlTask'
