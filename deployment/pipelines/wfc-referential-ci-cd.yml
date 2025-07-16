@@ -74,6 +74,7 @@ stages:
         command: 'build'
         projects: 'src/**/**/*.csproj'
         arguments: '--configuration $(buildConfiguration) --no-restore'
+
     - task: Bash@3
       displayName: 'Install EF Core CLI Tools if needed'
       inputs:
@@ -99,7 +100,6 @@ stages:
         command: 'custom'
         custom: 'ef'
         arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --idempotent --configuration $(buildConfiguration) --verbose --startup-project src/01.InterfaceAdapter/wfc.referential.API/wfc.referential.API.csproj --project src/04.Infrastructure/wfc.referential.Infrastructure/wfc.referential.Infrastructure.csproj'
-        projects: 'src/**/**/*.csproj'
         workingDirectory: '$(Build.SourcesDirectory)'
       condition: succeeded()
 
