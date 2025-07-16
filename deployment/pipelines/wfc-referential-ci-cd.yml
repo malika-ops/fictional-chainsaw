@@ -67,7 +67,25 @@ stages:
         feedsToUse: 'config'
         nugetConfigPath: 'nuget.config'
         workingDirectory: '$(Build.SourcesDirectory)'
-
+        
+    - task: Bash@3
+      displayName: 'Install EF Core CLI Tools if needed'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "=== Checking if EF Core CLI is installed ==="
+          
+          if dotnet ef --version; then
+              echo "✅ EF Core CLI is already installed"
+          else
+              echo "❌ EF Core CLI not found, installing..."
+              dotnet tool install --global dotnet-ef
+              echo "✅ EF Core CLI installed successfully"
+          fi
+          
+          echo "Current EF Core CLI version:"
+          dotnet ef --version
+      condition: succeeded()
     - task: DotNetCoreCLI@2
       displayName: 'Build solution'
       inputs:
