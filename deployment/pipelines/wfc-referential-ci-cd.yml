@@ -275,12 +275,12 @@ stages:
               enableTelemetry: true
 
           - task: DownloadBuildArtifacts@1
-              displayName: 'Download Migration Scripts'
-              inputs:
-                buildType: 'current'
-                downloadType: 'single'
-                artifactName: 'migration-scripts'
-                downloadPath: '$(System.ArtifactsDirectory)'
+            displayName: 'Download Migration Scripts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'migration-scripts'
+              downloadPath: '$(System.ArtifactsDirectory)'
 
           - task: Bash@3
             displayName: 'Install PostgreSQL Client Tools (if needed)'
