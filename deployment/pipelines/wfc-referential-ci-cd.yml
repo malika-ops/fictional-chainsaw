@@ -94,12 +94,59 @@ stages:
           dotnet ef --version
       condition: succeeded()
 
-    - task: DotNetCoreCLI@2
+    - task: Bash@3
       displayName: 'Generate EF Migration Scripts'
       inputs:
-        command: 'custom'
-        custom: 'ef'
-        arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --idempotent --configuration $(buildConfiguration) --verbose --startup-project src/01.InterfaceAdapter/wfc.referential.API/wfc.referential.API.csproj --project src/04.Infrastructure/wfc.referential.Infrastructure/wfc.referential.Infrastructure.csproj'
+        targetType: 'inline'
+        script: |
+          echo "=== Generating EF Core Migration Scripts ==="
+          
+          # Variables
+          STARTUP_PROJECT="src/01.InterfaceAdapter/wfc.referential.API/wfc.referential.API.csproj"
+          INFRASTRUCTURE_PROJECT="src/04.Infrastructure/wfc.referential.Infrastructure/wfc.referential.Infrastructure.csproj"
+          OUTPUT_FILE="$(Build.ArtifactStagingDirectory)/migration-script.sql"
+          
+          # Créer le répertoire de sortie
+          mkdir -p "$(Build.ArtifactStagingDirectory)"
+          
+          # Vérifier que les projets existent
+          if [ ! -f "$STARTUP_PROJECT" ]; then
+              echo "❌ Startup project not found: $STARTUP_PROJECT"
+              exit 1
+          fi
+          
+          if [ ! -f "$INFRASTRUCTURE_PROJECT" ]; then
+              echo "❌ Infrastructure project not found: $INFRASTRUCTURE_PROJECT"
+              exit 1
+          fi
+          
+          echo "✅ Projects found - generating migration script..."
+          
+          # Générer les scripts de migration
+          dotnet ef migrations script \
+            --output "$OUTPUT_FILE" \
+            --idempotent \
+            --configuration $(buildConfiguration) \
+            --startup-project "$STARTUP_PROJECT" \
+            --project "$INFRASTRUCTURE_PROJECT" \
+            --verbose
+          
+          if [ $? -eq 0 ] && [ -f "$OUTPUT_FILE" ]; then
+              echo "✅ Migration script generated successfully"
+              echo "File size: $(stat -c%s "$OUTPUT_FILE") bytes"
+              
+              # Validation du contenu
+              if [ -s "$OUTPUT_FILE" ]; then
+                  echo "✅ Migration script contains data"
+                  echo "First few lines:"
+                  head -5 "$OUTPUT_FILE"
+              else
+                  echo "⚠️ Migration script is empty - no pending migrations"
+              fi
+          else
+              echo "❌ Migration script generation failed"
+              exit 1
+          fi
         workingDirectory: '$(Build.SourcesDirectory)'
       condition: succeeded()
 
@@ -228,22 +275,116 @@ stages:
               enableTelemetry: true
 
           - task: DownloadBuildArtifacts@1
-            displayName: 'Download Migration Scripts'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'migration-scripts'
-              downloadPath: '$(System.ArtifactsDirectory)'
+              displayName: 'Download Migration Scripts'
+              inputs:
+                buildType: 'current'
+                downloadType: 'single'
+                artifactName: 'migration-scripts'
+                downloadPath: '$(System.ArtifactsDirectory)'
 
-          - task: SqlAzureDacpacDeployment@1
-            displayName: 'Run EF Core Migrations'
+          - task: Bash@3
+            displayName: 'Install PostgreSQL Client Tools (if needed)'
             inputs:
-              authenticationType: 'connectionString'
-              connectionString: '$(ConnectionStrings__wfc.referential.dbc)'
-              deployType: 'SqlTask'
-              sqlFile: '$(System.ArtifactsDirectory)/migration-scripts/migration-script.sql'
-              additionalArguments: '-v'
+              targetType: 'inline'
+              script: |
+                echo "=== Checking PostgreSQL Client Tools ==="
+                
+                # Vérifier si psql est déjà installé
+                if command -v psql &> /dev/null; then
+                    echo "✅ psql is already installed"
+                    psql --version
+                    exit 0
+                fi
+                
+                echo "📦 Installing PostgreSQL Client Tools..."
+                
+                # Installation optimisée
+                sudo apt-get update -qq
+                sudo apt-get install -y postgresql-client
+                
+                # Vérifier l'installation
+                psql --version
+                echo "✅ PostgreSQL Client Tools installed successfully"
             condition: succeeded()
+
+        - task: Bash@3
+          displayName: 'Execute EF Core Migrations'
+          inputs:
+            targetType: 'inline'
+            script: |
+              echo "=== Executing EF Core Migrations ==="
+              
+              # Variables
+              MIGRATION_SCRIPT="$(System.ArtifactsDirectory)/migration-scripts/migration-script.sql"
+              
+              # Vérifier que le script existe
+              if [ ! -f "$MIGRATION_SCRIPT" ]; then
+                  echo "❌ Migration script not found at: $MIGRATION_SCRIPT"
+                  echo "Available files:"
+                  ls -la "$(System.ArtifactsDirectory)/migration-scripts/" || echo "Directory not found"
+                  exit 1
+              fi
+              
+              # Vérifier que psql existe
+              if ! command -v psql &> /dev/null; then
+                  echo "❌ psql not found in PATH"
+                  exit 1
+              fi
+              
+              echo "✅ Migration script found: $MIGRATION_SCRIPT"
+              echo "✅ psql found: $(which psql)"
+              echo "Script size: $(stat -c%s "$MIGRATION_SCRIPT") bytes"
+              
+              # Vérifier que le script n'est pas vide
+              if [ ! -s "$MIGRATION_SCRIPT" ]; then
+                  echo "⚠️ Migration script is empty - no migrations to execute"
+                  exit 0
+              fi
+              
+              # Paramètres de connexion
+              echo "=== Connection Parameters ==="
+              echo "Host: $(DB_HOST)"
+              echo "Port: $(DB_PORT)"
+              echo "Database: $(DB_NAME)"
+              echo "User: $(DB_USER)"
+              echo "Password: [MASKED]"
+              
+              # Construire la chaîne de connexion PostgreSQL
+              export PGPASSWORD="$(DB_PASSWORD)"
+              
+              # Test de connexion
+              echo "=== Testing database connection ==="
+              psql -h "$(DB_HOST)" -p "$(DB_PORT)" -U "$(DB_USER)" -d "$(DB_NAME)" -c "SELECT version();" -t
+              
+              if [ $? -ne 0 ]; then
+                  echo "❌ Database connection test failed"
+                  exit 1
+              fi
+              
+              echo "✅ Database connection successful"
+              
+              # Exécuter les migrations avec gestion d'erreur
+              echo "=== Executing migrations ==="
+              psql -h "$(DB_HOST)" \
+                  -p "$(DB_PORT)" \
+                  -U "$(DB_USER)" \
+                  -d "$(DB_NAME)" \
+                  -f "$MIGRATION_SCRIPT" \
+                  -v ON_ERROR_STOP=1 \
+                  --echo-errors
+              
+              PSQL_EXIT_CODE=$?
+              
+              # Nettoyer la variable de mot de passe
+              unset PGPASSWORD
+              
+              if [ $PSQL_EXIT_CODE -eq 0 ]; then
+                  echo "✅ Migrations executed successfully"
+              else
+                  echo "❌ Migration execution failed with exit code: $PSQL_EXIT_CODE"
+                  exit 1
+              fi
+          condition: succeeded()
 
           - task: Bash@3
             displayName: 'Deploy to Kubernetes cluster'
