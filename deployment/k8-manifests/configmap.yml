@@ -20,12 +20,34 @@ data:
               }
             }
       },
-      "Logging": {
-        "LogLevel": {
-          "Default": "Information",
-          "Microsoft.AspNetCore": "Warning"
-        }
-      },
+      "Serilog": {
+        "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
+        "MinimumLevel": {
+            "Default": "Information",
+            "Override": {
+                "Microsoft": "Warning",
+                "System": "Warning"
+            }
+        },
+        "WriteTo": [
+            {
+                "Name": "Console",
+                "Args": {
+                    "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"
+                }
+            },
+            {
+                "Name": "File",
+                "Args": {
+                    "path": "logs/app-.log",
+                    "rollingInterval": "Day",
+                    "retainedFileCountLimit": 30,
+                    "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"
+                }
+            }
+        ],
+        "Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ]
+     },
       "AppSettings": {
         "ApiTimeout": 30,
         "MaxRetries": 3,
