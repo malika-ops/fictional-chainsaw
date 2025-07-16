@@ -67,7 +67,7 @@ stages:
         feedsToUse: 'config'
         nugetConfigPath: 'nuget.config'
         workingDirectory: '$(Build.SourcesDirectory)'
-        
+
     - task: Bash@3
       displayName: 'Install EF Core CLI Tools if needed'
       inputs:
@@ -98,7 +98,7 @@ stages:
       inputs:
         command: 'custom'
         custom: 'ef'
-        arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --idempotent --no-build'
+        arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --idempotent --no-build --startup-project src/01.InterfaceAdapter/wfc.referential.API/wfc.referential.API.csproj --project src/04.Infrastructure/wfc.referential.Infrastructure/wfc.referential.Infrastructure.csproj'
         projects: 'src/**/**/*.csproj'
         workingDirectory: '$(Build.SourcesDirectory)'
       condition: succeeded()
