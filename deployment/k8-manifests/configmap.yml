@@ -58,7 +58,7 @@ data:
       },
       "AllowedHosts": "*",
       "ConnectionStrings": {
-          "Database": "Host=#{Wfc.referential.DB_HOST}#;Port=#{Wfc.referential.DB_PORT}#;Database=#{Wfc.referential.DB_NAME}#;Username=#{Wfc.referential.DB_USER}#;Password=#{Wfc.referential.DB_PASSWORD}#"",
+          "Database": "#{ConnectionStrings__wfc.referential.dbc}#",
           "Redis": "#{ConnectionStrings__wfc.referential.redis}#"
       }
     }
