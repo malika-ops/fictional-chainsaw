@@ -16,7 +16,7 @@ public class CreateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
 {
     private void SetupDefaultMocks()
     {
-         //Setup Affiliate Repository - default behavior for successful scenarios
+         //Setup Affiliate Repository - default behaviors for successful scenarios
         _affiliateRepoMock.Setup(r => r.AddAsync(It.IsAny<Affiliate>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Affiliate a, CancellationToken _) => a);
         _affiliateRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
