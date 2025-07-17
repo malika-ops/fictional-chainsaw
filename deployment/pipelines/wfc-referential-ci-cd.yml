@@ -191,16 +191,6 @@ stages:
               useLegacyPattern: false
               enableTelemetry: true
 
-          - task: DotNetCoreCLI@2
-            displayName: 'Apply EF Core migrations'
-            inputs:
-              command: 'run'
-              projects: '**/wfc.referential.Infrastructure.csproj'
-              arguments: '--project wfc.referential.Infrastructure.csproj --no-build'
-              workingDirectory: '$(Build.SourcesDirectory)'
-              environment:
-                ASPNETCORE_ENVIRONMENT: 'DEV'
-
           - task: Bash@3
             displayName: 'Deploy to Kubernetes cluster'
             inputs:
