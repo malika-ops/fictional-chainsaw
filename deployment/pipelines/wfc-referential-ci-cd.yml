@@ -68,82 +68,82 @@ stages:
         nugetConfigPath: 'nuget.config'
         workingDirectory: '$(Build.SourcesDirectory)'
 
-    #- task: DotNetCoreCLI@2
-    #  displayName: 'Build solution'
-    #  inputs:
-    #    command: 'build'
-    #    projects: 'src/**/**/*.csproj'
-    #    arguments: '--configuration $(buildConfiguration) --no-restore'
-    #    
-    #- task: DotNetCoreCLI@2
-    #  displayName: 'Add coverlet.collector package'
-    #  inputs:
-    #    command: 'custom'
-    #    custom: 'add'
-    #    arguments: 'package coverlet.collector'
-    #    projects: '**/*[Tt]ests.csproj'
-#
-    #- task: DotNetCoreCLI@2
-    #  displayName: 'Run Unit Tests'
-    #  timeoutInMinutes: 10
-    #  inputs:
-    #    command: 'test'
-    #    projects: '**/*[Tt]ests.csproj'
-    #    arguments: '--configuration $(buildConfiguration) --logger "trx" --collect:"XPlat Code Coverage" --results-directory $(Agent.TempDirectory)/TestResults'
-    #    publishTestResults: false  # Changed to false - we'll publish manually
-    #    failTaskOnFailedTests: true
-    #    workingDirectory: '$(Build.SourcesDirectory)'
-    #
-    ### Publish test results
-    #- task: PublishTestResults@2
-    #  displayName: 'Publish Test Results'
-    #  inputs:
-    #    testResultsFormat: 'VSTest'
-    #    testResultsFiles: '**/*.trx'  # Changed to search for all .trx files
-    #    searchFolder: '$(Agent.TempDirectory)/TestResults'  # Specific folder
-    #    mergeTestResults: true
-    #    failTaskOnFailedTests: true
-    #    testRunTitle: 'Unit Tests - $(Build.BuildNumber)'
-    #  condition: succeededOrFailed()
-#
-    #- task: DotNetCoreCLI@2
-    #  displayName: "publish solution"
-    #  inputs:
-    #    command: publish
-    #    publishWebProjects: false
-    #    projects: 'src/**/**/*.csproj'
-    #    zipAfterPublish: false
-    #    arguments: "-o $(Build.SourcesDirectory)/src/Output"
-#
-    #- script: |
-    #    echo "Contents of the publish directory:"
-    #    ls -R $(Build.SourcesDirectory)/src/Output
-    #  displayName: 'Display publish directory contents'
-#
-    #- task: Docker@2
-    #  displayName: Docker Build
-    #  inputs:
-    #    command: Build
-    #    dockerfile: $(Build.SourcesDirectory)/deployment/dockerfile/wfc-referential-api.dockerfile
-    #    buildContext: $(Build.SourcesDirectory)
-    #    containerRegistry: $(dockerRegistryServiceConnection)
-    #    repository: $(imageRepository)
-    #    tags: |
-    #      latest
-    #      $(tag)
-    #    arguments: "--build-arg NUGET_PAT=$(System.AccessToken)"
-#
-    #- task: Docker@2
-    #  displayName: Docker Push to Harbor
-    #  inputs:
-    #    command: Push
-    #    dockerfile: $(Build.SourcesDirectory)/deployment/dockerfile/wfc-referential-api.dockerfile
-    #    buildContext: $(Build.SourcesDirectory)
-    #    containerRegistry: $(dockerRegistryServiceConnection)
-    #    repository: $(imageRepository)
-    #    tags: |
-    #      latest
-    #      $(tag)
+    - task: DotNetCoreCLI@2
+      displayName: 'Build solution'
+      inputs:
+        command: 'build'
+        projects: 'src/**/**/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+        
+    - task: DotNetCoreCLI@2
+      displayName: 'Add coverlet.collector package'
+      inputs:
+        command: 'custom'
+        custom: 'add'
+        arguments: 'package coverlet.collector'
+        projects: '**/*[Tt]ests.csproj'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Unit Tests'
+      timeoutInMinutes: 10
+      inputs:
+        command: 'test'
+        projects: '**/*[Tt]ests.csproj'
+        arguments: '--configuration $(buildConfiguration) --logger "trx" --collect:"XPlat Code Coverage" --results-directory $(Agent.TempDirectory)/TestResults'
+        publishTestResults: false  # Changed to false - we'll publish manually
+        failTaskOnFailedTests: true
+        workingDirectory: '$(Build.SourcesDirectory)'
+    
+    # Publish test results
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'  # Changed to search for all .trx files
+        searchFolder: '$(Agent.TempDirectory)/TestResults'  # Specific folder
+        mergeTestResults: true
+        failTaskOnFailedTests: true
+        testRunTitle: 'Unit Tests - $(Build.BuildNumber)'
+      condition: succeededOrFailed()
+
+    - task: DotNetCoreCLI@2
+      displayName: "publish solution"
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: 'src/**/**/*.csproj'
+        zipAfterPublish: false
+        arguments: "-o $(Build.SourcesDirectory)/src/Output"
+
+    - script: |
+        echo "Contents of the publish directory:"
+        ls -R $(Build.SourcesDirectory)/src/Output
+      displayName: 'Display publish directory contents'
+
+    - task: Docker@2
+      displayName: Docker Build
+      inputs:
+        command: Build
+        dockerfile: $(Build.SourcesDirectory)/deployment/dockerfile/wfc-referential-api.dockerfile
+        buildContext: $(Build.SourcesDirectory)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        repository: $(imageRepository)
+        tags: |
+          latest
+          $(tag)
+        arguments: "--build-arg NUGET_PAT=$(System.AccessToken)"
+
+    - task: Docker@2
+      displayName: Docker Push to Harbor
+      inputs:
+        command: Push
+        dockerfile: $(Build.SourcesDirectory)/deployment/dockerfile/wfc-referential-api.dockerfile
+        buildContext: $(Build.SourcesDirectory)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        repository: $(imageRepository)
+        tags: |
+          latest
+          $(tag)
 
 - stage: DeployDev
   displayName: Deploy to Development
@@ -227,14 +227,14 @@ stages:
                 }
                 
                 # Apply in correct order
-                #apply_manifest "$MANIFEST_DIR/local-storageclass.yml"
-                #apply_manifest "$MANIFEST_DIR/local-pv.yml"
-                #apply_manifest "$MANIFEST_DIR/namespace.yml"
-                #apply_manifest "$MANIFEST_DIR/local-pvc.yml"
-                #apply_manifest "$MANIFEST_DIR/configmap.yml"
-                #apply_manifest "$MANIFEST_DIR/secret.yml"
-                #apply_manifest "$MANIFEST_DIR/service.yml"
-                #apply_manifest "$MANIFEST_DIR/deployment.yml"
+                apply_manifest "$MANIFEST_DIR/local-storageclass.yml"
+                apply_manifest "$MANIFEST_DIR/local-pv.yml"
+                apply_manifest "$MANIFEST_DIR/namespace.yml"
+                apply_manifest "$MANIFEST_DIR/local-pvc.yml"
+                apply_manifest "$MANIFEST_DIR/configmap.yml"
+                apply_manifest "$MANIFEST_DIR/secret.yml"
+                apply_manifest "$MANIFEST_DIR/service.yml"
+                apply_manifest "$MANIFEST_DIR/deployment.yml"
 
                 # apply_manifest "$MANIFEST_DIR/ingress.yml"  # Commented out as in original
                 
