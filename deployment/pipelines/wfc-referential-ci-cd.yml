@@ -5,6 +5,9 @@ resources:
   - repo: self
 
 parameters:
+  - name: BDD_Migration
+    type: boolean
+    default: true
   - name: Build_Release
     type: boolean
     default: true
@@ -227,14 +230,15 @@ stages:
                 }
                 
                 # Apply in correct order
-                apply_manifest "$MANIFEST_DIR/local-storageclass.yml"
-                apply_manifest "$MANIFEST_DIR/local-pv.yml"
-                apply_manifest "$MANIFEST_DIR/namespace.yml"
-                apply_manifest "$MANIFEST_DIR/local-pvc.yml"
-                apply_manifest "$MANIFEST_DIR/configmap.yml"
-                apply_manifest "$MANIFEST_DIR/secret.yml"
-                apply_manifest "$MANIFEST_DIR/service.yml"
-                apply_manifest "$MANIFEST_DIR/deployment.yml"
+                #apply_manifest "$MANIFEST_DIR/local-storageclass.yml"
+                #apply_manifest "$MANIFEST_DIR/local-pv.yml"
+                #apply_manifest "$MANIFEST_DIR/namespace.yml"
+                #apply_manifest "$MANIFEST_DIR/local-pvc.yml"
+                #apply_manifest "$MANIFEST_DIR/configmap.yml"
+                #apply_manifest "$MANIFEST_DIR/secret.yml"
+                #apply_manifest "$MANIFEST_DIR/service.yml"
+                #apply_manifest "$MANIFEST_DIR/deployment.yml"
+
                 # apply_manifest "$MANIFEST_DIR/ingress.yml"  # Commented out as in original
                 
                 echo "=== Cleaning up Docker resources ==="
@@ -245,6 +249,43 @@ stages:
                 docker system prune -a --volumes --force || echo "Docker system prune failed"
                 
                 echo "=== Deployment completed ==="
+
+          - script: echo $(ConnectionStrings__wfc.referential.dbc)
+            displayName: 'Display connection string value'
+
+          - task: UseDotNet@2
+            displayName: "Use .NET Core sdk 8.0.x"
+            inputs:
+              version: 8.0.x
+
+          - task: NuGetAuthenticate@1
+            displayName: 'NuGet Authenticate'
+            inputs:
+              forceReinstallCredentialProvider: true
+            env:
+              DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER: '0'
+              SSL_CERT_FILE: '/etc/ssl/certs/wafacash-MASSA-CA.crt'
+              SSL_CERT_DIR: '/etc/ssl/certs'
+              NODE_EXTRA_CA_CERTS: '/etc/ssl/certs/ca-certificates.crt'
+              REQUESTS_CA_BUNDLE: '/etc/ssl/certs/ca-certificates.crt'
+              CURL_CA_BUNDLE: '/etc/ssl/certs/ca-certificates.crt'
+              NODE_TLS_REJECT_UNAUTHORIZED: '0'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Install EF Tools'
+            inputs:
+              command: 'custom'
+              custom: 'tool'
+              arguments: 'install --global dotnet-ef'
+              
+          - task: DotNetCoreCLI@2
+            displayName: 'Apply EF Migrations'
+            env:
+              ConnectionStrings__Database: $(ConnectionStrings__wfc.referential.dbc)
+            inputs:
+              command: 'custom'
+              custom: 'ef' 
+              arguments: 'database update --project $(Build.SourcesDirectory)/src/04.Infrastructure/wfc.referential.Infrastructure/wfc.referential.Infrastructure.csproj --startup-project $(Build.SourcesDirectory)/src/01.InterfaceAdapter/wfc.referential.API/wfc.referential.API.csproj'  
 
           - task: Bash@3
             displayName: 'Phoenix done!'
@@ -261,7 +302,7 @@ stages:
                     echo "Available files in phoenix directory:"
                     ls -la "$(Build.SourcesDirectory)/deployment/phoenix/" 2>/dev/null || echo "Phoenix directory not found"
                 fi
-                
+
 - stage: DeployPprod
   displayName: Deploy to PPROD
   dependsOn: 
