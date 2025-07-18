@@ -5,9 +5,6 @@ resources:
   - repo: self
 
 parameters:
-  - name: BDD_Migration
-    type: boolean
-    default: true
   - name: Build_Release
     type: boolean
     default: true
@@ -96,7 +93,7 @@ stages:
         publishTestResults: false  # Changed to false - we'll publish manually
         failTaskOnFailedTests: true
         workingDirectory: '$(Build.SourcesDirectory)'
-
+    
     ## Publish test results
     - task: PublishTestResults@2
       displayName: 'Publish Test Results'
@@ -230,14 +227,14 @@ stages:
                 }
                 
                 # Apply in correct order
-                #apply_manifest "$MANIFEST_DIR/local-storageclass.yml"
-                #apply_manifest "$MANIFEST_DIR/local-pv.yml"
-                #apply_manifest "$MANIFEST_DIR/namespace.yml"
-                #apply_manifest "$MANIFEST_DIR/local-pvc.yml"
-                #apply_manifest "$MANIFEST_DIR/configmap.yml"
-                #apply_manifest "$MANIFEST_DIR/secret.yml"
-                #apply_manifest "$MANIFEST_DIR/service.yml"
-                #apply_manifest "$MANIFEST_DIR/deployment.yml"
+                apply_manifest "$MANIFEST_DIR/local-storageclass.yml"
+                apply_manifest "$MANIFEST_DIR/local-pv.yml"
+                apply_manifest "$MANIFEST_DIR/namespace.yml"
+                apply_manifest "$MANIFEST_DIR/local-pvc.yml"
+                apply_manifest "$MANIFEST_DIR/configmap.yml"
+                apply_manifest "$MANIFEST_DIR/secret.yml"
+                apply_manifest "$MANIFEST_DIR/service.yml"
+                apply_manifest "$MANIFEST_DIR/deployment.yml"
 
                 # apply_manifest "$MANIFEST_DIR/ingress.yml"  # Commented out as in original
                 

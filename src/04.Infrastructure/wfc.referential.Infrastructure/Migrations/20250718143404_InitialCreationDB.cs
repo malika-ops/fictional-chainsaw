@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace wfc.referential.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class iniyial : Migration
+    public partial class InitialCreationDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28,6 +28,24 @@ namespace wfc.referential.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Banks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Controles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastModified = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifiedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Controles", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -212,6 +230,7 @@ namespace wfc.referential.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Code = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
+                    FlowDirection = table.Column<int>(type: "integer", nullable: false),
                     IsEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
@@ -482,6 +501,41 @@ namespace wfc.referential.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ServiceControles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ServiceId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ControleId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChannelId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ExecOrder = table.Column<int>(type: "integer", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastModified = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifiedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ServiceControles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ServiceControles_Controles_ControleId",
+                        column: x => x.ControleId,
+                        principalTable: "Controles",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ServiceControles_ParamTypes_ChannelId",
+                        column: x => x.ChannelId,
+                        principalTable: "ParamTypes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ServiceControles_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Cities",
                 columns: table => new
                 {
@@ -504,6 +558,32 @@ namespace wfc.referential.Infrastructure.Migrations
                         name: "FK_Cities_Regions_RegionId",
                         column: x => x.RegionId,
                         principalTable: "Regions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Contracts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Code = table.Column<string>(type: "text", nullable: false),
+                    PartnerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastModified = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifiedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Contracts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Contracts_Partners_PartnerId",
+                        column: x => x.PartnerId,
+                        principalTable: "Partners",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -841,6 +921,36 @@ namespace wfc.referential.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ContractDetails",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ContractId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PricingId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastModified = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifiedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContractDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ContractDetails_Contracts_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contracts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ContractDetails_Pricings_PricingId",
+                        column: x => x.PricingId,
+                        principalTable: "Pricings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Affiliates_AffiliateTypeId",
                 table: "Affiliates",
@@ -919,6 +1029,34 @@ namespace wfc.referential.Infrastructure.Migrations
                 name: "IX_Cities_RegionId",
                 table: "Cities",
                 column: "RegionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractDetails_ContractId_PricingId",
+                table: "ContractDetails",
+                columns: new[] { "ContractId", "PricingId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractDetails_PricingId",
+                table: "ContractDetails",
+                column: "PricingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Contracts_Code",
+                table: "Contracts",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Contracts_PartnerId",
+                table: "Contracts",
+                column: "PartnerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Controles_Code",
+                table: "Controles",
+                column: "Code",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Corridors_DestinationBranchId",
@@ -1138,6 +1276,22 @@ namespace wfc.referential.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ServiceControles_ChannelId",
+                table: "ServiceControles",
+                column: "ChannelId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ServiceControles_ControleId",
+                table: "ServiceControles",
+                column: "ControleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ServiceControles_ServiceId_ControleId_ChannelId",
+                table: "ServiceControles",
+                columns: new[] { "ServiceId", "ControleId", "ChannelId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Services_Code",
                 table: "Services",
                 column: "Code",
@@ -1199,6 +1353,9 @@ namespace wfc.referential.Infrastructure.Migrations
                 name: "AgencyTiers");
 
             migrationBuilder.DropTable(
+                name: "ContractDetails");
+
+            migrationBuilder.DropTable(
                 name: "CountryIdentityDocs");
 
             migrationBuilder.DropTable(
@@ -1211,7 +1368,7 @@ namespace wfc.referential.Infrastructure.Migrations
                 name: "PartnerCountries");
 
             migrationBuilder.DropTable(
-                name: "Pricings");
+                name: "ServiceControles");
 
             migrationBuilder.DropTable(
                 name: "TaxRuleDetails");
@@ -1220,10 +1377,22 @@ namespace wfc.referential.Infrastructure.Migrations
                 name: "Tiers");
 
             migrationBuilder.DropTable(
+                name: "Contracts");
+
+            migrationBuilder.DropTable(
+                name: "Pricings");
+
+            migrationBuilder.DropTable(
                 name: "IdentityDocuments");
 
             migrationBuilder.DropTable(
                 name: "Banks");
+
+            migrationBuilder.DropTable(
+                name: "Controles");
+
+            migrationBuilder.DropTable(
+                name: "Taxes");
 
             migrationBuilder.DropTable(
                 name: "Affiliates");
@@ -1233,9 +1402,6 @@ namespace wfc.referential.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Services");
-
-            migrationBuilder.DropTable(
-                name: "Taxes");
 
             migrationBuilder.DropTable(
                 name: "Agencies");

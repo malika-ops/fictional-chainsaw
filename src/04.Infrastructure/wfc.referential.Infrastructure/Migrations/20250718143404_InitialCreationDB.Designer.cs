@@ -12,8 +12,8 @@ using wfc.referential.Infrastructure.Data;
 namespace wfc.referential.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250620075420_AddControleTable")]
-    partial class AddControleTable
+    [Migration("20250718143404_InitialCreationDB")]
+    partial class InitialCreationDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -393,6 +393,90 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.HasIndex("RegionId");
 
                     b.ToTable("Cities");
+                });
+
+            modelBuilder.Entity("wfc.referential.Domain.ContractAggregate.Contract", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastModified")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PartnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("PartnerId");
+
+                    b.ToTable("Contracts", (string)null);
+                });
+
+            modelBuilder.Entity("wfc.referential.Domain.ContractDetailsAggregate.ContractDetails", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ContractId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastModified")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PricingId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PricingId");
+
+                    b.HasIndex("ContractId", "PricingId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ContractDetails_ContractId_PricingId");
+
+                    b.ToTable("ContractDetails", (string)null);
                 });
 
             modelBuilder.Entity("wfc.referential.Domain.ControleAggregate.Controle", b =>
@@ -1288,6 +1372,9 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<int>("FlowDirection")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsEnabled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1316,6 +1403,52 @@ namespace wfc.referential.Infrastructure.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("Services");
+                });
+
+            modelBuilder.Entity("wfc.referential.Domain.ServiceControleAggregate.ServiceControle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ControleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ExecOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastModified")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChannelId");
+
+                    b.HasIndex("ControleId");
+
+                    b.HasIndex("ServiceId", "ControleId", "ChannelId")
+                        .IsUnique();
+
+                    b.ToTable("ServiceControles", (string)null);
                 });
 
             modelBuilder.Entity("wfc.referential.Domain.SupportAccountAggregate.SupportAccount", b =>
@@ -1647,6 +1780,36 @@ namespace wfc.referential.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("wfc.referential.Domain.ContractAggregate.Contract", b =>
+                {
+                    b.HasOne("wfc.referential.Domain.PartnerAggregate.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Partner");
+                });
+
+            modelBuilder.Entity("wfc.referential.Domain.ContractDetailsAggregate.ContractDetails", b =>
+                {
+                    b.HasOne("wfc.referential.Domain.ContractAggregate.Contract", "Contract")
+                        .WithMany()
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("wfc.referential.Domain.PricingAggregate.Pricing", "Pricing")
+                        .WithMany()
+                        .HasForeignKey("PricingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Contract");
+
+                    b.Navigation("Pricing");
+                });
+
             modelBuilder.Entity("wfc.referential.Domain.CorridorAggregate.Corridor", b =>
                 {
                     b.HasOne("wfc.referential.Domain.AgencyAggregate.Agency", "DestinationBranch")
@@ -1868,6 +2031,30 @@ namespace wfc.referential.Infrastructure.Migrations
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("wfc.referential.Domain.ServiceControleAggregate.ServiceControle", b =>
+                {
+                    b.HasOne("wfc.referential.Domain.ParamTypeAggregate.ParamType", "Channel")
+                        .WithMany()
+                        .HasForeignKey("ChannelId")
+                        .IsRequired();
+
+                    b.HasOne("wfc.referential.Domain.ControleAggregate.Controle", "Controle")
+                        .WithMany()
+                        .HasForeignKey("ControleId")
+                        .IsRequired();
+
+                    b.HasOne("wfc.referential.Domain.ServiceAggregate.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .IsRequired();
+
+                    b.Navigation("Channel");
+
+                    b.Navigation("Controle");
+
+                    b.Navigation("Service");
                 });
 
             modelBuilder.Entity("wfc.referential.Domain.SupportAccountAggregate.SupportAccount", b =>

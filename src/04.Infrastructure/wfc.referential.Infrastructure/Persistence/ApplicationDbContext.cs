@@ -1,32 +1,33 @@
 ﻿using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using wfc.referential.Application.Data;
-using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.AgencyAggregate;
 using wfc.referential.Domain.AgencyTierAggregate;
+using wfc.referential.Domain.BankAggregate;
 using wfc.referential.Domain.CityAggregate;
+using wfc.referential.Domain.ContractAggregate;
+using wfc.referential.Domain.ContractDetailsAggregate;
+using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.Countries;
+using wfc.referential.Domain.CountryIdentityDocAggregate;
+using wfc.referential.Domain.CountryServiceAggregate;
 using wfc.referential.Domain.CurrencyAggregate;
+using wfc.referential.Domain.IdentityDocumentAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
+using wfc.referential.Domain.PartnerAggregate;
+using wfc.referential.Domain.PartnerCountryAggregate;
+using wfc.referential.Domain.ProductAggregate;
 using wfc.referential.Domain.RegionAggregate;
 using wfc.referential.Domain.SectorAggregate;
-using wfc.referential.Domain.TierAggregate;
-using wfc.referential.Domain.TaxAggregate;
-using wfc.referential.Domain.TypeDefinitionAggregate;
-using wfc.referential.Domain.ProductAggregate;
 using wfc.referential.Domain.ServiceAggregate;
-using wfc.referential.Domain.IdentityDocumentAggregate;
-using wfc.referential.Domain.CorridorAggregate;
-using wfc.referential.Domain.TaxRuleDetailAggregate;
-using wfc.referential.Domain.CountryIdentityDocAggregate;
-using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.SupportAccountAggregate;
-using wfc.referential.Domain.PartnerCountryAggregate;
-using wfc.referential.Domain.CountryServiceAggregate;
-using wfc.referential.Domain.ContractAggregate;
-using wfc.referential.Domain.ContractDetailsAggregate;
+using wfc.referential.Domain.TaxAggregate;
+using wfc.referential.Domain.TaxRuleDetailAggregate;
+using wfc.referential.Domain.TierAggregate;
+using wfc.referential.Domain.TypeDefinitionAggregate;
 
 namespace wfc.referential.Infrastructure.Data;
 public class ApplicationDbContext : DbContext, IApplicationDbContext
@@ -65,5 +66,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         base.OnModelCreating(builder);
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder
+            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
     }
 }
