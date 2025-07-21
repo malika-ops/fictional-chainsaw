@@ -11,6 +11,7 @@ using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
+using wfc.referential.Domain.OperatorAggregate;
 using wfc.referential.Domain.PartnerAggregate;
 using wfc.referential.Domain.ProductAggregate;
 using wfc.referential.Domain.ServiceAggregate;
@@ -26,6 +27,7 @@ public abstract class BaseAcceptanceTests : IDisposable
     protected readonly TestWebApplicationFactory _factory;
     protected readonly IFixture _fixture;
     // Propriétés pour accéder aux mocks
+    protected Mock<IOperatorRepository> _operatorRepoMock => _factory.GetMock<IOperatorRepository>();
     protected Mock<IAgencyTierRepository> _agencyTierRepoMock => _factory.GetMock<IAgencyTierRepository>();
     protected Mock<IAgencyRepository> _agencyRepoMock => _factory.GetMock<IAgencyRepository>();
     protected Mock<ITierRepository> _tierRepoMock => _factory.GetMock<ITierRepository>();
@@ -187,6 +189,20 @@ public abstract class BaseAcceptanceTests : IDisposable
               AgencyId.Of(_fixture.Create<Guid>()),
               AgencyId.Of(_fixture.Create<Guid>())
           )));
+
+        _fixture.Customize<Operator>(composer =>
+     composer.FromFactory(() =>
+        Operator.Create(
+            OperatorId.Of(_fixture.Create<Guid>()),
+            _fixture.Create<string>().Substring(0, 6), 
+            _fixture.Create<string>().Substring(0, 8), 
+            _fixture.Create<string>(),
+            _fixture.Create<string>(),
+            _fixture.Create<string>() + "@email.com",
+            "+212600000000",
+            _fixture.Create<OperatorType>(),
+            _fixture.Create<Guid>()
+        )));
 
         _fixture.Customize<Affiliate>(composer =>
       composer.FromFactory(() =>

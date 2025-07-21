@@ -13,6 +13,7 @@ using wfc.referential.Application.CountryServices.Mappings;
 using wfc.referential.Application.Currencies.Mappings;
 using wfc.referential.Application.IdentityDocuments.Mappings;
 using wfc.referential.Application.MonetaryZones.Mappings;
+using wfc.referential.Application.Operators.Mappings;
 using wfc.referential.Application.ParamTypes.Mappings;
 using wfc.referential.Application.PartnerAccounts.Mappings;
 using wfc.referential.Application.PartnerCountries.Mappings;
@@ -65,5 +66,6 @@ public static class MapsterConfig
         ControleMappings.Register();
         ContractDetailsMappings.Register();
         ServiceControleMappings.Register();
+        OperatorMappings.Register();
     }
 }

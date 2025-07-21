@@ -75,6 +75,7 @@ public static class DependencyInjection
         app.MapTypeDefinitionEndpoints();
         app.MapControleEndpoints();
         app.MapServiceControleEndpoints();
+        app.MapOperatorEndpoints();
 
         return app;
     }

@@ -73,6 +73,7 @@ public class TestWebApplicationFactory : IDisposable
     private void RegisterMocks(IServiceCollection services)
     {
         // Création et enregistrement des mocks
+        services.AddSingleton(GetMock<IOperatorRepository>().Object);
         services.AddSingleton(GetMock<IAgencyTierRepository>().Object);
         services.AddSingleton(GetMock<IAgencyRepository>().Object);
         services.AddSingleton(GetMock<ITierRepository>().Object);
