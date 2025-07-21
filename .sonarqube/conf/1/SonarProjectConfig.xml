@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <SonarProjectConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.sonarsource.com/msbuild/analyzer/2021/1">
-  <AnalysisConfigPath>C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\.sonarqube\conf\SonarQubeAnalysisConfig.xml</AnalysisConfigPath>
-  <ProjectPath>C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\src\02.Application\wfc.referential.Application\wfc.referential.Application.csproj</ProjectPath>
-  <FilesToAnalyzePath>C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\.sonarqube\conf\1\FilesToAnalyze.txt</FilesToAnalyzePath>
-  <OutPath>C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\.sonarqube\out\1</OutPath>
+  <AnalysisConfigPath>C:\Users\hp\source\repos\WafacashDevops\wfc-referential\.sonarqube\conf\SonarQubeAnalysisConfig.xml</AnalysisConfigPath>
+  <ProjectPath>C:\Users\hp\source\repos\WafacashDevops\wfc-referential\src\02.Application\wfc.referential.Application\wfc.referential.Application.csproj</ProjectPath>
+  <FilesToAnalyzePath>C:\Users\hp\source\repos\WafacashDevops\wfc-referential\.sonarqube\conf\1\FilesToAnalyze.txt</FilesToAnalyzePath>
+  <OutPath>C:\Users\hp\source\repos\WafacashDevops\wfc-referential\.sonarqube\out\1</OutPath>
   <ProjectType>Product</ProjectType>
   <TargetFramework>net8.0</TargetFramework>
 </SonarProjectConfig>

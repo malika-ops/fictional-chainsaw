@@ -1,1 +1,1 @@
-C:\Users\hp\source\repos\Wafacash_2.0\wafacash_referential\.sonarqube\out\1
+C:\Users\hp\source\repos\WafacashDevops\wfc-referential\.sonarqube\out\1
