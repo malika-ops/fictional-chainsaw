@@ -63,4 +63,10 @@ public record GetOperatorsResponse
     /// </summary>
     /// <example>f7e6d5c4-b3a2-1098-7654-3210fedcba98</example>
     public Guid? BranchId { get; init; }
+
+    /// <summary>
+    /// Profile ID associated with the operator.
+    /// </summary>
+    /// <example>a1b2c3d4-e5f6-7890-abcd-1234567890ef</example>
+    public Guid? ProfileId { get; init; }
 }

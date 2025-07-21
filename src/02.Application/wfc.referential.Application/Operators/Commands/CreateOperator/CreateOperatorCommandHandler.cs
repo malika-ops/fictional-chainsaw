@@ -46,15 +46,6 @@ public class CreateOperatorCommandHandler : ICommandHandler<CreateOperatorComman
                 throw new ResourceNotFoundException($"Branch with ID {cmd.BranchId.Value} not found");
         }
 
-        // TODO: Validate ProfileId exists if provided
-        // La table profile n'existe pas encore
-        // if (cmd.ProfileId.HasValue)
-        // {
-        //     var profile = await _profileRepository.GetByIdAsync(ProfileId.Of(cmd.ProfileId.Value), ct);
-        //     if (profile is null)
-        //         throw new ResourceNotFoundException($"Profile with ID {cmd.ProfileId.Value} not found");
-        // }
-
         var id = OperatorId.Of(Guid.NewGuid());
         var operatorEntity = Operator.Create(
             id,
@@ -65,7 +56,8 @@ public class CreateOperatorCommandHandler : ICommandHandler<CreateOperatorComman
             cmd.Email,
             cmd.PhoneNumber,
             cmd.OperatorType,
-            cmd.BranchId);
+            cmd.BranchId,
+            cmd.ProfileId);
 
         await _repo.AddAsync(operatorEntity, ct);
         await _repo.SaveChangesAsync(ct);

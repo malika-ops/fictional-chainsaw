@@ -497,17 +497,92 @@ public class GetFiltredOperatorsEndpointTests(TestWebApplicationFactory factory)
         result.Items.Should().HaveCount(1);
     }
 
+    [Fact(DisplayName = "GET /api/operators returns 200 with ProfileId filter")]
+    public async Task Get_ShouldReturn200_WithProfileIdFilter()
+    {
+        // Arrange
+        var profileId = Guid.NewGuid();
+        var mockOperators = CreateMockOperatorsList(2, profileId: profileId);
+        var pagedResult = new PagedResult<Operator>(mockOperators, 2, 1, 10);
+
+        _operatorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                It.IsAny<object>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pagedResult);
+
+        // Act
+        var response = await _client.GetAsync($"/api/operators?ProfileId={profileId}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<PagedResult<GetOperatorsResponse>>(content, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().OnlyContain(o => o.ProfileId == profileId);
+    }
+
+    [Fact(DisplayName = "GET /api/operators returns 200 with multiple filters including ProfileId")]
+    public async Task Get_ShouldReturn200_WithMultipleFiltersIncludingProfileId()
+    {
+        // Arrange
+        var branchId = Guid.NewGuid();
+        var profileId = Guid.NewGuid();
+        var mockOperators = CreateMockOperatorsList(1, "OP001", "ID123456", "Alami", "Ahmed", "ahmed.alami@wafacash.com", OperatorType.Agence, branchId, true, profileId);
+        var pagedResult = new PagedResult<Operator>(mockOperators, 1, 1, 10);
+
+        _operatorRepoMock.Setup(r => r.GetPagedByCriteriaAsync(
+                It.IsAny<object>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pagedResult);
+
+        // Act
+        var response = await _client.GetAsync($"/api/operators?Code=OP001&LastName=Alami&FirstName=Ahmed&Email=ahmed.alami@wafacash.com&OperatorType={(int)OperatorType.Agence}&BranchId={branchId}&ProfileId={profileId}&IsEnabled=true");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<PagedResult<GetOperatorsResponse>>(content, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(1);
+
+        var operatorResponse = result.Items.First();
+        operatorResponse.Code.Should().Be("OP001");
+        operatorResponse.LastName.Should().Be("Alami");
+        operatorResponse.FirstName.Should().Be("Ahmed");
+        operatorResponse.Email.Should().Be("ahmed.alami@wafacash.com");
+        operatorResponse.OperatorType.Should().Be(OperatorType.Agence);
+        operatorResponse.BranchId.Should().Be(branchId);
+        operatorResponse.ProfileId.Should().Be(profileId);
+        operatorResponse.IsEnabled.Should().BeTrue();
+    }
+
     // Helper Methods
     private static List<Operator> CreateMockOperatorsList(
-        int count,
-        string code = null,
-        string identityCode = null,
-        string lastName = null,
-        string firstName = null,
-        string email = null,
-        OperatorType? operatorType = null,
-        Guid? branchId = null,
-        bool? isEnabled = null)
+     int count,
+     string code = null,
+     string identityCode = null,
+     string lastName = null,
+     string firstName = null,
+     string email = null,
+     OperatorType? operatorType = null,
+     Guid? branchId = null,
+     bool? isEnabled = null,
+     Guid? profileId = null) 
     {
         var operators = new List<Operator>();
 
@@ -522,7 +597,8 @@ public class GetFiltredOperatorsEndpointTests(TestWebApplicationFactory factory)
                 email ?? $"operator{i}@email.com",
                 "+212600000000",
                 operatorType ?? OperatorType.Agence,
-                branchId ?? Guid.NewGuid());
+                branchId ?? Guid.NewGuid(),
+                profileId); 
 
             if (isEnabled.HasValue && !isEnabled.Value)
             {

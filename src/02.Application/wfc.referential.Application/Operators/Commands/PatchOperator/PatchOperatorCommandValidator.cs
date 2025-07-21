@@ -64,5 +64,11 @@ public class PatchOperatorCommandValidator : AbstractValidator<PatchOperatorComm
             RuleFor(x => x.BranchId!.Value)
                 .NotEqual(Guid.Empty).WithMessage("BranchId must be a valid GUID if provided");
         });
+
+        // If profile ID is provided, check valid GUID
+        When(x => x.ProfileId is not null, () => {
+            RuleFor(x => x.ProfileId!.Value)
+                .NotEqual(Guid.Empty).WithMessage("ProfileId must be a valid GUID if provided");
+        });
     }
 }

@@ -6,7 +6,7 @@ namespace wfc.referential.Domain.OperatorAggregate;
 public class Operator : Aggregate<OperatorId>
 {
     public string Code { get; private set; } = string.Empty;
-    public string IdentityCode { get; private set; } = string.Empty; 
+    public string IdentityCode { get; private set; } = string.Empty;
     public string LastName { get; private set; } = string.Empty;
     public string FirstName { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
@@ -15,10 +15,9 @@ public class Operator : Aggregate<OperatorId>
 
     public OperatorType? OperatorType { get; private set; }
 
-    public Guid? BranchId { get; private set; } 
+    public Guid? BranchId { get; private set; }
 
-    // TODO: ProfileId - La table profile n'existe pas encore
-    // public Guid? ProfileId { get; private set; }
+    public Guid? ProfileId { get; private set; }
 
     private Operator() { }
 
@@ -31,7 +30,8 @@ public class Operator : Aggregate<OperatorId>
         string email,
         string phoneNumber,
         OperatorType? operatorType,
-        Guid? branchId)
+        Guid? branchId,
+        Guid? profileId)
     {
         var operatorEntity = new Operator
         {
@@ -43,7 +43,8 @@ public class Operator : Aggregate<OperatorId>
             Email = email,
             PhoneNumber = phoneNumber,
             OperatorType = operatorType,
-            BranchId = branchId
+            BranchId = branchId,
+            ProfileId = profileId
         };
 
         operatorEntity.AddDomainEvent(new OperatorCreatedEvent(
@@ -68,7 +69,8 @@ public class Operator : Aggregate<OperatorId>
         string phoneNumber,
         bool? isEnabled,
         OperatorType? operatorType,
-        Guid? branchId)
+        Guid? branchId,
+        Guid? profileId)
     {
         Code = code;
         IdentityCode = identityCode;
@@ -80,6 +82,7 @@ public class Operator : Aggregate<OperatorId>
 
         OperatorType = operatorType;
         BranchId = branchId;
+        ProfileId = profileId;
 
         AddDomainEvent(new OperatorUpdatedEvent(
             Id.Value,
@@ -101,7 +104,8 @@ public class Operator : Aggregate<OperatorId>
         string? phoneNumber,
         bool? isEnabled,
         OperatorType? operatorType,
-        Guid? branchId)
+        Guid? branchId,
+        Guid? profileId)
     {
         Code = code ?? Code;
         IdentityCode = identityCode ?? IdentityCode;
@@ -113,6 +117,7 @@ public class Operator : Aggregate<OperatorId>
 
         OperatorType = operatorType ?? OperatorType;
         BranchId = branchId ?? BranchId;
+        ProfileId = profileId ?? ProfileId;
 
         AddDomainEvent(new OperatorPatchedEvent(
             Id.Value,
@@ -151,5 +156,10 @@ public class Operator : Aggregate<OperatorId>
     public void SetBranch(Guid branchId)
     {
         BranchId = branchId;
+    }
+
+    public void SetProfile(Guid profileId)
+    {
+        ProfileId = profileId;
     }
 }

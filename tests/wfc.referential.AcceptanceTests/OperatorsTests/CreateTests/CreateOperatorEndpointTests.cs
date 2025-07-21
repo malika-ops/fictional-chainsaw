@@ -350,6 +350,57 @@ public class CreateOperatorEndpointTests(TestWebApplicationFactory factory) : Ba
         capturedOperator.Email.Should().Be((string)minimalPayload["Email"]);
     }
 
+    [Fact(DisplayName = "POST /api/operators validates ProfileId GUID")]
+    public async Task Post_ShouldReturn400_WhenProfileIdIsEmptyGuid()
+    {
+        // Arrange
+        var invalidPayload = CreateCompleteValidPayload();
+        invalidPayload["ProfileId"] = Guid.Empty; // Empty GUID should fail validation
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/operators", invalidPayload);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        responseContent.Should().Contain("ProfileId must be a valid GUID if provided");
+
+        _operatorRepoMock.Verify(r => r.AddAsync(It.IsAny<Operator>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "POST /api/operators allows creation with ProfileId")]
+    public async Task Post_ShouldReturn200_WhenCreatingWithProfileId()
+    {
+        // Arrange
+        Operator capturedOperator = null;
+
+        SetupDefaultMocks();
+
+        _operatorRepoMock.Setup(r => r.AddAsync(It.IsAny<Operator>(), It.IsAny<CancellationToken>()))
+            .Callback<Operator, CancellationToken>((o, _) => capturedOperator = o)
+            .ReturnsAsync((Operator o, CancellationToken _) => o);
+
+        var profileId = Guid.NewGuid();
+        var payload = CreateCompleteValidPayload();
+        payload["ProfileId"] = profileId;
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/operators", payload);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var returnedId = await response.Content.ReadFromJsonAsync<Guid>();
+        returnedId.Should().NotBeEmpty();
+
+        capturedOperator.Should().NotBeNull();
+        capturedOperator.ProfileId.Should().Be(profileId);
+
+        _operatorRepoMock.Verify(r => r.AddAsync(It.IsAny<Operator>(), It.IsAny<CancellationToken>()), Times.Once);
+        _operatorRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // Helper Methods
     private static Dictionary<string, object> CreateCompleteValidPayload()
     {
@@ -362,7 +413,8 @@ public class CreateOperatorEndpointTests(TestWebApplicationFactory factory) : Ba
             { "Email", "ahmed.alami@wafacash.com" },
             { "PhoneNumber", "+212612345678" },
             { "OperatorType", (int)OperatorType.Agence },
-            { "BranchId", Guid.NewGuid() }
+            { "BranchId", Guid.NewGuid() },
+            { "ProfileId", Guid.NewGuid() } 
         };
     }
 
@@ -390,7 +442,8 @@ public class CreateOperatorEndpointTests(TestWebApplicationFactory factory) : Ba
             email,
             "+212600000000",
             OperatorType.Agence,
-            Guid.NewGuid());
+            Guid.NewGuid(),
+            null);
     }
 
     private static Agency CreateMockAgency(Guid? id = null)

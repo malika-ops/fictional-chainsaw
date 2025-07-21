@@ -16,4 +16,5 @@ public record PatchOperatorCommand : ICommand<Result<bool>>
     public bool? IsEnabled { get; init; }
     public OperatorType? OperatorType { get; init; }
     public Guid? BranchId { get; init; }
+    public Guid? ProfileId { get; init; }
 }

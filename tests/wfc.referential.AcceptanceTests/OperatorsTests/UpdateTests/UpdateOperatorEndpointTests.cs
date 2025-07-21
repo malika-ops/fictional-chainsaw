@@ -351,6 +351,73 @@ public class UpdateOperatorEndpointTests(TestWebApplicationFactory factory) : Ba
         _operatorRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact(DisplayName = "PUT /api/operators/{id} returns 400 when ProfileId is empty GUID")]
+    public async Task Put_ShouldReturn400_WhenProfileIdIsEmptyGuid()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var operatorEntity = CreateTestOperator(id, "OP001", "ID123", "test@email.com");
+
+        _operatorRepoMock.Setup(r => r.GetByIdAsync(OperatorId.Of(id), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(operatorEntity);
+
+        var payload = new
+        {
+            OperatorId = id,
+            Code = "OP001",
+            IdentityCode = "AB123456",
+            LastName = "Test",
+            FirstName = "Operator",
+            Email = "test@email.com",
+            PhoneNumber = "+212600000000",
+            IsEnabled = true,
+            ProfileId = Guid.Empty 
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/operators/{id}", payload);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        responseContent.Should().Contain("ProfileId must be a valid GUID if provided");
+    }
+
+    [Fact(DisplayName = "PUT /api/operators/{id} returns 200 when updating with valid ProfileId")]
+    public async Task Put_ShouldReturn200_WhenUpdatingWithValidProfileId()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var profileId = Guid.NewGuid();
+        var operatorEntity = CreateTestOperator(id, "OP001", "ID123", "test@email.com");
+
+        _operatorRepoMock.Setup(r => r.GetByIdAsync(OperatorId.Of(id), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(operatorEntity);
+
+        _operatorRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Operator, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Operator>());
+
+        Operator updated = null;
+        _operatorRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => updated = operatorEntity)
+            .Returns(Task.CompletedTask);
+
+        var payload = CreateBasicUpdatePayloadWithProfileId(id, profileId);
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/operators/{id}", payload);
+        var returned = await response.Content.ReadFromJsonAsync<bool>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        returned.Should().BeTrue();
+
+        updated.ProfileId.Should().Be(profileId);
+
+        _operatorRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // Helper methods
     private static object CreateCompleteUpdatePayload(Guid id, Guid branchId)
     {
@@ -365,7 +432,24 @@ public class UpdateOperatorEndpointTests(TestWebApplicationFactory factory) : Ba
             PhoneNumber = "+212698765432",
             IsEnabled = true,
             OperatorType = (int)OperatorType.Filiale,
-            BranchId = branchId
+            BranchId = branchId,
+            ProfileId = Guid.NewGuid() 
+        };
+    }
+
+    private static object CreateBasicUpdatePayloadWithProfileId(Guid id, Guid profileId)
+    {
+        return new
+        {
+            OperatorId = id,
+            Code = "OP001",
+            IdentityCode = "AB123456",
+            LastName = "Test",
+            FirstName = "Operator",
+            Email = "test@email.com",
+            PhoneNumber = "+212600000000",
+            IsEnabled = true,
+            ProfileId = profileId
         };
     }
 
@@ -456,7 +540,8 @@ public class UpdateOperatorEndpointTests(TestWebApplicationFactory factory) : Ba
             email,
             "+212600000000",
             OperatorType.Agence,
-            Guid.NewGuid());
+            Guid.NewGuid(),
+            null); 
     }
 
     private static Agency CreateMockAgency(Guid? id = null)

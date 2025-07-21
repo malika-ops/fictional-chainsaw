@@ -21,13 +21,14 @@ public class GetOperatorByIdEndpointTests(TestWebApplicationFactory factory) : B
             $"test-{code}@email.com",
             "+212600000000",
             OperatorType.Agence,
-            Guid.NewGuid());
+            Guid.NewGuid(),
+            null);
 
         if (!enabled) operatorEntity.Disable();
         return operatorEntity;
     }
 
-    private record OperatorDto(Guid OperatorId, string Code, string IdentityCode, string LastName, string FirstName, string Email, bool IsEnabled);
+    private record OperatorDto(Guid OperatorId, string Code, string IdentityCode, string LastName, string FirstName, string Email, bool IsEnabled, Guid? ProfileId);
 
     [Fact(DisplayName = "GET /api/operators/{id} → 200 when Operator exists")]
     public async Task Get_ShouldReturn200_WhenOperatorExists()

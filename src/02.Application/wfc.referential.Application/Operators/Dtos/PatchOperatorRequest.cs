@@ -57,4 +57,10 @@ public record PatchOperatorRequest
     /// </summary>
     /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa8</example>
     public Guid? BranchId { get; init; }
+
+    /// <summary>
+    /// If provided, updates the profile. If omitted, profile remains unchanged.
+    /// </summary>
+    /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa9</example>
+    public Guid? ProfileId { get; init; }
 }

@@ -14,4 +14,5 @@ public record CreateOperatorCommand : ICommand<Result<Guid>>
     public string PhoneNumber { get; init; } = string.Empty;
     public OperatorType? OperatorType { get; init; }
     public Guid? BranchId { get; init; }
+    public Guid? ProfileId { get; init; }
 }

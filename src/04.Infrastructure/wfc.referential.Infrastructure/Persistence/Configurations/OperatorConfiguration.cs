@@ -57,10 +57,10 @@ public class OperatorConfiguration : IEntityTypeConfiguration<Operator>
         builder.Property(o => o.BranchId)
             .IsRequired(false);
 
-        // TODO: ProfileId - La table profile n'existe pas encore
-        // builder.Property(o => o.ProfileId)
-        //     .IsRequired(false)
-        //     .HasComment("La table profile n'existe pas");
+        // Foreign key to Profile
+        builder.Property(o => o.ProfileId)
+            .IsRequired(false)
+            .HasComment("Reference to Profile - optional association");
 
         // Unique indexes
         builder.HasIndex(o => o.Code)

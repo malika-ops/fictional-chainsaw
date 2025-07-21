@@ -53,10 +53,9 @@ public record CreateOperatorRequest
     /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa6</example>
     public Guid? BranchId { get; init; }
 
-    // TODO: ProfileId - La table profile n'existe pas encore
-    // /// <summary>
-    // /// The ID of the Profile.
-    // /// </summary>
-    // /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa7</example>
-    // public Guid? ProfileId { get; init; }
+    /// <summary>
+    /// The ID of the Profile.
+    /// </summary>
+    /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa7</example>
+    public Guid? ProfileId { get; init; }
 }

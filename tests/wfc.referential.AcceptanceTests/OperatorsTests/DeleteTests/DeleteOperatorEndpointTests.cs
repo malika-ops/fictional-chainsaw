@@ -105,6 +105,7 @@ public class DeleteOperatorEndpointTests(TestWebApplicationFactory factory) : Ba
             "test@email.com",
             "+212600000000",
             OperatorType.Agence,
-            Guid.NewGuid());
+            Guid.NewGuid(),
+            null);
     }
 }

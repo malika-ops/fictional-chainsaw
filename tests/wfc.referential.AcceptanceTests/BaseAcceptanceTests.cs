@@ -201,6 +201,7 @@ public abstract class BaseAcceptanceTests : IDisposable
             _fixture.Create<string>() + "@email.com",
             "+212600000000",
             _fixture.Create<OperatorType>(),
+            _fixture.Create<Guid>(),
             _fixture.Create<Guid>()
         )));
 

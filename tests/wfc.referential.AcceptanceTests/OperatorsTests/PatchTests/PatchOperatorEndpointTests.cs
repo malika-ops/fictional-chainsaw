@@ -542,6 +542,64 @@ public class PatchOperatorEndpointTests(TestWebApplicationFactory factory) : Bas
         _operatorRepoMock.Verify(r => r.GetByIdAsync(OperatorId.Of(urlId), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact(DisplayName = "PATCH /api/operators/{id} returns 200 when patching ProfileId")]
+    public async Task Patch_ShouldReturn200_WhenPatchingProfileId()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var newProfileId = Guid.NewGuid();
+        var operatorEntity = CreateTestOperator(id, "OP001", "ID123", "test@email.com");
+
+        _operatorRepoMock.Setup(r => r.GetByIdAsync(OperatorId.Of(id), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(operatorEntity);
+
+        _operatorRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Operator, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Operator>());
+
+        var patchPayload = new { OperatorId = id, ProfileId = newProfileId };
+
+        // Act
+        var response = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Patch, $"/api/operators/{id}")
+        {
+            Content = JsonContent.Create(patchPayload)
+        });
+
+        var result = await response.Content.ReadFromJsonAsync<bool>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().BeTrue();
+
+        operatorEntity.ProfileId.Should().Be(newProfileId);
+
+        _operatorRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "PATCH /api/operators/{id} returns 400 when ProfileId is empty GUID")]
+    public async Task Patch_ShouldReturn400_WhenProfileIdIsEmptyGuid()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var operatorEntity = CreateTestOperator(id, "OP001", "ID123", "test@email.com");
+
+        _operatorRepoMock.Setup(r => r.GetByIdAsync(OperatorId.Of(id), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(operatorEntity);
+
+        var patchPayload = new { OperatorId = id, ProfileId = Guid.Empty };
+
+        // Act
+        var response = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Patch, $"/api/operators/{id}")
+        {
+            Content = JsonContent.Create(patchPayload)
+        });
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        responseContent.Should().Contain("ProfileId must be a valid GUID if provided");
+    }
+
     // Helper methods
     private static Operator CreateTestOperator(Guid id, string code, string identityCode, string email)
     {
@@ -554,7 +612,8 @@ public class PatchOperatorEndpointTests(TestWebApplicationFactory factory) : Bas
             email,
             "+212600000000",
             OperatorType.Agence,
-            Guid.NewGuid());
+            Guid.NewGuid(),
+            null); 
     }
 
     private static Agency CreateMockAgency()

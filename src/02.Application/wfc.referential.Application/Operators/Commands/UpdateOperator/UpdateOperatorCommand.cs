@@ -16,4 +16,5 @@ public record UpdateOperatorCommand : ICommand<Result<bool>>
     public bool IsEnabled { get; init; } = true;
     public OperatorType? OperatorType { get; init; }
     public Guid? BranchId { get; init; }
+    public Guid? ProfileId { get; init; }
 }

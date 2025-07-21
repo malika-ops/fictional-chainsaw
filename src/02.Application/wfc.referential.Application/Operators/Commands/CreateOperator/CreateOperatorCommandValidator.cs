@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using wfc.referential.Domain.OperatorAggregate;
 
 namespace wfc.referential.Application.Operators.Commands.CreateOperator;
 
@@ -39,5 +38,9 @@ public class CreateOperatorCommandValidator : AbstractValidator<CreateOperatorCo
         RuleFor(x => x.BranchId)
             .NotEqual(Guid.Empty).WithMessage("BranchId must be a valid GUID if provided")
             .When(x => x.BranchId.HasValue);
+
+        RuleFor(x => x.ProfileId)
+            .NotEqual(Guid.Empty).WithMessage("ProfileId must be a valid GUID if provided")
+            .When(x => x.ProfileId.HasValue);
     }
 }

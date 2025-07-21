@@ -59,15 +59,6 @@ public class PatchOperatorCommandHandler : ICommandHandler<PatchOperatorCommand,
                 throw new ResourceNotFoundException($"Branch with ID {cmd.BranchId.Value} not found");
         }
 
-        // TODO: Validate ProfileId exists if provided
-        // La table profile n'existe pas encore
-        // if (cmd.ProfileId.HasValue)
-        // {
-        //     var profile = await _profileRepository.GetByIdAsync(ProfileId.Of(cmd.ProfileId.Value), ct);
-        //     if (profile is null)
-        //         throw new ResourceNotFoundException($"Profile with ID {cmd.ProfileId.Value} not found");
-        // }
-
         operatorEntity.Patch(
             cmd.Code,
             cmd.IdentityCode,
@@ -77,7 +68,8 @@ public class PatchOperatorCommandHandler : ICommandHandler<PatchOperatorCommand,
             cmd.PhoneNumber,
             cmd.IsEnabled,
             cmd.OperatorType,
-            cmd.BranchId);
+            cmd.BranchId,
+            cmd.ProfileId);
 
         await _repo.SaveChangesAsync(ct);
         return Result.Success(true);
