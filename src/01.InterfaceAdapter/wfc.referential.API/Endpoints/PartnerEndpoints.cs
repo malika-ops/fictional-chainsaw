@@ -8,6 +8,7 @@ using wfc.referential.Application.Partners.Commands.UpdatePartner;
 using wfc.referential.Application.Partners.Dtos;
 using wfc.referential.Application.Partners.Queries.GetPartnerById;
 using wfc.referential.Application.Partners.Queries.GetFiltredPartners;
+using wfc.referential.Application.Partners.Commands.GetPricingConfiguration;
 
 namespace wfc.referential.API.Features;
 
@@ -70,6 +71,15 @@ public static class PartnerEndpoints
             .ProducesValidationProblem(400)
             .Produces(404)
             .ProducesProblem(409);
+
+        group.MapPost("/pricing-configuration/search", GetPricingConfiguration)
+             .WithName("GetPricingConfiguration")
+             .WithSummary("Retrieve aggregated pricing configuration for a partner")
+             .WithDescription("Given PartnerId, ServiceId, CorridorId, AffiliateId, Channel and Amount, returns the applicable Contract, Pricing and list of Taxes.")
+             .Accepts<GetPricingConfigurationRequest>("application/json")
+             .Produces<GetPricingConfigurationResponse>(StatusCodes.Status200OK)
+             .ProducesValidationProblem(400)
+             .ProducesProblem(500);
     }
 
     internal static async Task<IResult> CreatePartner(
@@ -128,5 +138,14 @@ public static class PartnerEndpoints
         var command = new DeletePartnerCommand { PartnerId = partnerId };
         var result = await mediator.Send(command);
         return Results.Ok(result.Value);
+    }
+
+    internal static async Task<IResult> GetPricingConfiguration(
+       GetPricingConfigurationRequest request,
+       IMediator mediator)
+    {
+        var query = request.Adapt<GetPricingConfigurationCommand>();
+        var result = await mediator.Send(query);
+        return Results.Ok(result);
     }
 }
