@@ -60,5 +60,11 @@ data:
       "ConnectionStrings": {
           "Database": "#{ConnectionStrings__wfc.referential.dbc}#",
           "Redis": "#{ConnectionStrings__wfc.referential.redis}#"
-      }
+      },
+     "SpecialCharacterValidation": {
+          "ForbiddenCharactersPattern": "[<>&\"'/\\\\{}\\[\\]();:=+*?%#@!$^`~|\\r\\n\\t]",
+          "ExcludedProperties": ["password","token","signature","hash","key","secret"],
+          "EnableDetailedErrorMessages": true,
+          "IsEnabled": false
+     }
     }

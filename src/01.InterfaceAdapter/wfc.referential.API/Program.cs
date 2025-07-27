@@ -4,6 +4,7 @@ using BuildingBlocks.Core.CoreServices;
 using Serilog;
 using wfc.referential.API;
 using wfc.referential.Application;
+using wfc.referential.Application.ValdationsBehaviour;
 using wfc.referential.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,17 +12,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.AddServiceDefaults("ReferentialApi");
 
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
-    .Enrich.WithProperty("ServiceName", "ReferentialApi")
-    .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
-    .CreateLogger();
+builder.Services.AddSerilog((services, lc) => lc
+         .ReadFrom.Configuration(builder.Configuration)
+         .Enrich.FromLogContext()
+         .Enrich.WithProperty("ServiceName", "ReferentialApi")
+         .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName));
 
+builder.Services.Configure<SpecialCharacterValidationOptions>(builder.Configuration.GetSection("SpecialCharacterValidation"));
 
-builder.Host.UseSerilog();
 builder.Services.AddAuthorization();
-
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -58,7 +57,6 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 var app = builder.Build();
 
-app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseHttpsRedirection();
 //app.UseAuthentication();

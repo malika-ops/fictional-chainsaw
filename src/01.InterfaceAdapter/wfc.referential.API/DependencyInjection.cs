@@ -39,7 +39,7 @@ public static class DependencyInjection
     public static WebApplication UseApiServices(this WebApplication app)
     {
         app.UseExceptionHandler(opt => { });
-
+        app.UseMiddleware<RequestLoggingMiddleware>();
         return app;
     }
 
