@@ -65,6 +65,6 @@ data:
           "ForbiddenCharactersPattern": "#{ForbiddenCharactersPattern__wfc.referential}#",
           "ExcludedProperties": ["password","token","signature","hash","key","secret"],
           "EnableDetailedErrorMessages": true,
-          "IsEnabled": false
+          "IsEnabled": true
      }
     }
