@@ -2,5 +2,5 @@
 
 namespace wfc.referential.Domain.CurrencyDenominationAggregate.Exceptions;
 
-public class CurrencyCodeIsoAlreadyExistException(int codeIso)
-    : ConflictException($"Currency with ISO code {codeIso} already exists.");
+public class CurrencyDenominationAlreadyExistException(Guid currencyid, CurrencyDenominationType type , decimal value)
+    : ConflictException($"CurrencyDenomination with currencyid = {currencyid} and type = {type} and value = {value} already exists.");

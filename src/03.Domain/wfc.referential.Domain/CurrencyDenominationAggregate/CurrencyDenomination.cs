@@ -7,7 +7,7 @@ namespace wfc.referential.Domain.CurrencyDenominationAggregate;
 public class CurrencyDenomination : Aggregate<CurrencyDenominationId>
 {
     public CurrencyId CurrencyId { get; set; }  
-    public CurrencyDenominationType TypeCurrency { get; set; }
+    public CurrencyDenominationType Type { get; set; }
     public Decimal Value { get; set; }
     public bool IsEnabled { get; private set; } = true;
 
@@ -24,7 +24,7 @@ public class CurrencyDenomination : Aggregate<CurrencyDenominationId>
         {
             Id = id,
             CurrencyId = currencyId,
-            TypeCurrency = typeCurrency,
+            Type = typeCurrency,
             Value = value,
             IsEnabled = true
         };
@@ -32,7 +32,7 @@ public class CurrencyDenomination : Aggregate<CurrencyDenominationId>
         CurrencyDenomination.AddDomainEvent(new CurrencyDenominationCreatedEvent(
             CurrencyDenomination.Id.Value,
             CurrencyDenomination.CurrencyId,
-            CurrencyDenomination.TypeCurrency,
+            CurrencyDenomination.Type,
             CurrencyDenomination.Value,
             DateTime.UtcNow));
 
@@ -46,14 +46,14 @@ public class CurrencyDenomination : Aggregate<CurrencyDenominationId>
         bool? isEnabled)
     {
         CurrencyId = currencyId;
-        TypeCurrency = typeCurrency;
+        Type = typeCurrency;
         Value = value;
         IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new CurrencyDenominationUpdatedEvent(
             Id.Value,
             CurrencyId,
-            TypeCurrency,
+            Type,
             Value,
             DateTime.UtcNow));
     }
@@ -65,14 +65,14 @@ public class CurrencyDenomination : Aggregate<CurrencyDenominationId>
         bool? isEnabled)
     {
         CurrencyId = currencyId ?? CurrencyId;
-        TypeCurrency = typeCurrency ?? TypeCurrency;
+        Type = typeCurrency ?? Type;
         Value = value ?? Value;
         IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new CurrencyDenominationPatchedEvent(
             Id.Value,
             CurrencyId,
-            TypeCurrency,
+            Type,
             Value,
             DateTime.UtcNow));
     }
