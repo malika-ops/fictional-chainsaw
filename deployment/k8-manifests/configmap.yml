@@ -63,8 +63,8 @@ data:
       },
      "SpecialCharacterValidation": {
           "ForbiddenCharactersPattern": "#{ForbiddenCharactersPattern__wfc.referential}#",
-          "ExcludedProperties": ["password","token","signature","hash","key","secret"],
-          "EnableDetailedErrorMessages": true,
-          "IsEnabled": true
+          "ExcludedProperties": "#{ExcludedProperties__wfc.referential}#",
+          "EnableDetailedErrorMessages": "#{EnableDetailedErrorMessages__wfc.referential}#",
+          "IsEnabled": "#{SpecialCharacterValidation__IsEnabled__wfc.referential}#"
      }
     }

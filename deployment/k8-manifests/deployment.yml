@@ -7,7 +7,7 @@ metadata:
     app: wfc-referential-api
     version: v1
 spec:
-  replicas: 4
+  replicas: 1
   selector:
     matchLabels:
       app: wfc-referential-api
@@ -39,8 +39,8 @@ spec:
           readOnly: false
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "128Mi"
+            cpu: "100m"
           limits:
             memory: "512Mi"
             cpu: "500m"
@@ -66,7 +66,7 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
+          - weight: 50
             podAffinityTerm:
               labelSelector:
                 matchExpressions:
@@ -88,7 +88,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: wfc-referential-api
-  minReplicas: 4
+  minReplicas: 1
   maxReplicas: 10
   metrics:
   - type: Resource
