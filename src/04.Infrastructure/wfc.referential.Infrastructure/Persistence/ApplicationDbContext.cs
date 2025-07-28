@@ -13,6 +13,7 @@ using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CountryIdentityDocAggregate;
 using wfc.referential.Domain.CountryServiceAggregate;
 using wfc.referential.Domain.CurrencyAggregate;
+using wfc.referential.Domain.CurrencyDenominationAggregate;
 using wfc.referential.Domain.IdentityDocumentAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
 using wfc.referential.Domain.ParamTypeAggregate;
@@ -61,6 +62,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<CountryService> CountryServices => Set<CountryService>();
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<ContractDetails> ContractDetails => Set<ContractDetails>();
+    public DbSet<CurrencyDenomination> CurrencyDenominations => Set<CurrencyDenomination>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

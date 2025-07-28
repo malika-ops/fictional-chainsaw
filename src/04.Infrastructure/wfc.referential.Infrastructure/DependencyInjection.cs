@@ -117,6 +117,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<IContractDetailsRepository, ContractDetailsRepository>();
         builder.Services.AddScoped<IServiceControleRepository, ServiceControleRepository>();
         builder.Services.AddScoped<IOperatorRepository, OperatorRepository>();
+        builder.Services.AddScoped<ICurrencyDenominationRepository, CurrencyDenominationRepository>();
 
         return builder;
     }
