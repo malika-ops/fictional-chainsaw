@@ -61,6 +61,7 @@ public abstract class BaseAcceptanceTests : IDisposable
     protected Mock<IServiceControleRepository> _serviceControlRepoMock => _factory.GetMock<IServiceControleRepository>();
     protected Mock<ITaxRuleDetailRepository> _taxRuleDetailsRepoMock => _factory.GetMock<ITaxRuleDetailRepository>();
     protected Mock<ITaxRepository> _taxRepoMock => _factory.GetMock<ITaxRepository>();
+    protected Mock<ICurrencyDenominationRepository> _currencyDenominationRepoMock => _factory.GetMock<ICurrencyDenominationRepository>();
 
     protected BaseAcceptanceTests(TestWebApplicationFactory factory)
     {

@@ -107,6 +107,7 @@ public class TestWebApplicationFactory : IDisposable
         services.AddSingleton(GetMock<IServiceControleRepository>().Object);
         services.AddSingleton(GetMock<ITaxRuleDetailRepository>().Object);
         services.AddSingleton(GetMock<ITaxRepository>().Object);
+        services.AddSingleton(GetMock<ICurrencyDenominationRepository>().Object);
     }
 
     public void Dispose()
