@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.CurrencyDenominationAggregate;
 
 namespace wfc.referential.Infrastructure.Persistence.Configurations;
@@ -15,17 +16,22 @@ public class CurrencyDenominationConfiguration : IEntityTypeConfiguration<Curren
                 id => id.Value,
                 value => new CurrencyDenominationId(value));
 
-        builder.Property(c => c.CurrencyId).IsRequired();
-        builder.Property(c => c.Type).IsRequired();
-        builder.Property(c => c.Value).IsRequired();
+        builder.Property(x => x.CurrencyId)
+           .HasConversion(
+               id => id.Value,
+               value => new CurrencyId(value))
+           .IsRequired();
 
-        builder.Property(c => c.IsEnabled)
-            .IsRequired()
-            .HasDefaultValue(true);
 
-        // Add unique constraints
-        builder.HasIndex(c => c.CurrencyId).IsUnique();
-        builder.HasIndex(c => c.Type).IsUnique();
-        builder.HasIndex(c => c.Value).IsUnique();
+        builder.Property(cd => cd.Type)
+            .HasConversion<string>()
+            .IsRequired();
+
+        builder.Property(cd => cd.Value)
+            .HasColumnType("decimal(18,2)")
+            .IsRequired();
+
+        builder.Property(cd => cd.IsEnabled)
+            .IsRequired();
     }
 }

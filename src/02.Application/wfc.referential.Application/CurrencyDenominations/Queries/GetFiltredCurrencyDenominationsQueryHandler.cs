@@ -10,14 +10,14 @@ namespace wfc.referential.Application.CurrencyDenominations.Queries.GetFiltredCu
 public class GetFiltredCurrencyDenominationsHandler
     : IQueryHandler<GetFiltredCurrencyDenominationsQuery, PagedResult<GetCurrencyDenominationsResponse>>
 {
-    private readonly ICurrencyRepository _repo;
+    private readonly ICurrencyDenominationRepository _repo;
 
-    public GetFiltredCurrencyDenominationsHandler(ICurrencyRepository repo) => _repo = repo;
+    public GetFiltredCurrencyDenominationsHandler(ICurrencyDenominationRepository repo) => _repo = repo;
 
     public async Task<PagedResult<GetCurrencyDenominationsResponse>> Handle(
-        GetFiltredCurrencyDenominationsQuery currencyQuery, CancellationToken ct)
+        GetFiltredCurrencyDenominationsQuery currencyDenominationQuery, CancellationToken ct)
     {
-        var currencydenominations = await _repo.GetPagedByCriteriaAsync(currencyQuery, currencyQuery.PageNumber, currencyQuery.PageSize, ct);
+        var currencydenominations = await _repo.GetPagedByCriteriaAsync(currencyDenominationQuery, currencyDenominationQuery.PageNumber, currencyDenominationQuery.PageSize, ct);
         return new PagedResult<GetCurrencyDenominationsResponse>(currencydenominations.Items.Adapt<List<GetCurrencyDenominationsResponse>>(), currencydenominations.TotalCount, currencydenominations.PageNumber, currencydenominations.PageSize);
     }
 }

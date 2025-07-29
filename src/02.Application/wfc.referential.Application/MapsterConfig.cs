@@ -67,5 +67,6 @@ public static class MapsterConfig
         ContractDetailsMappings.Register();
         ServiceControleMappings.Register();
         OperatorMappings.Register();
+        CurrencyDenominationMappings.Register();
     }
 }
