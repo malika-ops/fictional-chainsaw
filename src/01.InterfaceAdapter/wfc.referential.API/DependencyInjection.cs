@@ -76,6 +76,7 @@ public static class DependencyInjection
         app.MapControleEndpoints();
         app.MapServiceControleEndpoints();
         app.MapOperatorEndpoints();
+        app.MapCurrencyDenominationEndpoints();
 
         return app;
     }

@@ -32,4 +32,5 @@ public static class EndpointGroups
     public const string Contracts = "Contracts";
     public const string Controles = "Controles";
     public const string ContractDetails = "ContractDetails";
+    public const string CurrencyDenominations = "CurrencyDenominations";
 }

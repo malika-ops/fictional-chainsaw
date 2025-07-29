@@ -10,20 +10,24 @@ public class PatchCurrencyDenominationCommandValidator : AbstractValidator<Patch
             .NotEqual(Guid.Empty).WithMessage("CurrencyDenominationId cannot be empty.");
 
         // If code is provided (not null), check it's not empty
-        When(x => x.CurrencyId is not null, () => {
+        When(x => x.CurrencyId is not null, () =>
+        {
             RuleFor(x => x.CurrencyId!)
                 .NotEmpty().WithMessage("CurrencyId cannot be empty if provided.");
         });
 
         // If name is provided, check not empty
-        When(x => x.Type is not null, () => {
+        When(x => x.Type is not null, () =>
+        {
             RuleFor(x => x.Type!)
                 .NotEmpty().WithMessage("Type cannot be empty if provided.");
         });
 
         // If CodeAR is provided, check not empty
-        When(x => x.Value is not null, () => {
+        When(x => x.Value is not null, () =>
+        {
             RuleFor(x => x.Value!)
                 .NotEmpty().WithMessage("Value cannot be empty if provided.");
         });
+    }
 }

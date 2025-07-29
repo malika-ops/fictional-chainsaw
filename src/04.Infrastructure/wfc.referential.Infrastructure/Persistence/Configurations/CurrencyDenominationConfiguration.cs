@@ -16,7 +16,7 @@ public class CurrencyDenominationConfiguration : IEntityTypeConfiguration<Curren
                 value => new CurrencyDenominationId(value));
 
         builder.Property(c => c.CurrencyId).IsRequired();
-        builder.Property(c => c.TypeCurrency).IsRequired();
+        builder.Property(c => c.Type).IsRequired();
         builder.Property(c => c.Value).IsRequired();
 
         builder.Property(c => c.IsEnabled)
@@ -25,7 +25,7 @@ public class CurrencyDenominationConfiguration : IEntityTypeConfiguration<Curren
 
         // Add unique constraints
         builder.HasIndex(c => c.CurrencyId).IsUnique();
-        builder.HasIndex(c => c.TypeCurrency).IsUnique();
+        builder.HasIndex(c => c.Type).IsUnique();
         builder.HasIndex(c => c.Value).IsUnique();
     }
 }
