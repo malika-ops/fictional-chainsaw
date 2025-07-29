@@ -6,11 +6,17 @@ public class CreateCurrencyDenominationValidator : AbstractValidator<CreateCurre
 {
     public CreateCurrencyDenominationValidator()
     {
-        RuleFor(x => x.CurrencyId).NotEmpty()
+        RuleFor(x => x.CurrencyId)
+            .NotEmpty()
             .WithMessage("CurrencyId is required.");
-        RuleFor(x => x.Type).NotEmpty()
+
+        RuleFor(x => x.Type)
+            .NotEmpty()
+            .IsInEnum()
             .WithMessage("Type is required.");
-        RuleFor(x => x.Value).NotEmpty()
+
+        RuleFor(x => x.Value)
+            .NotEmpty()
             .WithMessage("Value is required.");
     }
 }

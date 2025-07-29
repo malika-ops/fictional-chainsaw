@@ -10,25 +10,37 @@ namespace wfc.referential.Application.CurrencyDenominations.Commands.UpdateCurre
 public class UpdateCurrencyDenominationCommandHandler
     : ICommandHandler<UpdateCurrencyDenominationCommand, Result<bool>>
 {
-    private readonly ICurrencyDenominationRepository _repo;
+    private readonly ICurrencyDenominationRepository _CurrencyDenominationRepository;
+    private readonly ICurrencyRepository _CurrencyRepository;
 
-    public UpdateCurrencyDenominationCommandHandler(ICurrencyDenominationRepository repo) => _repo = repo;
+    public UpdateCurrencyDenominationCommandHandler(ICurrencyDenominationRepository currencyDenominationRepository, ICurrencyRepository currencyRepository)
+    {
+        _CurrencyDenominationRepository = currencyDenominationRepository;
+        _CurrencyRepository = currencyRepository;
+    }
 
     public async Task<Result<bool>> Handle(UpdateCurrencyDenominationCommand cmd, CancellationToken ct)
     {
-        var currencyDenomination = await _repo.GetByIdAsync(CurrencyDenominationId.Of(cmd.CurrencyDenominationId), ct);
+        //Check if the currency denomination exists
+        var currencyDenomination = await _CurrencyDenominationRepository.GetByIdAsync(CurrencyDenominationId.Of(cmd.CurrencyDenominationId), ct);
         if (currencyDenomination is null)
             throw new BusinessException($"CurrencyDenomination [{cmd.CurrencyDenominationId}] not found.");
 
+        //Check if the currency exists
+        var currency = await _CurrencyRepository.GetByIdAsync(CurrencyId.Of(cmd.CurrencyId)) ??
+                throw new ResourceNotFoundException($"Currency with Id '{cmd.CurrencyId}' not found");
+
+        //Update the currency denomination
         currencyDenomination.Update(
             CurrencyId.Of(cmd.CurrencyId),
             cmd.Type,
             cmd.Value,
             cmd.IsEnabled);
 
-        _repo.Update(currencyDenomination);
+        _CurrencyDenominationRepository.Update(currencyDenomination);
 
-        await _repo.SaveChangesAsync(ct);
+        //Save changes to the repository
+        await _CurrencyDenominationRepository.SaveChangesAsync(ct);
         return Result.Success(true);
     }
 }

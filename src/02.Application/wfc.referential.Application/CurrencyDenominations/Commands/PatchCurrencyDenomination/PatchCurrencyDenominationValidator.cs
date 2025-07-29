@@ -20,7 +20,9 @@ public class PatchCurrencyDenominationCommandValidator : AbstractValidator<Patch
         When(x => x.Type is not null, () =>
         {
             RuleFor(x => x.Type!)
-                .NotEmpty().WithMessage("Type cannot be empty if provided.");
+                .NotEmpty()
+                .IsInEnum()
+                .WithMessage("Type cannot be empty if provided.");
         });
 
         // If CodeAR is provided, check not empty

@@ -27,6 +27,12 @@ public class CurrencyDenominationConfiguration : IEntityTypeConfiguration<Curren
             .HasConversion<string>()
             .IsRequired();
 
+        builder.Property(cd => cd.Type).
+            HasConversion(
+              cd => cd.ToString(),
+              cd => (CurrencyDenominationType)Enum.Parse(typeof(CurrencyDenominationType), cd)
+            );
+
         builder.Property(cd => cd.Value)
             .HasColumnType("decimal(18,2)")
             .IsRequired();

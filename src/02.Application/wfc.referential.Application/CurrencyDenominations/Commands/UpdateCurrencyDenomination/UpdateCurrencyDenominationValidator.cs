@@ -14,7 +14,9 @@ public class UpdateCurrencyDenominationCommandValidator : AbstractValidator<Upda
             .NotEmpty().WithMessage("CurrencyId is required.");
 
         RuleFor(x => x.Type)
-            .NotEmpty().WithMessage("Type is required.");
+            .NotEmpty()
+            .IsInEnum()
+            .WithMessage("Type is required.");
 
         RuleFor(x => x.Value)
             .NotEmpty().WithMessage("Value is required.");
