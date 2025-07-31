@@ -2,7 +2,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using FluentAssertions;
 using Moq;
 using wfc.referential.Application.CurrencyDenominations.Dtos;
