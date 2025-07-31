@@ -11,7 +11,6 @@ public class CreateCurrencyDenominationValidator : AbstractValidator<CreateCurre
             .WithMessage("CurrencyId is required.");
 
         RuleFor(x => x.Type)
-            .NotEmpty()
             .IsInEnum()
             .WithMessage("Type is required.");
 

@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using BuildingBlocks.Core.CoreServices;
 using Serilog;
 using wfc.referential.API;
@@ -54,6 +55,7 @@ builder
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 var app = builder.Build();
 

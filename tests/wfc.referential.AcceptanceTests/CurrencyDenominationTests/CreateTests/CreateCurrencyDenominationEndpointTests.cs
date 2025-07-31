@@ -17,11 +17,6 @@ public class CreateCurrencyDenominationAcceptanceTests(TestWebApplicationFactory
     [Fact(DisplayName = "POST /api/currencyDenominations creates currency denomination with all required fields")]
     public async Task CreateCurrencyDenomination_Should_CreateNewCurrencyDenomination_WhenAllRequiredFieldsProvided()
     {
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters = { new JsonStringEnumConverter() }
-        };
         // Arrange
         var createRequest = new CreateCurrencyDenominationRequest
         {
@@ -40,11 +35,11 @@ public class CreateCurrencyDenominationAcceptanceTests(TestWebApplicationFactory
             .Setup(r => r.GetByConditionAsync(It.IsAny<Expression<Func<CurrencyDenomination, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var json = JsonSerializer.Serialize(createRequest, options);
+        var json = JsonSerializer.Serialize(createRequest);
         Console.WriteLine(">>> JSON Sent:\n" + json);
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/currencyDenominations", createRequest, options);
+        var response = await _client.PostAsJsonAsync("/api/currencyDenominations", createRequest);
 
         var body = await response.Content.ReadAsStringAsync();
         Console.WriteLine(">>>>> RESPONSE BODY:\n" + body);
