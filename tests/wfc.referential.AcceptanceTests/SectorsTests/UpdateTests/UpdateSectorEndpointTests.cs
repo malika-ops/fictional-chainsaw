@@ -280,7 +280,7 @@ public class UpdateSectorEndpointTests : BaseAcceptanceTests
         var updateRequest = new UpdateSectorRequest
         {
             Code = "SEC-001_MODIFIÉ",
-            Name = "Secteur Modifié avec Accents & Symboles (Zone 1)",
+            Name = "Secteur Modifié avec Accents et Symboles",
             CityId = existingSector.CityId.Value,
             IsEnabled = true
         };

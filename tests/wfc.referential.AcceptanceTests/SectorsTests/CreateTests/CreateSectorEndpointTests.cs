@@ -227,7 +227,7 @@ public class CreateSectorEndpointTests : BaseAcceptanceTests
         var createRequest = new CreateSectorRequest
         {
             Code = "SEC006",
-            Name = "Secteur Ville-Centre & Périphérie (Zone 1)",
+            Name = "Secteur VilleCentre et Peripherie Zone 1",
             CityId = Guid.NewGuid()
         };
 
@@ -237,7 +237,7 @@ public class CreateSectorEndpointTests : BaseAcceptanceTests
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         _sectorRepoMock.Verify(r => r.AddAsync(It.Is<Sector>(s =>
-            s.Name == "Secteur Ville-Centre & Périphérie (Zone 1)"), It.IsAny<CancellationToken>()), Times.Once);
+            s.Name == "Secteur VilleCentre et Peripherie Zone 1"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact(DisplayName = "POST /api/sectors returns proper error message for duplicate code")]

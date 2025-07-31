@@ -209,7 +209,7 @@ public class CreatePartnerEndpointTests: BaseAcceptanceTests
     [Theory(DisplayName = "POST /api/partners accepts valid person types")]
     [InlineData("Natural Person")]
     [InlineData("Legal Person")]
-    [InlineData("Natural Person/Legal Person")]
+    [InlineData("Natural Person Legal Person")]
     public async Task Post_ShouldAcceptValidPersonTypes(string personType)
     {
         // Arrange
