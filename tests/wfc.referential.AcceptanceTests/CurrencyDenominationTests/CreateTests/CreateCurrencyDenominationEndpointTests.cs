@@ -1,7 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using FluentAssertions;
 using Moq;
 using wfc.referential.Application.CurrencyDenominations.Dtos;
@@ -34,14 +33,10 @@ public class CreateCurrencyDenominationAcceptanceTests(TestWebApplicationFactory
             .Setup(r => r.GetByConditionAsync(It.IsAny<Expression<Func<CurrencyDenomination, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var json = JsonSerializer.Serialize(createRequest);
-        Console.WriteLine(">>> JSON Sent:\n" + json);
-
         // Act
         var response = await _client.PostAsJsonAsync("/api/currencyDenominations", createRequest);
 
         var body = await response.Content.ReadAsStringAsync();
-        Console.WriteLine(">>>>> RESPONSE BODY:\n" + body);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
