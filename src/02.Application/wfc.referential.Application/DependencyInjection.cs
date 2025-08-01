@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using BuildingBlocks.Core.Behaviors;
+using BuildingBlocks.Core.Behaviors.Valdations;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +17,7 @@ public static class DependencyInjection
         {
             config.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
             config.AddOpenBehavior(typeof(CachingBehavior<,>));
-            config.AddOpenBehavior(typeof(ValdationsBehaviour.ValidationBehavior<,>));
+            config.AddOpenBehavior(typeof(ValidationBehavior<,>));
             config.AddOpenBehavior(typeof(LoggingBehavior<,>));
         });
 

@@ -1,10 +1,10 @@
 using System.Reflection;
 using System.Text.Json;
+using BuildingBlocks.Core.Behaviors.Valdations;
 using BuildingBlocks.Core.CoreServices;
 using Serilog;
 using wfc.referential.API;
 using wfc.referential.Application;
-using wfc.referential.Application.ValdationsBehaviour;
 using wfc.referential.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
