@@ -18,6 +18,12 @@ RUN apt-get update && \
         --no-install-recommends && \
     fc-cache -f -v && \
     rm -rf /var/lib/apt/lists/*
+
+# Copy your CA certificate into the image
+COPY ./deployment/certificat/wafacash-MASSA-CA.crt /usr/local/share/ca-certificates/wafacash-ca.crt
+
+# Update CA certificates to trust your CA
+RUN update-ca-certificates
     
 # Copy published application 
 COPY ./src/Output/wfc.referential.API/ .
