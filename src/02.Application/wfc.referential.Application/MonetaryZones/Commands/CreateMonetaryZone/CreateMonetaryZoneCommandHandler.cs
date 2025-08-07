@@ -42,7 +42,7 @@ public class CreateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZ
                  TraceId = traceId
              });
 
-        await _kafkaProducer.ProduceAsync( auditEvent , "auditLogsTopic");
+        //await _kafkaProducer.ProduceAsync( auditEvent , "auditLogsTopic");
 
         return Result.Success(monetaryZone.Id!.Value);
 
