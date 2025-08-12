@@ -26,23 +26,21 @@ public class CreateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZ
         await _monetaryZoneRepository.AddAsync(monetaryZone, cancellationToken);
         await _monetaryZoneRepository.SaveChangesAsync(cancellationToken);
 
-        var auditEvent = new MonetaryZoneCreatedAuditEvent(
-             userId,
-             monetaryZone.Id!.Value,
-             new
-             {
-                 monetaryZone.Code,
-                 monetaryZone.Name,
-                 monetaryZone.Description,
-                 monetaryZone.IsEnabled
-             },
-             new
-             {
-                 ip = _userContext.IpAddress,
-                 TraceId = traceId
-             });
+        var auditEvent = new MonetaryZoneCreatedAuditEvent
+        {
+            NewValueJson = monetaryZone,
+            OldValueJson = null,
+            Timestamp = DateTime.UtcNow,
+            EntityId = monetaryZone.Id!.ToString(),
+            MetadataJson = new
+            {
+                ip = _userContext.IpAddress,
+                TraceId = traceId
+            },
+            
+        };
 
-        //await _kafkaProducer.ProduceAsync( auditEvent , "auditLogsTopic");
+        //await _kafkaProducer.ProduceAsync(auditEvent, "auditLogsTopic");
 
         return Result.Success(monetaryZone.Id!.Value);
 

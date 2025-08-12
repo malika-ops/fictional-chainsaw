@@ -10,7 +10,7 @@
 
   <ItemGroup>
 	<PackageReference Include="AutoFixture" Version="4.18.1" />
-	<PackageReference Include="BuildingBlocks" Version="1.0.55" />
+	<PackageReference Include="BuildingBlocks" Version="1.0.56" />
 	<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.3" />
 	<PackageReference Include="FluentAssertions" Version="8.1.0" />
 	<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.13" />
