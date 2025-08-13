@@ -9,22 +9,25 @@ using wfc.referential.Domain.MonetaryZoneAggregate.Exceptions;
 
 namespace wfc.referential.Application.MonetaryZones.Commands.CreateMonetaryZone;
 
-public class CreateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZoneRepository,IProducerService _kafkaProducer,ICurrentUserContext _userContext) 
+public class CreateMonetaryZoneCommandHandler(
+    IMonetaryZoneRepository monetaryZoneRepository,
+    IProducerService kafkaProducer,
+    ICurrentUserContext userContext) 
     : ICommandHandler<CreateMonetaryZoneCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateMonetaryZoneCommand request, CancellationToken cancellationToken)
     {
-        var userId = _userContext.UserId ?? "anonymous";
-        var traceId = _userContext.TraceId ?? Guid.NewGuid().ToString();
+        var userId = userContext.UserId ?? "anonymous";
+        var traceId = userContext.TraceId ?? Guid.NewGuid().ToString();
 
-        var isExist = await _monetaryZoneRepository.GetOneByConditionAsync(m=>m.Code == request.Code, cancellationToken);
+        var isExist = await monetaryZoneRepository.GetOneByConditionAsync(m=>m.Code == request.Code, cancellationToken);
         if (isExist is not null) throw new CodeAlreadyExistException(request.Code);
 
         var id = MonetaryZoneId.Of(Guid.NewGuid()); 
         var monetaryZone = MonetaryZone.Create(id, request.Code, request.Name, request.Description);
 
-        await _monetaryZoneRepository.AddAsync(monetaryZone, cancellationToken);
-        await _monetaryZoneRepository.SaveChangesAsync(cancellationToken);
+        await monetaryZoneRepository.AddAsync(monetaryZone, cancellationToken);
+        await monetaryZoneRepository.SaveChangesAsync(cancellationToken);
 
         var auditEvent = new MonetaryZoneCreatedAuditEvent
         {
@@ -34,15 +37,14 @@ public class CreateMonetaryZoneCommandHandler(IMonetaryZoneRepository _monetaryZ
             EntityId = monetaryZone.Id!.ToString(),
             MetadataJson = new
             {
-                ip = _userContext.IpAddress,
+                ip = userContext.IpAddress,
                 TraceId = traceId
             },
             
         };
 
-        //await _kafkaProducer.ProduceAsync(auditEvent, "auditLogsTopic");
+        //await kafkaProducer.ProduceAsync(auditEvent, "auditLogsTopic");
 
         return Result.Success(monetaryZone.Id!.Value);
-
     }
 }
