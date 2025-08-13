@@ -8,6 +8,9 @@ parameters:
   - name: Build_Release
     type: boolean
     default: true
+  - name: Run_Fortify_Scan
+    type: boolean
+    default: true
     
 name: 9.9$(Rev:.r)
 
@@ -22,6 +25,16 @@ variables:
     value: '$(Build.BuildId)'
   - name: dockerRegistryServiceConnection
     value: 'Harbor-Registry'
+  # Fortify Variables
+  - name: fortifyProjectName
+    value: 'wfc-referential-api'
+  - name: fortifyProjectVersion
+    value: '$(Build.SourceBranchName)'
+  - name: fortifyScanId
+    value: 'wfc-referential-api-$(Build.BuildId)'
+  - name: fortifyProjectID
+    value: '10005'
+
 
 stages:
 - stage: Build_CI
@@ -144,6 +157,266 @@ stages:
         tags: |
           latest
           $(tag)
+
+# Stage 2: Fortify Security Scan (runs in parallel after build artifacts are published)
+- stage: Fortify_Security_Scan
+  condition: and(succeeded(), eq(${{parameters.Run_Fortify_Scan}}, 'true'))
+  displayName: Fortify Security Scan
+  dependsOn: []  # Runs independently to maximize parallelism
+  jobs:
+  - job: Fortify_Scan
+    displayName: Fortify Static Code Analysis
+    pool:
+      name: Agents_Win_Linux
+      demands: 
+        - Agent.OS -equals Linux
+        - fortify  
+    timeoutInMinutes: 120  
+    workspace:
+      clean: all
+    variables:
+    - group: SecurityToolsLibrary
+    steps:
+    - task: Bash@3
+      displayName: 'Verify Fortify Installation'
+      inputs:
+        targetType: 'inline'
+        script: |
+          /home/wfc/fortify/fortify_sca_24.4.0/bin/sourceanalyzer -version
+
+    # Clean previous scan artifacts
+    - script: |
+        /home/wfc/fortify/fortify_sca_24.4.0/bin/sourceanalyzer -b $(fortifyScanId) -clean
+      displayName: 'Clean Fortify Build Session'
+      continueOnError: true
+
+    - script: |
+        echo "Contents of SourcesDirectory:"
+        ls -R $(Build.SourcesDirectory)/src
+      displayName: 'Display Build.SourcesDirectory contents'
+
+    # Translate source code
+    - script: |
+        echo "Starting Fortify translation..."
+        /home/wfc/fortify/fortify_sca_24.4.0/bin/sourceanalyzer -b $(fortifyScanId) \
+          -dotnet-version 8.0 \
+          -libdirs "$(Build.SourcesDirectory)/src/**/bin/$(buildConfiguration)" \
+          "$(Build.SourcesDirectory)/src/**/*.cs" \
+          "$(Build.SourcesDirectory)/src/**/*.csproj"
+      displayName: 'Fortify - Translate Source Code'
+      timeoutInMinutes: 30
+
+    # Scan source code
+    - script: |
+        echo "Starting Fortify scan..."
+        /home/wfc/fortify/fortify_sca_24.4.0/bin/sourceanalyzer -b $(fortifyScanId) \
+          -scan \
+          -f "$(Build.SourcesDirectory)/$(fortifyScanId).fpr" \
+          -format fpr \
+          -verbose \
+          -Xmx4G \
+          -Xms2G \
+          -Xss24M
+      displayName: 'Fortify - Scan Source Code'
+      timeoutInMinutes: 60
+
+    - script: |
+        echo "Contents of SourcesDirectory:"
+        ls -R $(Build.SourcesDirectory)
+      displayName: 'Display Fortify directory contents'
+
+    - task: Bash@3
+      displayName: 'Debug - List Available Projects and Versions'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Install jq if needed
+          which jq || (sudo apt-get update && sudo apt-get install -y jq)
+
+          # Using the token from the library group
+          SSC_URL="$(Fortify_SSC_URL)"
+          AUTH_TOKEN="$(FortifyAuthToken)"
+
+          echo "=== Testing API Connection ==="
+          echo "Testing connection to: $SSC_URL with this token : $AUTH_TOKEN "
+
+          # Test basic connectivity
+          SERVER_VERSION=$(curl -k -s \
+            -H "Authorization: FortifyToken $AUTH_TOKEN" \
+            "$SSC_URL/api/v1/serverVersion" 2>&1)
+
+          echo "Server response: $SERVER_VERSION"
+
+          echo ""
+          echo "=== Pipeline Variables ==="
+          echo "fortifyProjectName: '$(fortifyProjectName)'"
+          echo "fortifyProjectVersion: '$(fortifyProjectVersion)'"
+
+          echo ""
+          echo "=== Available Projects ==="
+
+          PROJECTS_RESPONSE=$(curl -k -s \
+            -H "Authorization: FortifyToken $AUTH_TOKEN" \
+            "$SSC_URL/api/v1/projects")
+
+          echo "Projects API Response:"
+          echo "$PROJECTS_RESPONSE"
+
+          # Check if response is valid JSON
+          if echo "$PROJECTS_RESPONSE" | jq empty 2>/dev/null; then
+            echo ""
+            echo "=== Formatted Project List ==="
+            echo "$PROJECTS_RESPONSE" | jq -r '.data[] | "Project ID: \(.id) | Name: \(.name)"'
+
+            echo ""
+            echo "=== Available Project Versions ==="
+            PROJECT_VERSIONS_RESPONSE=$(curl -k -s \
+              -H "Authorization: FortifyToken $AUTH_TOKEN" \
+              "$SSC_URL/api/v1/projectVersions")
+
+            echo "$PROJECT_VERSIONS_RESPONSE" | jq -r '.data[] | "Project: \(.project.name) | Version: \(.name) | ID: \(.id)"'
+
+            echo ""
+            echo "=== Looking for Exact Match ==="
+            EXACT_MATCH=$(echo "$PROJECT_VERSIONS_RESPONSE" | jq -r --arg proj "$(fortifyProjectName)" --arg ver "$(fortifyProjectVersion)" '.data[] | select(.project.name == $proj and .name == $ver) | "Found: Project=\(.project.name), Version=\(.name), ID=\(.id)"')
+
+            if [ -n "$EXACT_MATCH" ]; then
+              echo "✅ $EXACT_MATCH"
+            else
+              echo "❌ No exact match found for project='$(fortifyProjectName)' version='$(fortifyProjectVersion)'"
+
+              echo ""
+              echo "=== Similar Projects (case-insensitive search) ==="
+              echo "$PROJECT_VERSIONS_RESPONSE" | jq -r --arg proj "$(fortifyProjectName)" '.data[] | select(.project.name | ascii_downcase | contains($proj | ascii_downcase)) | "Similar: \(.project.name) | Version: \(.name)"'
+            fi
+
+          else
+            echo "❌ Invalid JSON response or API error"
+            echo "Raw response: $PROJECTS_RESPONSE"
+          fi
+
+    - task: Bash@3
+      displayName: 'Upload FPR to Existing Version'
+      inputs:
+        targetType: 'inline'
+        script: |
+          which jq || (sudo apt-get update && sudo apt-get install -y jq)
+
+          # Using the token from the library group
+          SSC_URL="$(Fortify_SSC_URL)"
+          AUTH_TOKEN="$(FortifyAuthToken)"
+
+          FPR_FILE="$(Build.SourcesDirectory)/$(fortifyScanId).fpr"
+
+          # Use the existing project version ID: $(fortifyProjectID)
+          PROJECT_VERSION_ID="$(fortifyProjectID)" 
+
+          # echo "✅ Using existing project version:"
+          # echo "   Project: wfc-referential-api"  
+          # echo "   Version: 1.0"
+          # echo "   ID: $(fortifyProjectID)"
+
+          # Verify FPR file exists
+          if [ ! -f "$FPR_FILE" ]; then
+            echo "❌ FPR file not found: $FPR_FILE"
+            exit 1
+          fi
+
+          echo "📁 FPR file: $FPR_FILE ($(du -h "$FPR_FILE" | cut -f1))"
+
+          # Upload FPR
+          echo "🚀 Uploading FPR file..."
+          UPLOAD_RESULT=$(curl -k -s -w "HTTPSTATUS:%{http_code}" \
+            -H "Authorization: FortifyToken $AUTH_TOKEN" \
+            -F "file=@$FPR_FILE" \
+            "$SSC_URL/api/v1/projectVersions/$PROJECT_VERSION_ID/artifacts")
+
+          # Extract HTTP status and body
+          HTTP_STATUS=$(echo $UPLOAD_RESULT | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+          HTTP_BODY=$(echo $UPLOAD_RESULT | sed -e 's/HTTPSTATUS:.*//g')
+
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "Response: $HTTP_BODY"
+
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 201 ]; then
+            echo "✅ FPR uploaded successfully to wfc-referential-api v1.0!"
+
+            # Try to extract artifact ID
+            if echo "$HTTP_BODY" | jq empty 2>/dev/null; then
+              ARTIFACT_ID=$(echo "$HTTP_BODY" | jq -r '.data.id // "unknown"')
+              echo "🆔 Artifact ID: $ARTIFACT_ID"
+            fi
+          else
+            echo "❌ Upload failed with status $HTTP_STATUS"
+            echo "Response body: $HTTP_BODY"
+            exit 1
+          fi
+
+    - task: Bash@3
+      displayName: 'Convert FPR to HTML Report'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Define paths
+          FPR_FILE="$(Build.SourcesDirectory)/$(fortifyScanId).fpr"
+          HTML_OUTPUT="$(Build.ArtifactStagingDirectory)/fortify-security-report.html"
+          FORTIFY_BIN="/home/wfc/fortify/fortify_sca_24.4.0/bin"
+
+          # Verify FPR file exists
+          if [ ! -f "$FPR_FILE" ]; then
+            echo "❌ FPR file not found: $FPR_FILE"
+            exit 1
+          fi
+
+          echo "📄 Converting FPR to HTML..."
+          echo "   Input: $FPR_FILE"
+          echo "   Output: $HTML_OUTPUT"
+
+          # Create output directory if it doesn't exist
+          mkdir -p "$(Build.ArtifactStagingDirectory)"
+
+          # Generate HTML report
+          "$FORTIFY_BIN/FPRUtility" \
+            -information \
+            -listIssues \
+            -categoryIssueCounts \
+            -project "$FPR_FILE" \
+            -f "$HTML_OUTPUT"
+
+          # Check if HTML was created successfully
+          if [ -f "$HTML_OUTPUT" ]; then
+            echo "✅ HTML report generated successfully!"
+            echo "📊 Report size: $(du -h "$HTML_OUTPUT" | cut -f1)"
+          else
+            echo "❌ Failed to generate HTML report"
+            exit 1
+          fi
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish HTML Report as Artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/fortify-security-report.html'
+        ArtifactName: 'FortifySecurityReport'
+        publishLocation: 'Container'
+      condition: always()
+
+    - task: Bash@3
+      displayName: 'Display Fortify HTML Report Contents'
+      inputs:
+        targetType: 'inline'
+        script: |
+          HTML_FILE="$(Build.ArtifactStagingDirectory)/fortify-security-report.html"
+          
+          echo "📄 Contents of fortify-security-report.html:"
+          echo "============================================="
+          
+          if [ -f "$HTML_FILE" ]; then
+            cat "$HTML_FILE"
+          else
+            echo "❌ HTML file not found: $HTML_FILE"
+            echo "📁 Files in artifact directory:"
+            ls -la "$(Build.ArtifactStagingDirectory)/"
+          fi
 
 - stage: DeployDev
   displayName: Deploy to Development
