@@ -55,7 +55,6 @@ public record CreateCountryRequest
     /// <summary>   
     /// is the country has a sector
     /// </summary>
-    [Required]
     public bool HasSector { get; init; } = false;
     /// <summary>
     /// is the country has a SMS
@@ -64,7 +63,6 @@ public record CreateCountryRequest
     /// <summary>
     /// the number of decimal digits for the number format
     /// </summary>
-    [Required]
     public int NumberDecimalDigits { get; init; }
 
     /// <summary>
