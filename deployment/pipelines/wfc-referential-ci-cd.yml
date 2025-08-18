@@ -200,6 +200,7 @@ stages:
         echo "Starting Fortify translation..."
         /home/wfc/fortify/fortify_sca_24.4.0/bin/sourceanalyzer -b $(fortifyScanId) \
           -dotnet-version 8.0 \
+          -exclude "$(Build.SourcesDirectory)/src/**/Migrations/**" \
           -libdirs "$(Build.SourcesDirectory)/src/**/bin/$(buildConfiguration)" \
           "$(Build.SourcesDirectory)/src/**/*.cs" \
           "$(Build.SourcesDirectory)/src/**/*.csproj"
