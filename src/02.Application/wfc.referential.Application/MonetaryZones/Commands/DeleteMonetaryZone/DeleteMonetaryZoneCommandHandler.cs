@@ -48,7 +48,7 @@ public class DeleteMonetaryZoneCommandHandler(
 
         };
 
-        await kafkaProducer.ProduceAsync(auditEvent, "auditLogsTopic");
+        await kafkaProducer.ProduceAsync(auditEvent);
 
         return Result.Success(true);
     }
