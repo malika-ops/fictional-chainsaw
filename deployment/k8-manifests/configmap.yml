@@ -66,5 +66,9 @@ data:
           "ExcludedProperties": "#{ExcludedProperties__wfc.referential}#",
           "EnableDetailedErrorMessages": "#{EnableDetailedErrorMessages__wfc.referential}#",
           "IsEnabled": "#{SpecialCharacterValidation__IsEnabled__wfc.referential}#"
-     }
+     },
+     "KafkaProducerConfiguration": {
+         "BootstrapServers": "#{Kafka_AuditTrail_Producer__wfc.referential}#",
+         "Topic": "#{Kafka_AuditTrail_topic__wfc}#"
+     }   
     }
