@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BuildingBlocks" Version="1.0.56" />
+    <PackageReference Include="BuildingBlocks" Version="1.0.60" />
     <PackageReference Include="FluentAssertions" Version="8.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.13" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.2" />

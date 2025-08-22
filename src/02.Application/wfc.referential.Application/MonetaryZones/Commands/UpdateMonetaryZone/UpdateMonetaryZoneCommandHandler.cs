@@ -51,6 +51,7 @@ public class UpdateMonetaryZoneCommandHandler(
         // Create Audit Event
         var auditEvent = new MonetaryZoneUpdatedAuditEvent
         {
+            TraceId = traceId,
             NewValueJson = monetaryZone,
             OldValueJson = monetaryZoneBeforeUpdate,
             Timestamp = DateTime.UtcNow,

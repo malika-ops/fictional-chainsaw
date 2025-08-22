@@ -48,6 +48,7 @@ public class PatchMonetaryZoneCommandHandler(
         // Create patch-specific audit event
         var auditEvent = new MonetaryZonePatchedAuditEvent
         {
+            TraceId = traceId,
             NewValueJson = monetaryZone,
             OldValueJson = monetaryZoneBeforeUpdate,
             Timestamp = DateTime.UtcNow,

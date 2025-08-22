@@ -36,6 +36,7 @@ public class DeleteMonetaryZoneCommandHandler(
 
         var auditEvent = new MonetaryZoneDisabledAuditEvent
         {
+            TraceId = traceId,
             NewValueJson = monetaryZone,
             OldValueJson = null,
             Timestamp = DateTime.UtcNow,
