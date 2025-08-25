@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using FluentAssertions;
 using Moq;
 using wfc.referential.Domain.SupportAccountAggregate;
@@ -18,7 +19,8 @@ public class UpdateSupportAccountEndpointTests(TestWebApplicationFactory factory
             threshold,
             limit,
             balance,
-            "ACC" + code
+            "ACC" + code,
+            SupportAccountTypeEnum.Individuel
         );
     }
 
@@ -33,7 +35,7 @@ public class UpdateSupportAccountEndpointTests(TestWebApplicationFactory factory
         _supportAccountRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, bool>>>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((SupportAccount)null);
 
-        var payload = new
+        var payload = new 
         {
             SupportAccountId = id,
             Code = "SA002",
@@ -43,7 +45,7 @@ public class UpdateSupportAccountEndpointTests(TestWebApplicationFactory factory
             AccountBalance = 7500.00m,
             AccountingNumber = "ACC002",
             PartnerId = (Guid?)null,
-            SupportAccountTypeId = (Guid?)null,
+            SupportAccountType = SupportAccountTypeEnum.Individuel,
             IsEnabled = true
         };
 
@@ -75,7 +77,7 @@ public class UpdateSupportAccountEndpointTests(TestWebApplicationFactory factory
             AccountBalance = 7500.00m,
             AccountingNumber = "ACC002",
             PartnerId = (Guid?)null,
-            SupportAccountTypeId = (Guid?)null,
+            SupportAccountType = SupportAccountTypeEnum.Individuel,
             IsEnabled = true
         };
 
@@ -109,7 +111,7 @@ public class UpdateSupportAccountEndpointTests(TestWebApplicationFactory factory
             AccountBalance = 7500.00m,
             AccountingNumber = "ACC002",
             PartnerId = (Guid?)null,
-            SupportAccountTypeId = (Guid?)null,
+            SupportAccountType = SupportAccountTypeEnum.Individuel,
             IsEnabled = true
         };
 

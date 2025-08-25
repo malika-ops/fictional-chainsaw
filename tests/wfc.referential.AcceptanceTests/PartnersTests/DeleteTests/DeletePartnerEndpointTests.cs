@@ -79,7 +79,8 @@ public class DeletePartnerEndpointTests(TestWebApplicationFactory factory) : Bas
             10000.00m,
             20000.00m,
             5000.00m,
-            "ACC001"
+            "ACC001",
+            SupportAccountTypeEnum.Individuel
         );
         _supportAccountRepoMock.Setup(r => r.GetByConditionAsync(
                 It.IsAny<Expression<Func<SupportAccount, bool>>>(),
@@ -187,9 +188,9 @@ public class DeletePartnerEndpointTests(TestWebApplicationFactory factory) : Bas
         // Mock multiple support accounts
         var supportAccounts = new List<SupportAccount>
         {
-            SupportAccount.Create(SupportAccountId.Of(Guid.NewGuid()), "SA001", "Support Account 1", 1000m, 5000m, 2000m, "ACC001"),
-            SupportAccount.Create(SupportAccountId.Of(Guid.NewGuid()), "SA002", "Support Account 2", 1500m, 7500m, 3000m, "ACC002"),
-            SupportAccount.Create(SupportAccountId.Of(Guid.NewGuid()), "SA003", "Support Account 3", 2000m, 10000m, 4000m, "ACC003")
+            SupportAccount.Create(SupportAccountId.Of(Guid.NewGuid()), "SA001", "Support Account 1", 1000m, 5000m, 2000m, "ACC001",SupportAccountTypeEnum.Individuel),
+            SupportAccount.Create(SupportAccountId.Of(Guid.NewGuid()), "SA002", "Support Account 2", 1500m, 7500m, 3000m, "ACC002",SupportAccountTypeEnum.Individuel),
+            SupportAccount.Create(SupportAccountId.Of(Guid.NewGuid()), "SA003", "Support Account 3", 2000m, 10000m, 4000m, "ACC003", SupportAccountTypeEnum.Individuel)
         };
 
         _supportAccountRepoMock.Setup(r => r.GetByConditionAsync(

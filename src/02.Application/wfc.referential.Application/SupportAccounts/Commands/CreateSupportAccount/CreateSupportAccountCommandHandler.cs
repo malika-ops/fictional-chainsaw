@@ -34,7 +34,8 @@ public class CreateSupportAccountCommandHandler : ICommandHandler<CreateSupportA
             command.Threshold,
             command.Limit,
             command.AccountBalance,
-            command.AccountingNumber
+            command.AccountingNumber,
+            command.SupportAccountType
         );
 
         await _supportAccountRepository.AddAsync(supportAccount, ct);

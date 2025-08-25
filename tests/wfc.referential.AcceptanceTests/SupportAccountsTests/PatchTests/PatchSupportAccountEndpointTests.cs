@@ -18,7 +18,8 @@ public class PatchSupportAccountEndpointTests(TestWebApplicationFactory factory)
             threshold,
             limit,
             balance,
-            "ACC" + code
+            "ACC" + code,
+            SupportAccountTypeEnum.Individuel
         );
     }
 

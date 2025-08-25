@@ -45,6 +45,7 @@ public class PatchSupportAccountCommandHandler : ICommandHandler<PatchSupportAcc
             cmd.Limit,
             cmd.AccountBalance,
             cmd.AccountingNumber,
+            cmd.SupportAccountType,
             cmd.IsEnabled);
 
         _repo.Update(supportAccount);

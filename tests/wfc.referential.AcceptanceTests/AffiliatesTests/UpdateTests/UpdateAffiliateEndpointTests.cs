@@ -20,8 +20,6 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
         var oldAffiliate = CreateTestAffiliate(id, "AFF001", "Old Affiliate");
 
         var countryId = Guid.NewGuid();
-        var affiliateTypeId = Guid.NewGuid();
-
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(oldAffiliate);
@@ -38,7 +36,7 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
                  .Callback(() => updated = oldAffiliate)
                  .Returns(Task.CompletedTask);
 
-        var payload = CreateCompleteUpdatePayload(id, countryId, affiliateTypeId);
+        var payload = CreateCompleteUpdatePayload(id, countryId);
 
         // Act
         var response = await _client.PutAsJsonAsync($"/api/affiliates/{id}", payload);
@@ -78,7 +76,7 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
             CountryId = Guid.NewGuid(),
             ThresholdBilling = 10000.00m,
             AccountingAccountNumber = "411000001",
-            AffiliateTypeId = Guid.NewGuid(),
+            AffiliateType = AffiliateTypeEnum.Paycash,
             IsEnabled = true
             // OpeningDate intentionally omitted
         };
@@ -113,7 +111,7 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
             OpeningDate = DateTime.Now,
             CountryId = Guid.NewGuid(),
             ThresholdBilling = 10000.00m,
-            AffiliateTypeId = Guid.NewGuid(),
+            AffiliateType = AffiliateTypeEnum.Paycash,
             IsEnabled = true
             // AccountingAccountNumber intentionally omitted
         };
@@ -328,7 +326,7 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
     }
 
     // Helper methods
-    private static object CreateCompleteUpdatePayload(Guid id, Guid countryId, Guid affiliateTypeId)
+    private static object CreateCompleteUpdatePayload(Guid id, Guid countryId)
     {
         return new
         {
@@ -345,7 +343,7 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
             StampDutyMention = "No stamp duty",
             CountryId = countryId,
             IsEnabled = true,
-            AffiliateTypeId = affiliateTypeId
+            AffiliateType = AffiliateTypeEnum.Paycash
         };
     }
 
@@ -360,24 +358,8 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
             CountryId = countryId,
             ThresholdBilling = 10000.00m,
             AccountingAccountNumber = "411000001",
-            AffiliateTypeId = Guid.NewGuid(),
+            AffiliateType = AffiliateTypeEnum.Paycash,
             IsEnabled = true
-        };
-    }
-
-    private static object CreateBasicUpdatePayloadWithAffiliateType(Guid id, Guid affiliateTypeId)
-    {
-        return new
-        {
-            AffiliateId = id,
-            Code = "AFF001",
-            Name = "Test Affiliate",
-            OpeningDate = DateTime.Now,
-            CountryId = Guid.NewGuid(),
-            ThresholdBilling = 10000.00m,
-            AccountingAccountNumber = "411000001",
-            IsEnabled = true,
-            AffiliateTypeId = affiliateTypeId
         };
     }
 
@@ -392,7 +374,7 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
             CountryId = Guid.NewGuid(),
             ThresholdBilling = 10000.00m,
             AccountingAccountNumber = "411000001",
-            AffiliateTypeId = Guid.NewGuid(),
+            AffiliateType = AffiliateTypeEnum.Paycash,
             IsEnabled = true
         };
     }

@@ -12,5 +12,7 @@ public class CreateSupportAccountCommandValidator : AbstractValidator<CreateSupp
             .WithMessage("Support account description is required.");
         RuleFor(x => x.AccountingNumber).NotEmpty()
             .WithMessage("Accounting number is required.");
+        RuleFor(x => x.SupportAccountType)
+            .IsInEnum().WithMessage("SupportAccountType must be in Enum");
     }
 }

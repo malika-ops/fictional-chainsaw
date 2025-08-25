@@ -1,6 +1,7 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Pagination;
 using wfc.referential.Application.SupportAccounts.Dtos;
+using wfc.referential.Domain.SupportAccountAggregate;
 
 namespace wfc.referential.Application.SupportAccounts.Queries.GetFiltredSupportAccounts;
 
@@ -12,6 +13,6 @@ public record GetFiltredSupportAccountsQuery : IQuery<PagedResult<GetSupportAcco
     public string? Description { get; init; }
     public string? AccountingNumber { get; init; }
     public Guid? PartnerId { get; init; }
-    public Guid? SupportAccountTypeId { get; init; }
+    public SupportAccountTypeEnum? SupportAccountType { get; init; }
     public bool? IsEnabled { get; init; } = true;
 }

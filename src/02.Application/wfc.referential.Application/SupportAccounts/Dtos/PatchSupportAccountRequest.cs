@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.SupportAccounts.Dtos;
+﻿using wfc.referential.Domain.SupportAccountAggregate;
+
+namespace wfc.referential.Application.SupportAccounts.Dtos;
 
 public record PatchSupportAccountRequest
 {
@@ -37,6 +39,12 @@ public record PatchSupportAccountRequest
     /// </summary>
     /// <example>ACC654321</example>
     public string? AccountingNumber { get; init; }
+
+    /// <summary>
+    /// If provided, updates the support account type. If omitted, support account type remains unchanged.
+    /// </summary>
+    /// <example>Commun</example>
+    public SupportAccountTypeEnum? SupportAccountType { get; init; }
 
     /// <summary>
     /// If provided, updates the enabled status. If omitted, enabled status remains unchanged.

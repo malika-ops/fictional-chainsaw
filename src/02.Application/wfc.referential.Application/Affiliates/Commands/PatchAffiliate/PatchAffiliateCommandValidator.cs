@@ -64,7 +64,10 @@ public class PatchAffiliateCommandValidator : AbstractValidator<PatchAffiliateCo
 
         When(x => x.AffiliateType is not null, () => {
             RuleFor(x => x.AffiliateType!)
-                .IsInEnum().WithMessage("AffiliateType must be a valid enum value");
+                .NotNull()
+                .WithMessage("Affiliate Type is required.")
+                .IsInEnum()
+                .WithMessage("Affiliate Type must be a valid value.");
         });
 
         When(x => x.OpeningDate is not null, () => {

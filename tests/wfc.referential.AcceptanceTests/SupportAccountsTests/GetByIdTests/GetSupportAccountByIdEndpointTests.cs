@@ -19,7 +19,8 @@ public class GetSupportAccountByIdEndpointTests(TestWebApplicationFactory factor
             threshold: 1000.00m,
             limit: 5000.00m,
             accountBalance: 1000.00m,
-            accountingNumber: $"ACC-{code}"
+            accountingNumber: $"ACC-{code}",
+            supportAccountType: SupportAccountTypeEnum.Individuel
         );
 
         if (!enabled)

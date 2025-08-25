@@ -18,5 +18,11 @@ public class UpdateSupportAccountCommandValidator : AbstractValidator<UpdateSupp
 
         RuleFor(x => x.AccountingNumber)
             .NotEmpty().WithMessage("Accounting number is required.");
+
+        RuleFor(x => x.SupportAccountType)
+            .NotNull()
+            .WithMessage("Support Account Type is required.")
+            .IsInEnum()
+            .WithMessage("Support Account Type must be a valid value.");
     }
 }

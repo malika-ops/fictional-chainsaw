@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace wfc.referential.Application.SupportAccounts.Dtos;
+﻿namespace wfc.referential.Application.SupportAccounts.Dtos;
 
 public record UpdateSupportAccountBalanceRequest
 {

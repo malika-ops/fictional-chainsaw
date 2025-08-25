@@ -22,7 +22,8 @@ public class GetFiltredSupportAccountsEndpointTests(TestWebApplicationFactory fa
             threshold,
             limit,
             5000.00m,
-            accountingNumber
+            accountingNumber,
+            SupportAccountTypeEnum.Individuel
         );
     }
 

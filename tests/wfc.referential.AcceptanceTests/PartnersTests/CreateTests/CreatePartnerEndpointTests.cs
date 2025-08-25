@@ -420,6 +420,7 @@ public class CreatePartnerEndpointTests: BaseAcceptanceTests
             500.00m, // threshold
             10000.00m, // limit
             2000.00m, // accountBalance
-            "ACC123456"); // accountingNumber
+            "ACC123456",
+            SupportAccountTypeEnum.Individuel); // accountingNumber
     }
 }

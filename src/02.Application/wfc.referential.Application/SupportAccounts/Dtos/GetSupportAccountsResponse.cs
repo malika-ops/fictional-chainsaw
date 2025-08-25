@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.SupportAccounts.Dtos;
+﻿using wfc.referential.Domain.SupportAccountAggregate;
+
+namespace wfc.referential.Application.SupportAccounts.Dtos;
 
 public record GetSupportAccountsResponse
 {
@@ -51,10 +53,10 @@ public record GetSupportAccountsResponse
     public Guid? PartnerId { get; init; }
 
     /// <summary>
-    /// Unique identifier of the support account type, if applicable.
+    /// The support account type, if applicable.
     /// </summary>
-    /// <example>0a1b2c3d-4e5f-6789-abcd-ef0123456789</example>
-    public Guid? SupportAccountTypeId { get; init; }
+    /// <example>Commun</example>
+    public SupportAccountTypeEnum? SupportAccountType { get; init; }
 
     /// <summary>
     /// Indicates whether the support account is enabled.

@@ -18,7 +18,8 @@ public class UpdateBalanceEndpointTests(TestWebApplicationFactory factory) : Bas
             threshold,
             limit,
             balance,
-            "ACC" + code
+            "ACC" + code,
+            SupportAccountTypeEnum.Individuel
         );
     }
 

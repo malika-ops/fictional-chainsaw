@@ -24,7 +24,10 @@ public class CreateAffiliateCommandValidator : AbstractValidator<CreateAffiliate
             .NotEqual(Guid.Empty).WithMessage("CountryId must be a valid GUID");
 
         RuleFor(x => x.AffiliateType)
-            .IsInEnum().WithMessage("AffiliateType must be a valid enum value");
+            .NotNull()
+            .WithMessage("Affiliate Type is required.")
+            .IsInEnum()
+            .WithMessage("Affiliate Type must be a valid value.");
 
         RuleFor(x => x.ThresholdBilling)
             .GreaterThanOrEqualTo(0).WithMessage("ThresholdBilling must be greater than or equal to 0");

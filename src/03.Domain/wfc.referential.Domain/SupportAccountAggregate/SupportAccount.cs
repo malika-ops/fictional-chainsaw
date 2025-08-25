@@ -1,7 +1,6 @@
 ﻿using BuildingBlocks.Core.Abstraction.Domain;
-using wfc.referential.Domain.SupportAccountAggregate.Events;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
+using wfc.referential.Domain.SupportAccountAggregate.Events;
 
 namespace wfc.referential.Domain.SupportAccountAggregate;
 
@@ -16,8 +15,7 @@ public class SupportAccount : Aggregate<SupportAccountId>
     public bool IsEnabled { get; private set; } = true;
     public Partner? Partner { get; private set; }
     public PartnerId? PartnerId { get; private set; }
-    public ParamTypeId? SupportAccountTypeId { get; private set; }
-    public ParamType? SupportAccountType { get; private set; }
+    public SupportAccountTypeEnum SupportAccountType { get; private set; }
 
     private SupportAccount() { }
 
@@ -28,7 +26,8 @@ public class SupportAccount : Aggregate<SupportAccountId>
         decimal threshold,
         decimal limit,
         decimal accountBalance,
-        string accountingNumber)
+        string accountingNumber,
+        SupportAccountTypeEnum supportAccountType)
     {
         var supportAccount = new SupportAccount
         {
@@ -39,6 +38,7 @@ public class SupportAccount : Aggregate<SupportAccountId>
             Limit = limit,
             AccountBalance = accountBalance,
             AccountingNumber = accountingNumber,
+            SupportAccountType = supportAccountType,
             IsEnabled = true
         };
 
@@ -63,6 +63,7 @@ public class SupportAccount : Aggregate<SupportAccountId>
         decimal limit,
         decimal accountBalance,
         string accountingNumber,
+        SupportAccountTypeEnum supportAccountType,
         bool? isEnabled)
     {
         Code = code;
@@ -71,6 +72,7 @@ public class SupportAccount : Aggregate<SupportAccountId>
         Limit = limit;
         AccountBalance = accountBalance;
         AccountingNumber = accountingNumber;
+        SupportAccountType = supportAccountType;
         IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new SupportAccountUpdatedEvent(
@@ -92,6 +94,7 @@ public class SupportAccount : Aggregate<SupportAccountId>
         decimal? limit,
         decimal? accountBalance,
         string? accountingNumber,
+        SupportAccountTypeEnum? supportAccountType,
         bool? isEnabled)
     {
         Code = code ?? Code;
@@ -100,6 +103,7 @@ public class SupportAccount : Aggregate<SupportAccountId>
         Limit = limit ?? Limit;
         AccountBalance = accountBalance ?? AccountBalance;
         AccountingNumber = accountingNumber ?? AccountingNumber;
+        SupportAccountType = supportAccountType ?? SupportAccountType;
         IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new SupportAccountPatchedEvent(
@@ -142,10 +146,5 @@ public class SupportAccount : Aggregate<SupportAccountId>
         AddDomainEvent(new SupportAccountActivatedEvent(
             Id.Value,
             DateTime.UtcNow));
-    }
-
-    public void SetSupportAccountType(ParamTypeId typeId)
-    {
-        SupportAccountTypeId = typeId;
     }
 }

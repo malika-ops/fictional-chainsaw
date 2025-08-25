@@ -84,7 +84,8 @@ public class CreateSupportAccountEndpointTests(TestWebApplicationFactory factory
             10000.00m,
             15000.00m,
             5000.00m,
-            "ACC001"
+            "ACC001",
+            SupportAccountTypeEnum.Individuel
         );
 
         _supportAccountRepoMock.Setup(r => r.GetOneByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<SupportAccount, bool>>>(), It.IsAny<CancellationToken>()))

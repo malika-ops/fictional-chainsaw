@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using wfc.referential.Domain.SupportAccountAggregate;
 
 namespace wfc.referential.Application.SupportAccounts.Dtos;
 
@@ -39,4 +40,10 @@ public record CreateSupportAccountRequest
     /// </summary>
     /// <example>ACC123456</example>
     public string AccountingNumber { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The Support Account Type associated with this Support Account.
+    /// </summary>
+    /// <example>Commun</example>
+    public SupportAccountTypeEnum SupportAccountType { get; init; }
 }

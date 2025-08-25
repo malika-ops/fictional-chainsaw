@@ -589,6 +589,7 @@ public class PatchPartnerEndpointTests(TestWebApplicationFactory factory) : Base
             500.00m,
             10000.00m,
             2000.00m,
-            "ACC123456");
+            "ACC123456", 
+            SupportAccountTypeEnum.Individuel);
     }
 }

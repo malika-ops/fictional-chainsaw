@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using wfc.referential.Domain.SupportAccountAggregate;
 using wfc.referential.Domain.PartnerAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
+using wfc.referential.Domain.SupportAccountAggregate;
 
 namespace wfc.referential.Infrastructure.Persistence.Configurations;
 
@@ -43,20 +42,14 @@ public class SupportAccountConfiguration : IEntityTypeConfiguration<SupportAccou
                 value => new PartnerId(value))
             .IsRequired(false);
 
-        builder.Property(s => s.SupportAccountTypeId)
-            .HasConversion(
-                Id => Id!.Value,
-                value => new ParamTypeId(value))
-            .IsRequired(false);
+        builder.Property(a => a.SupportAccountType)
+           .HasConversion<string>()
+           .HasMaxLength(50)
+           .IsRequired();
 
         builder.HasOne(s => s.Partner)
             .WithMany()
             .HasForeignKey(s => s.PartnerId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(s => s.SupportAccountType)
-            .WithMany()
-            .HasForeignKey(s => s.SupportAccountTypeId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using wfc.referential.Domain.SupportAccountAggregate;
 
 namespace wfc.referential.Application.SupportAccounts.Commands.UpdateSupportAccount;
 
@@ -12,5 +13,6 @@ public record UpdateSupportAccountCommand : ICommand<Result<bool>>
     public decimal Limit { get; set; }
     public decimal AccountBalance { get; set; }
     public string AccountingNumber { get; set; } = string.Empty;
+    public SupportAccountTypeEnum SupportAccountType { get; set; }
     public bool IsEnabled { get; set; } = true;
 }
