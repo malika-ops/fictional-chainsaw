@@ -69,17 +69,10 @@ public class AffiliateConfiguration : IEntityTypeConfiguration<Affiliate>
             .HasForeignKey(a => a.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ParamType relationship for AffiliateType
-        builder.Property(a => a.AffiliateTypeId)
-            .HasConversion(
-                Id => Id!.Value,
-                value => new ParamTypeId(value))
-            .IsRequired(false);
-
-        builder.HasOne(a => a.AffiliateType)
-            .WithMany()
-            .HasForeignKey(a => a.AffiliateTypeId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(a => a.AffiliateType)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
 
         // Unique indexes
         builder.HasIndex(a => a.Code)

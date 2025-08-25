@@ -6,7 +6,6 @@ using Moq;
 using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.CorridorAggregate;
 using wfc.referential.Domain.Countries;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PricingAggregate;
 using wfc.referential.Domain.ServiceAggregate;
 using Xunit;
@@ -289,9 +288,6 @@ public class DeleteAffiliateEndpointTests(TestWebApplicationFactory factory) : B
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
         SetupDefaultMocks(hasPricingDependencies: false);
 
-        // Set some additional properties to verify they remain intact
-        affiliate.SetAffiliateType(ParamTypeId.Of(Guid.NewGuid()));
-
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(affiliate);
 
@@ -430,7 +426,9 @@ public class DeleteAffiliateEndpointTests(TestWebApplicationFactory factory) : B
             "ACC-DOC-001",
             "411000001",
             "Stamp duty applicable",
-            CountryId.Of(Guid.NewGuid()));
+            AffiliateTypeEnum.Paycash,
+            CountryId.Of(Guid.NewGuid())
+            );
     }
 
     private static Pricing CreateTestPricing(AffiliateId affiliateId)

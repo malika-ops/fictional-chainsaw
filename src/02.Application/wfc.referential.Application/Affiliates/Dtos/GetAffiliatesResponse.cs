@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.Affiliates.Dtos;
+﻿using wfc.referential.Domain.AffiliateAggregate;
+
+namespace wfc.referential.Application.Affiliates.Dtos;
 
 public record GetAffiliatesResponse
 {
@@ -81,8 +83,8 @@ public record GetAffiliatesResponse
     public bool IsEnabled { get; init; }
 
     /// <summary>
-    /// Unique identifier of the affiliate type, if any.
+    /// The affiliate type, if any.
     /// </summary>
-    /// <example>e1d2c3b4-a5f6-7890-bcde-1234567890ab</example>
-    public Guid? AffiliateTypeId { get; init; }
+    /// <example>Paycash</example>
+    public AffiliateTypeEnum? AffiliateType{ get; init; }
 }

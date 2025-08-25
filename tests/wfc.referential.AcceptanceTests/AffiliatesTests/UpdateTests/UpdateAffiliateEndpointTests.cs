@@ -6,8 +6,6 @@ using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
-using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AffiliatesTests.UpdateTests;
@@ -34,10 +32,6 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
         // Setup Country mock for specific ID
         _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(countryId), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(CreateMockCountry(countryId));
-
-        // Setup ParamType mock for specific ID
-        _paramTypeRepoMock.Setup(r => r.GetByIdAsync(ParamTypeId.Of(affiliateTypeId), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync(CreateMockParamType(affiliateTypeId));
 
         Affiliate updated = null;
         _affiliateRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -97,41 +91,6 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
 
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("OpeningDate is required");
-
-        _affiliateRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact(DisplayName = "PUT /api/affiliates/{id} returns 400 when AffiliateTypeId is missing")]
-    public async Task Put_ShouldReturn400_WhenAffiliateTypeIdIsMissing()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-
-        _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(affiliate);
-
-        var payload = new
-        {
-            AffiliateId = id,
-            Code = "AFF001",
-            Name = "Test Affiliate",
-            OpeningDate = DateTime.Now,
-            CountryId = Guid.NewGuid(),
-            ThresholdBilling = 10000.00m,
-            AccountingAccountNumber = "411000001",
-            IsEnabled = true
-            // AffiliateTypeId intentionally omitted
-        };
-
-        // Act
-        var response = await _client.PutAsJsonAsync($"/api/affiliates/{id}", payload);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var responseContent = await response.Content.ReadAsStringAsync();
-        responseContent.Should().Contain("AffiliateTypeId is required");
 
         _affiliateRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -203,46 +162,6 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
 
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain($"Country with ID {countryId} not found");
-
-        _affiliateRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact(DisplayName = "PUT /api/affiliates/{id} validates AffiliateType exists")]
-    public async Task Put_ShouldReturn404_WhenAffiliateTypeDoesNotExist()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-
-        // Reset mocks and setup for affiliate type not found scenario
-        _affiliateRepoMock.Reset();
-        _paramTypeRepoMock.Reset();
-        _countryRepoMock.Reset();
-
-        _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(affiliate);
-
-        _affiliateRepoMock.Setup(r => r.GetByConditionAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Affiliate, bool>>>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<Affiliate>());
-
-        // Setup successful country check
-        _countryRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<CountryId>(), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync((CountryId id, CancellationToken _) => CreateMockCountry(id.Value));
-
-        var affiliateTypeId = Guid.NewGuid();
-        _paramTypeRepoMock.Setup(r => r.GetByIdAsync(ParamTypeId.Of(affiliateTypeId), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync((ParamType?)null); // Not found
-
-        var payload = CreateBasicUpdatePayloadWithAffiliateType(id, affiliateTypeId);
-
-        // Act
-        var response = await _client.PutAsJsonAsync($"/api/affiliates/{id}", payload);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-
-        var responseContent = await response.Content.ReadAsStringAsync();
-        responseContent.Should().Contain($"Affiliate Type with ID {affiliateTypeId} not found");
 
         _affiliateRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -492,16 +411,8 @@ public class UpdateAffiliateEndpointTests(TestWebApplicationFactory factory) : B
             "ACC-DOC-001",
             "411000001",
             "Stamp duty applicable",
+            AffiliateTypeEnum.Paycash,
             CountryId.Of(Guid.NewGuid()));
-    }
-
-    // Mock entity creation methods - Updated to accept optional IDs
-    private static ParamType CreateMockParamType(Guid? id = null)
-    {
-        return ParamType.Create(
-            ParamTypeId.Of(id ?? Guid.NewGuid()),
-            TypeDefinitionId.Of(Guid.NewGuid()),
-            "Mock ParamType Value");
     }
 
     private static Country CreateMockCountry(Guid? id = null)

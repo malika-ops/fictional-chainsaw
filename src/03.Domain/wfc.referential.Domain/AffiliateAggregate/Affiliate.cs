@@ -1,6 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.Domain;
 using wfc.referential.Domain.AffiliateAggregate.Events;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.Countries;
 
 namespace wfc.referential.Domain.AffiliateAggregate;
@@ -22,10 +21,7 @@ public class Affiliate : Aggregate<AffiliateId>
     // Foreign key relationship to Country
     public CountryId CountryId { get; private set; }
     public Country? Country { get; private set; }
-
-    // ParamType relationships for AffiliateType 
-    public ParamTypeId? AffiliateTypeId { get; private set; }
-    public ParamType? AffiliateType { get; private set; }
+    public AffiliateTypeEnum AffiliateType { get; private set; } = AffiliateTypeEnum.Wafacash;
 
     private Affiliate() { }
 
@@ -41,6 +37,7 @@ public class Affiliate : Aggregate<AffiliateId>
         string accountingDocumentNumber,
         string accountingAccountNumber,
         string stampDutyMention,
+        AffiliateTypeEnum affiliateType,
         CountryId countryId)
     {
         var affiliate = new Affiliate
@@ -57,6 +54,7 @@ public class Affiliate : Aggregate<AffiliateId>
             AccountingAccountNumber = accountingAccountNumber,
             StampDutyMention = stampDutyMention,
             CountryId = countryId,
+            AffiliateType = affiliateType,
         };
 
         affiliate.AddDomainEvent(new AffiliateCreatedEvent(
@@ -90,6 +88,7 @@ public class Affiliate : Aggregate<AffiliateId>
         string accountingAccountNumber,
         string stampDutyMention,
         CountryId countryId,
+        AffiliateTypeEnum affiliateType,
         bool? isEnabled
         )
     {
@@ -104,6 +103,7 @@ public class Affiliate : Aggregate<AffiliateId>
         AccountingAccountNumber = accountingAccountNumber;
         StampDutyMention = stampDutyMention;
         CountryId = countryId;
+        AffiliateType = affiliateType;
         IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new AffiliateUpdatedEvent(
@@ -135,6 +135,7 @@ public class Affiliate : Aggregate<AffiliateId>
         string? accountingAccountNumber,
         string? stampDutyMention,
         CountryId? countryId,
+        AffiliateTypeEnum? affiliateType,
         bool? isEnabled)
     {
         Code = code ?? Code;
@@ -148,6 +149,7 @@ public class Affiliate : Aggregate<AffiliateId>
         AccountingAccountNumber = accountingAccountNumber ?? AccountingAccountNumber;
         StampDutyMention = stampDutyMention ?? StampDutyMention;
         CountryId = countryId ?? CountryId;
+        AffiliateType = affiliateType ?? AffiliateType;
         IsEnabled = isEnabled ?? IsEnabled;
 
         AddDomainEvent(new AffiliatePatchedEvent(
@@ -166,12 +168,6 @@ public class Affiliate : Aggregate<AffiliateId>
             IsEnabled,
             DateTime.UtcNow));
     }
-
-    public void SetAffiliateType(ParamTypeId affiliateTypeId)
-    {
-        AffiliateTypeId = affiliateTypeId;
-    }
-
     public void SetCountry(CountryId countryId, Country? country = null)
     {
         CountryId = countryId;

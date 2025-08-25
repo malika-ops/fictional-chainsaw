@@ -6,8 +6,6 @@ using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.Countries;
 using wfc.referential.Domain.CurrencyAggregate;
 using wfc.referential.Domain.MonetaryZoneAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
-using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.AffiliatesTests.PatchTests;
@@ -186,37 +184,6 @@ public class PatchAffiliateEndpointTests(TestWebApplicationFactory factory) : Ba
         _affiliateRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact(DisplayName = "PATCH /api/affiliates/{id} validates AffiliateType exists when provided")]
-    public async Task Patch_ShouldReturn404_WhenAffiliateTypeDoesNotExist()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
-        var invalidAffiliateTypeId = Guid.NewGuid();
-
-        _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(affiliate);
-
-        _paramTypeRepoMock.Setup(r => r.GetByIdAsync(ParamTypeId.Of(invalidAffiliateTypeId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ParamType?)null);
-
-        var patchPayload = new { AffiliateId = id, AffiliateTypeId = invalidAffiliateTypeId };
-
-        // Act
-        var response = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Patch, $"/api/affiliates/{id}")
-        {
-            Content = JsonContent.Create(patchPayload)
-        });
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-
-        var responseContent = await response.Content.ReadAsStringAsync();
-        responseContent.Should().Contain($"Affiliate Type with ID {invalidAffiliateTypeId} not found");
-
-        _affiliateRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
     [Fact(DisplayName = "PATCH /api/affiliates/{id} returns 400 for empty GUID")]
     public async Task Patch_ShouldReturn400_ForEmptyGuid()
     {
@@ -364,7 +331,7 @@ public class PatchAffiliateEndpointTests(TestWebApplicationFactory factory) : Ba
         // Arrange
         var id = Guid.NewGuid();
         var countryId = Guid.NewGuid();
-        var affiliateTypeId = Guid.NewGuid();
+        var affiliateType = AffiliateTypeEnum.Wafacash;
         var affiliate = CreateTestAffiliate(id, "AFF001", "Test Affiliate");
 
         _affiliateRepoMock.Setup(r => r.GetByIdAsync(AffiliateId.Of(id), It.IsAny<CancellationToken>()))
@@ -377,15 +344,11 @@ public class PatchAffiliateEndpointTests(TestWebApplicationFactory factory) : Ba
         _countryRepoMock.Setup(r => r.GetByIdAsync(CountryId.Of(countryId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateMockCountry());
 
-        // Setup ParamType mock for specific ID
-        _paramTypeRepoMock.Setup(r => r.GetByIdAsync(ParamTypeId.Of(affiliateTypeId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateMockParamType());
-
         var patchPayload = new
         {
             AffiliateId = id,
             CountryId = countryId,
-            AffiliateTypeId = affiliateTypeId
+            AffiliateType = affiliateType
         };
 
         // Act
@@ -402,7 +365,6 @@ public class PatchAffiliateEndpointTests(TestWebApplicationFactory factory) : Ba
 
         // Verify repository interactions
         _countryRepoMock.Verify(r => r.GetByIdAsync(CountryId.Of(countryId), It.IsAny<CancellationToken>()), Times.Once);
-        _paramTypeRepoMock.Verify(r => r.GetByIdAsync(ParamTypeId.Of(affiliateTypeId), It.IsAny<CancellationToken>()), Times.Once);
         _affiliateRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -499,15 +461,8 @@ public class PatchAffiliateEndpointTests(TestWebApplicationFactory factory) : Ba
             "ACC-DOC-001",
             "411000001",
             "Stamp duty applicable",
+            AffiliateTypeEnum.Paycash,
             CountryId.Of(Guid.NewGuid()));
-    }
-
-    private static ParamType CreateMockParamType()
-    {
-        return ParamType.Create(
-            ParamTypeId.Of(Guid.NewGuid()),
-            TypeDefinitionId.Of(Guid.NewGuid()),
-            "Mock ParamType Value");
     }
 
     private static Country CreateMockCountry()

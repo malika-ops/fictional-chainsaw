@@ -4,7 +4,6 @@ using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.AffiliateAggregate;
 using wfc.referential.Domain.AffiliateAggregate.Exceptions;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.Countries;
 
 namespace wfc.referential.Application.Affiliates.Commands.PatchAffiliate;
@@ -12,16 +11,13 @@ namespace wfc.referential.Application.Affiliates.Commands.PatchAffiliate;
 public class PatchAffiliateCommandHandler : ICommandHandler<PatchAffiliateCommand, Result<bool>>
 {
     private readonly IAffiliateRepository _repo;
-    private readonly IParamTypeRepository _paramTypeRepository;
     private readonly ICountryRepository _countryRepository;
 
     public PatchAffiliateCommandHandler(
         IAffiliateRepository repo,
-        IParamTypeRepository paramTypeRepository,
         ICountryRepository countryRepository)
     {
         _repo = repo;
-        _paramTypeRepository = paramTypeRepository;
         _countryRepository = countryRepository;
     }
 
@@ -49,14 +45,6 @@ public class PatchAffiliateCommandHandler : ICommandHandler<PatchAffiliateComman
                 throw new ResourceNotFoundException($"Country with ID {cmd.CountryId.Value} not found");
         }
 
-        // Validate AffiliateType exists if provided
-        if (cmd.AffiliateTypeId.HasValue)
-        {
-            var affiliateType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(cmd.AffiliateTypeId.Value), ct);
-            if (affiliateType is null)
-                throw new ResourceNotFoundException($"Affiliate Type with ID {cmd.AffiliateTypeId.Value} not found");
-        }
-
         affiliate.Patch(
             cmd.Code,
             cmd.Name,
@@ -69,11 +57,8 @@ public class PatchAffiliateCommandHandler : ICommandHandler<PatchAffiliateComman
             cmd.AccountingAccountNumber,
             cmd.StampDutyMention,
            countryId,
+           cmd.AffiliateType,
             cmd.IsEnabled);
-
-        // Set relationships after validation (only if provided)
-        if (cmd.AffiliateTypeId.HasValue)
-            affiliate.SetAffiliateType(ParamTypeId.Of(cmd.AffiliateTypeId.Value));
 
         await _repo.SaveChangesAsync(ct);
         return Result.Success(true);

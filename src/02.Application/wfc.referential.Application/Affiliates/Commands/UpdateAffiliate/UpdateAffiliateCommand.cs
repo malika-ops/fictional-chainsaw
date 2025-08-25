@@ -1,5 +1,6 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using wfc.referential.Domain.AffiliateAggregate;
 
 namespace wfc.referential.Application.Affiliates.Commands.UpdateAffiliate;
 
@@ -18,5 +19,5 @@ public record UpdateAffiliateCommand : ICommand<Result<bool>>
     public string StampDutyMention { get; init; } = string.Empty;
     public Guid CountryId { get; init; }
     public bool IsEnabled { get; init; } = true;
-    public Guid AffiliateTypeId { get; init; } 
+    public AffiliateTypeEnum AffiliateType { get; init; } 
 }

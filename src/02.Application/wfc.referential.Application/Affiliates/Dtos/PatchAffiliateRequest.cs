@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.Affiliates.Dtos;
+﻿using wfc.referential.Domain.AffiliateAggregate;
+
+namespace wfc.referential.Application.Affiliates.Dtos;
 
 public record PatchAffiliateRequest
 {
@@ -75,8 +77,8 @@ public record PatchAffiliateRequest
     public bool? IsEnabled { get; init; }
 
     /// <summary>
-    /// If provided, updates the Affiliate Type ID. If omitted, Affiliate Type remains unchanged.
+    /// If provided, updates the Affiliate Type. If omitted, Affiliate Type remains unchanged.
     /// </summary>
-    /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa9</example>
-    public Guid? AffiliateTypeId { get; init; }
+    /// <example>Paycash</example>
+    public AffiliateTypeEnum? AffiliateType { get; init; }
 }

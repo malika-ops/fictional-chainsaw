@@ -62,6 +62,16 @@ public class PatchAffiliateCommandValidator : AbstractValidator<PatchAffiliateCo
                 .MaximumLength(500).WithMessage("Logo cannot exceed 500 characters");
         });
 
+        When(x => x.AffiliateType is not null, () => {
+            RuleFor(x => x.AffiliateType!)
+                .IsInEnum().WithMessage("AffiliateType must be a valid enum value");
+        });
+
+        When(x => x.OpeningDate is not null, () => {
+            RuleFor(x => x.OpeningDate!)
+                .LessThanOrEqualTo(DateTime.Today).WithMessage("OpeningDate cannot be in the future");
+        });
+
         When(x => x.CancellationDay is not null, () => {
             RuleFor(x => x.CancellationDay!)
                 .MaximumLength(50).WithMessage("CancellationDay cannot exceed 50 characters");

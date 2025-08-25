@@ -220,6 +220,7 @@ public abstract class BaseAcceptanceTests : IDisposable
               _fixture.Create<string>(),
               _fixture.Create<string>(),
               _fixture.Create<string>(),
+              _fixture.Create<AffiliateTypeEnum>(),
               CountryId.Of(_fixture.Create<Guid>())
           )));
     }

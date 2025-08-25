@@ -12,8 +12,7 @@ public class AffiliateMappings
         TypeAdapterConfig<Affiliate, GetAffiliatesResponse>
              .NewConfig()
              .Map(dest => dest.AffiliateId, src => src.Id.Value)
-             .Map(dest => dest.CountryId, src => src.CountryId.Value)
-             .Map(dest => dest.AffiliateTypeId, src => src.AffiliateTypeId != null ? src.AffiliateTypeId.Value : (Guid?)null);
+             .Map(dest => dest.CountryId, src => src.CountryId.Value);
         TypeAdapterConfig<AffiliateId, Guid?>
               .NewConfig()
               .MapWith(src => src == null ? (Guid?)null : src.Value);

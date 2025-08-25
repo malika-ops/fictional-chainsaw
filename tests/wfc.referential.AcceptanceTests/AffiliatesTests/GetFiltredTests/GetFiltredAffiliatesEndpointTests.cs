@@ -471,6 +471,7 @@ public class GetFiltredAffiliatesEndpointTests(TestWebApplicationFactory factory
                 "ACC-DOC-001",
                 "411000001",
                 "Stamp duty applicable",
+                AffiliateTypeEnum.Paycash,
                 CountryId.Of(countryId ?? Guid.NewGuid()));
 
             if (isEnabled.HasValue && !isEnabled.Value)

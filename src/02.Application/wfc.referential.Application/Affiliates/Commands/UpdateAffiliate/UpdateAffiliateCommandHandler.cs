@@ -12,16 +12,13 @@ namespace wfc.referential.Application.Affiliates.Commands.UpdateAffiliate;
 public class UpdateAffiliateCommandHandler : ICommandHandler<UpdateAffiliateCommand, Result<bool>>
 {
     private readonly IAffiliateRepository _repo;
-    private readonly IParamTypeRepository _paramTypeRepository;
     private readonly ICountryRepository _countryRepository;
 
     public UpdateAffiliateCommandHandler(
         IAffiliateRepository repo,
-        IParamTypeRepository paramTypeRepository,
         ICountryRepository countryRepository)
     {
         _repo = repo;
-        _paramTypeRepository = paramTypeRepository;
         _countryRepository = countryRepository;
     }
 
@@ -46,11 +43,6 @@ public class UpdateAffiliateCommandHandler : ICommandHandler<UpdateAffiliateComm
         if (country is null)
             throw new ResourceNotFoundException($"Country with ID {cmd.CountryId} not found");
 
-        // Validate AffiliateType exists
-        var affiliateType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(cmd.AffiliateTypeId), ct);
-        if (affiliateType is null)
-            throw new ResourceNotFoundException($"Affiliate Type with ID {cmd.AffiliateTypeId} not found");
-
         affiliate.Update(
             cmd.Code,
             cmd.Name,
@@ -63,10 +55,8 @@ public class UpdateAffiliateCommandHandler : ICommandHandler<UpdateAffiliateComm
             cmd.AccountingAccountNumber,
             cmd.StampDutyMention,
            countryId,
+           cmd.AffiliateType,
             cmd.IsEnabled);
-
-        // Set relationships after validation
-        affiliate.SetAffiliateType(ParamTypeId.Of(cmd.AffiliateTypeId));
 
         await _repo.SaveChangesAsync(ct);
         return Result.Success(true);

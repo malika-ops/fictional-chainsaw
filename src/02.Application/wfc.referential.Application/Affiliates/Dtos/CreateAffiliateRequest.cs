@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using wfc.referential.Domain.AffiliateAggregate;
 
 namespace wfc.referential.Application.Affiliates.Dtos;
 
@@ -71,8 +72,8 @@ public record CreateAffiliateRequest
     public Guid CountryId { get; init; }
 
     /// <summary>
-    /// The ID of the Affiliate Type parameter type.
+    /// The Affiliate Type parameter type.
     /// </summary>
-    /// <example>3fa85f64-5717-4562-b3fc-2c963f66afa7</example>
-    public Guid AffiliateTypeId { get; init; } 
+    /// <example>Paycash</example>
+    public AffiliateTypeEnum AffiliateType { get; init; } 
 }

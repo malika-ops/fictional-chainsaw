@@ -1,5 +1,6 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using wfc.referential.Domain.AffiliateAggregate;
 
 namespace wfc.referential.Application.Affiliates.Commands.CreateAffiliate;
 
@@ -16,5 +17,5 @@ public record CreateAffiliateCommand : ICommand<Result<Guid>>
     public string AccountingAccountNumber { get; init; } = string.Empty;
     public string StampDutyMention { get; init; } = string.Empty;
     public Guid CountryId { get; init; }
-    public Guid AffiliateTypeId { get; init; } 
+    public AffiliateTypeEnum AffiliateType { get; init; } 
 }
