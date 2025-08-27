@@ -19,12 +19,6 @@ public class DeletePartnerAccountEndpointTests(TestWebApplicationFactory factory
         var bankId = Guid.NewGuid();
         var bank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
 
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-        // Create a valid TypeDefinitionId instead of passing null
-        var typeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
-        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), typeDefinitionId, "Activity");
-
         return PartnerAccount.Create(
             PartnerAccountId.Of(id),
             "000123456789",
@@ -34,7 +28,7 @@ public class DeletePartnerAccountEndpointTests(TestWebApplicationFactory factory
             "TB",
             50000.00m,
             bank,
-            accountType
+            PartnerAccountTypeEnum.Activité
         );
     }
 

@@ -752,7 +752,7 @@ public class UpdatePartnerEndpointTests(TestWebApplicationFactory factory) : Bas
             "Mock Short",
             1000.00m,
             mockBank,
-            mockAccountType);
+            PartnerAccountTypeEnum.Activité);
     }
 
     private static SupportAccount CreateMockSupportAccount()

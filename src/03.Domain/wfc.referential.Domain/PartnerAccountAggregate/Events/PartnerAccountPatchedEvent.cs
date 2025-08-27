@@ -11,6 +11,5 @@ public record PartnerAccountPatchedEvent(
     string ShortName,
     decimal AccountBalance,
     Guid BankId,
-    Guid AccountTypeId,
     bool IsEnabled,
     DateTime OccurredOn) : IDomainEvent;

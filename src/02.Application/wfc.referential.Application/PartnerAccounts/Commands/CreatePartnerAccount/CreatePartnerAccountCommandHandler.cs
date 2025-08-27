@@ -3,7 +3,6 @@ using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate.Exceptions;
 
@@ -13,7 +12,6 @@ public class CreatePartnerAccountCommandHandler : ICommandHandler<CreatePartnerA
 {
     private readonly IPartnerAccountRepository _partnerAccountRepository;
     private readonly IBankRepository _bankRepository;
-    private readonly IParamTypeRepository _paramTypeRepository;
 
     public CreatePartnerAccountCommandHandler(
         IPartnerAccountRepository partnerAccountRepository,
@@ -22,7 +20,6 @@ public class CreatePartnerAccountCommandHandler : ICommandHandler<CreatePartnerA
     {
         _partnerAccountRepository = partnerAccountRepository;
         _bankRepository = bankRepository;
-        _paramTypeRepository = paramTypeRepository;
     }
 
     public async Task<Result<Guid>> Handle(CreatePartnerAccountCommand command, CancellationToken ct)
@@ -42,11 +39,6 @@ public class CreatePartnerAccountCommandHandler : ICommandHandler<CreatePartnerA
         if (bank is null)
             throw new BusinessException($"Bank with ID {command.BankId} not found");
 
-        // Validate AccountType exists
-        var accountType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(command.AccountTypeId), ct);
-        if (accountType is null)
-            throw new BusinessException($"Account Type with ID {command.AccountTypeId} not found");
-
         var partnerAccount = PartnerAccount.Create(
             PartnerAccountId.Of(Guid.NewGuid()),
             command.AccountNumber,
@@ -56,11 +48,11 @@ public class CreatePartnerAccountCommandHandler : ICommandHandler<CreatePartnerA
             command.ShortName,
             command.AccountBalance,
             bank,
-            accountType);
+            command.PartnerAccountType);
 
         await _partnerAccountRepository.AddAsync(partnerAccount, ct);
         await _partnerAccountRepository.SaveChangesAsync(ct);
 
-        return Result.Success(partnerAccount.Id.Value);
+        return Result.Success(partnerAccount.Id!.Value);
     }
 }

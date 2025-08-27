@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.PartnerAccounts.Dtos;
+﻿using wfc.referential.Domain.PartnerAccountAggregate;
+
+namespace wfc.referential.Application.PartnerAccounts.Dtos;
 
 public record GetFiltredPartnerAccountsRequest : FilterRequest
 {
@@ -23,6 +25,6 @@ public record GetFiltredPartnerAccountsRequest : FilterRequest
     /// <summary>Optional filter by Bank ID.</summary>
     public Guid? BankId { get; init; }
 
-    /// <summary>Optional filter by Account Type ID.</summary>
-    public Guid? AccountTypeId { get; init; }
+    /// <summary>Optional filter by Account Type.</summary>
+    public PartnerAccountTypeEnum? PartnerAccountType { get; init; }
 }

@@ -4,9 +4,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Moq;
 using wfc.referential.Domain.BankAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
-using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.UpdateTests;
@@ -21,25 +19,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
             .Setup(r => r.GetByIdAsync(It.IsAny<BankId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Bank.Create(bankId, "AWB", "Attijariwafa Bank", "AWB"));
 
-        // Set up param type mock to return valid account types
-        var activityTypeId = ParamTypeId.Of(Guid.Parse("22222222-2222-2222-2222-222222222222"));
-        var commissionTypeId = ParamTypeId.Of(Guid.Parse("33333333-3333-3333-3333-333333333333"));
-
-        // Create valid TypeDefinitionId instances instead of passing null
-        var activityTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
-        var commissionTypeDefinitionId = TypeDefinitionId.Of(Guid.Parse("55555555-5555-5555-5555-555555555555"));
-
-        var activityType = ParamType.Create(activityTypeId, activityTypeDefinitionId, "Activity");
-        var commissionType = ParamType.Create(commissionTypeId, commissionTypeDefinitionId, "Commission");
-
-        _paramTypeRepoMock
-            .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == activityTypeId.Value), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(activityType);
-
-        _paramTypeRepoMock
-            .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(id => id.Value == commissionTypeId.Value), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(commissionType);
-
     }
 
     // Helper to create a test partner account
@@ -48,11 +27,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var bank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
 
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-        // Create a valid TypeDefinitionId instead of passing null
-        var typeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
-        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), typeDefinitionId, "Activity");
 
         return PartnerAccount.Create(
             PartnerAccountId.Of(id), // Updated to use factory method
@@ -63,7 +37,7 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
             businessName.Substring(0, 2).ToUpper(),
             50000.00m,
             bank,
-            accountType
+            PartnerAccountTypeEnum.Activité
         );
     }
 
@@ -73,8 +47,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
         // Arrange
         var id = Guid.NewGuid();
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var activityTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var commissionTypeId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
         var oldAccount = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Old Business");
 
@@ -102,13 +74,13 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
             ShortName = "NBN",
             AccountBalance = 75000.00m,
             BankId = bankId,
-            AccountTypeId = commissionTypeId,
+            PartnerAccountType = "1",
             IsEnabled = true
         };
 
         // Act
         var response = await _client.PutAsJsonAsync($"/api/partner-accounts/{id}", payload);
-        var result = await response.Content.ReadFromJsonAsync<bool>(); // Now returns bool
+        var result = await response.Content.ReadFromJsonAsync<bool>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -119,7 +91,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
         updated.BusinessName.Should().Be("New Business Name");
         updated.ShortName.Should().Be("NBN");
         updated.AccountBalance.Should().Be(75000.00m);
-        updated.AccountTypeId.Value.Should().Be(commissionTypeId);
         updated.IsEnabled.Should().BeTrue();
 
         _partnerAccountRepoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Once);
@@ -132,7 +103,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
         // Arrange
         var id = Guid.NewGuid();
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         var oldAccount = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Test Bank");
 
@@ -159,7 +129,7 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
             ShortName = "TB",
             AccountBalance = 50000.00m,
             BankId = bankId,
-            AccountTypeId = accountTypeId,
+            PartnerAccountType = "1",
             IsEnabled = false // Changed from true to false
         };
 
@@ -183,7 +153,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
         // Arrange
         var id = Guid.NewGuid();
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         var payload = new
         {
@@ -195,7 +164,7 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
             ShortName = "NBN",
             AccountBalance = 75000.00m,
             BankId = bankId,
-            AccountTypeId = accountTypeId,
+            PartnerAccountType = "1",
             IsEnabled = true
         };
 
@@ -221,7 +190,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
         var id = Guid.NewGuid();
         var existingId = Guid.NewGuid();
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         var existing = CreateTestPartnerAccount(existingId, "000555666777", "55566677788899900011122", "Existing Business");
         var target = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Target Business");
@@ -245,7 +213,7 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
             ShortName = "UB",
             AccountBalance = 75000.00m,
             BankId = bankId,
-            AccountTypeId = accountTypeId,
+            PartnerAccountType = "1",
             IsEnabled = true
         };
 
@@ -265,7 +233,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
         // Arrange
         var id = Guid.NewGuid();
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((PartnerAccount?)null);
@@ -280,7 +247,7 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
             ShortName = "NB",
             AccountBalance = 75000.00m,
             BankId = bankId,
-            AccountTypeId = accountTypeId,
+            PartnerAccountType = "1",
             IsEnabled = true
         };
 
@@ -304,7 +271,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
         // Arrange
         var id = Guid.NewGuid();
         var nonExistentBankId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         var account = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Test Business");
 
@@ -326,7 +292,7 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
             ShortName = "NB",
             AccountBalance = 75000.00m,
             BankId = nonExistentBankId,
-            AccountTypeId = accountTypeId,
+            PartnerAccountType = "1",
             IsEnabled = true
         };
 
@@ -339,52 +305,6 @@ public class UpdatePartnerAccountEndpointTests : BaseAcceptanceTests
 
         doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
            .Should().Be($"Bank with ID {nonExistentBankId} not found");
-
-        _partnerAccountRepoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Never);
-        _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact(DisplayName = "PUT /api/partner-accounts/{id} returns 400 when account type doesn't exist")]
-    public async Task Put_ShouldReturn400_WhenAccountTypeDoesNotExist()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var nonExistentAccountTypeId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-
-        var account = CreateTestPartnerAccount(id, "000123456789", "12345678901234567890123", "Test Business");
-
-        _partnerAccountRepoMock.Setup(r => r.GetByIdAsync(It.Is<PartnerAccountId>(pid => pid.Value == id), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(account);
-
-        // Setup param type repository to return null for this ID
-        _paramTypeRepoMock
-            .Setup(r => r.GetByIdAsync(It.Is<ParamTypeId>(pid => pid.Value == nonExistentAccountTypeId), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ParamType?)null);
-
-        var payload = new
-        {
-            PartnerAccountId = id,
-            AccountNumber = "000987654321",
-            RIB = "98765432109876543210987",
-            Domiciliation = "Casablanca Marina",
-            BusinessName = "New Business",
-            ShortName = "NB",
-            AccountBalance = 75000.00m,
-            BankId = bankId,
-            AccountTypeId = nonExistentAccountTypeId,
-            IsEnabled = true
-        };
-
-        // Act
-        var response = await _client.PutAsJsonAsync($"/api/partner-accounts/{id}", payload);
-        var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        doc!.RootElement.GetProperty("errors").GetProperty("message").GetString()
-           .Should().Be($"Account Type with ID {nonExistentAccountTypeId} not found");
 
         _partnerAccountRepoMock.Verify(r => r.Update(It.IsAny<PartnerAccount>()), Times.Never);
         _partnerAccountRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

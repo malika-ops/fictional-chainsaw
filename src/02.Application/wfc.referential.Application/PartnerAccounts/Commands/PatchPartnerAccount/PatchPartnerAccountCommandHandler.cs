@@ -3,7 +3,6 @@ using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate.Exceptions;
 
@@ -13,16 +12,14 @@ public class PatchPartnerAccountCommandHandler : ICommandHandler<PatchPartnerAcc
 {
     private readonly IPartnerAccountRepository _partnerAccountRepository;
     private readonly IBankRepository _bankRepository;
-    private readonly IParamTypeRepository _paramTypeRepository;
 
     public PatchPartnerAccountCommandHandler(
         IPartnerAccountRepository partnerAccountRepository,
-        IBankRepository bankRepository,
-        IParamTypeRepository paramTypeRepository)
+        IBankRepository bankRepository
+        )
     {
         _partnerAccountRepository = partnerAccountRepository;
         _bankRepository = bankRepository;
-        _paramTypeRepository = paramTypeRepository;
     }
 
     public async Task<Result<bool>> Handle(PatchPartnerAccountCommand cmd, CancellationToken ct)
@@ -56,15 +53,6 @@ public class PatchPartnerAccountCommandHandler : ICommandHandler<PatchPartnerAcc
                 throw new BusinessException($"Bank with ID {cmd.BankId} not found");
         }
 
-        // Get updated account type if needed
-        ParamType? accountType = null;
-        if (cmd.AccountTypeId.HasValue)
-        {
-            accountType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(cmd.AccountTypeId.Value), ct);
-            if (accountType is null)
-                throw new BusinessException($"Account Type with ID {cmd.AccountTypeId} not found");
-        }
-
         partnerAccount.Patch(
             cmd.AccountNumber,
             cmd.RIB,
@@ -73,7 +61,7 @@ public class PatchPartnerAccountCommandHandler : ICommandHandler<PatchPartnerAcc
             cmd.ShortName,
             cmd.AccountBalance,
             bank,
-            accountType,
+            cmd.PartnerAccountType,
             cmd.IsEnabled);
 
         _partnerAccountRepository.Update(partnerAccount);

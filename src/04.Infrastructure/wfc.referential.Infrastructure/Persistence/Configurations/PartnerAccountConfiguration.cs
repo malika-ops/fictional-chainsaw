@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using wfc.referential.Domain.PartnerAccountAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.BankAggregate;
+using wfc.referential.Domain.PartnerAccountAggregate;
 
 namespace wfc.referential.Infrastructure.Persistence.Configurations;
 
@@ -34,11 +33,10 @@ public class PartnerAccountConfiguration : IEntityTypeConfiguration<PartnerAccou
                 value => new BankId(value))
             .IsRequired();
 
-        builder.Property(p => p.AccountTypeId)
-            .HasConversion(
-                Id => Id.Value,
-                value => new ParamTypeId(value))
-            .IsRequired();
+        builder.Property(a => a.PartnerAccountType)
+           .HasConversion<string>()
+           .HasMaxLength(50)
+           .IsRequired();
 
         builder.Property(p => p.IsEnabled)
             .IsRequired()
@@ -48,10 +46,6 @@ public class PartnerAccountConfiguration : IEntityTypeConfiguration<PartnerAccou
         builder.HasOne(p => p.Bank)
             .WithMany()
             .HasForeignKey(p => p.BankId);
-
-        builder.HasOne(p => p.AccountType)
-            .WithMany()
-            .HasForeignKey(p => p.AccountTypeId);
 
         // Indexes for performance and business rules
         builder.HasIndex(p => p.AccountNumber).IsUnique();

@@ -408,7 +408,7 @@ public class CreatePartnerEndpointTests: BaseAcceptanceTests
             "Mock Short", // shortName
             1000.00m, // accountBalance
             mockBank, // bank
-            mockAccountType); // accountType
+            PartnerAccountTypeEnum.Activité); // accountType
     }
 
     private static SupportAccount CreateMockSupportAccount()

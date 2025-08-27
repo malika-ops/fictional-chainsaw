@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.PartnerAccounts.Dtos;
+﻿using wfc.referential.Domain.PartnerAccountAggregate;
+
+namespace wfc.referential.Application.PartnerAccounts.Dtos;
 
 public record PartnerAccountResponse
 {
@@ -66,7 +68,7 @@ public record PartnerAccountResponse
     /// Unique identifier of the account type.
     /// </summary>
     /// <example>f1e2d3c4-b5a6-7890-1234-56789abcdef0</example>
-    public Guid AccountTypeId { get; init; }
+    public PartnerAccountTypeEnum PartnerAccountType { get; init; }
 
     /// <summary>
     /// Name of the account type.

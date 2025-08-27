@@ -3,9 +3,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Moq;
 using wfc.referential.Domain.BankAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
-using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.PatchTests;
@@ -17,12 +15,6 @@ public class PatchPartnerAccountEndpointTests(TestWebApplicationFactory factory)
         var bankId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var bank = Bank.Create(BankId.Of(bankId), "AWB", "Attijariwafa Bank", "AWB");
 
-        var accountTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-        // Create a valid TypeDefinitionId instead of passing null
-        var typeDefinitionId = TypeDefinitionId.Of(Guid.Parse("44444444-4444-4444-4444-444444444444"));
-        var accountType = ParamType.Create(ParamTypeId.Of(accountTypeId), typeDefinitionId, "Activity");
-
         return PartnerAccount.Create(
             PartnerAccountId.Of(id),
             accountNumber,
@@ -32,7 +24,7 @@ public class PatchPartnerAccountEndpointTests(TestWebApplicationFactory factory)
             businessName.Substring(0, 2).ToUpper(),
             50000.00m,
             bank,
-            accountType
+            PartnerAccountTypeEnum.Activité
         );
     }
 

@@ -4,9 +4,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Moq;
 using wfc.referential.Domain.BankAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
-using wfc.referential.Domain.TypeDefinitionAggregate;
 using Xunit;
 
 namespace wfc.referential.AcceptanceTests.PartnerAccountsTests.GetByIdTests;
@@ -22,12 +20,6 @@ public class GetPartnerAccountByIdEndpointTests(TestWebApplicationFactory factor
             abbreviation: "TST"
         );
 
-        var accountType = ParamType.Create(
-            paramTypeId: ParamTypeId.Of(Guid.NewGuid()),
-            typeDefinitionId: TypeDefinitionId.Of(Guid.NewGuid()),
-            value: "Checking Account"
-        );
-
         var partnerAccount = PartnerAccount.Create(
             id: PartnerAccountId.Of(id),
             accountNumber: code,
@@ -37,7 +29,7 @@ public class GetPartnerAccountByIdEndpointTests(TestWebApplicationFactory factor
             shortName: code.Substring(0, Math.Min(10, code.Length)),
             accountBalance: 1000.00m,
             bank: bank,
-            accountType: accountType
+            partnerAccountType: PartnerAccountTypeEnum.Activité
         );
 
         if (!enabled)

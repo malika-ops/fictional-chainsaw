@@ -1,6 +1,5 @@
 ﻿using BuildingBlocks.Core.Abstraction.Domain;
 using wfc.referential.Domain.BankAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate.Events;
 
 namespace wfc.referential.Domain.PartnerAccountAggregate;
@@ -15,8 +14,7 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
     public decimal AccountBalance { get; private set; } = 0;
     public Bank Bank { get; private set; }
     public BankId BankId { get; private set; }
-    public ParamTypeId AccountTypeId { get; private set; }
-    public ParamType AccountType { get; private set; }
+    public PartnerAccountTypeEnum PartnerAccountType { get; private set; }
     public bool IsEnabled { get; private set; } = true;
 
     private PartnerAccount() { }
@@ -30,7 +28,7 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
         string? shortName,
         decimal accountBalance,
         Bank bank,
-        ParamType accountType)
+        PartnerAccountTypeEnum partnerAccountType)
     {
         var partnerAccount = new PartnerAccount
         {
@@ -43,8 +41,7 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
             AccountBalance = accountBalance,
             Bank = bank,
             BankId = bank.Id,
-            AccountType = accountType,
-            AccountTypeId = accountType.Id,
+            PartnerAccountType = partnerAccountType,
             IsEnabled = true
         };
 
@@ -58,7 +55,6 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
             partnerAccount.ShortName ?? string.Empty,
             partnerAccount.AccountBalance,
             partnerAccount.Bank.Id.Value,
-            partnerAccount.AccountTypeId.Value,
             partnerAccount.IsEnabled,
             DateTime.UtcNow
         ));
@@ -73,7 +69,7 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
         string? shortName,
         decimal accountBalance,
         Bank bank,
-        ParamType accountType)
+        PartnerAccountTypeEnum partnerAccountType)
     {
         AccountNumber = accountNumber;
         RIB = rib;
@@ -83,8 +79,7 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
         AccountBalance = accountBalance;
         Bank = bank;
         BankId = bank.Id;
-        AccountType = accountType;
-        AccountTypeId = accountType.Id;
+        PartnerAccountType = partnerAccountType;
 
         // raise the update event
         AddDomainEvent(new PartnerAccountUpdatedEvent(
@@ -96,7 +91,6 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
             ShortName ?? string.Empty,
             AccountBalance,
             Bank.Id.Value,
-            AccountTypeId.Value,
             IsEnabled,
             DateTime.UtcNow
         ));
@@ -110,7 +104,7 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
         string? shortName,
         decimal? accountBalance,
         Bank? bank,
-        ParamType? accountType,
+        PartnerAccountTypeEnum? partnerAccountType,
         bool? isEnabled)
     {
         AccountNumber = accountNumber ?? AccountNumber;
@@ -119,17 +113,12 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
         BusinessName = businessName ?? BusinessName;
         ShortName = shortName ?? ShortName;
         AccountBalance = accountBalance ?? AccountBalance;
+        PartnerAccountType = partnerAccountType ?? PartnerAccountType;
 
         if (bank is not null)
         {
             Bank = bank;
             BankId = bank.Id;
-        }
-
-        if (accountType is not null)
-        {
-            AccountType = accountType;
-            AccountTypeId = accountType.Id;
         }
 
         AddDomainEvent(new PartnerAccountPatchedEvent(
@@ -141,7 +130,6 @@ public class PartnerAccount : Aggregate<PartnerAccountId>
             ShortName ?? string.Empty,
             AccountBalance,
             Bank.Id.Value,
-            AccountTypeId.Value,
             IsEnabled,
             DateTime.UtcNow
         ));

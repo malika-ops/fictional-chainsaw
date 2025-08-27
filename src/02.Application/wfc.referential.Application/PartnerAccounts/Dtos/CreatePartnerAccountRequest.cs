@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.PartnerAccounts.Dtos;
+﻿using wfc.referential.Domain.PartnerAccountAggregate;
+
+namespace wfc.referential.Application.PartnerAccounts.Dtos;
 
 public record CreatePartnerAccountRequest
 {
@@ -45,8 +47,8 @@ public record CreatePartnerAccountRequest
     public Guid BankId { get; init; }
 
     /// <summary>
-    /// The ID of the Account Type (from ParamType).
+    /// The Partner Account Type.
     /// </summary>
-    /// <example>5a583b69-6e16-5b2c-9c8f-69627ee725d4</example>
-    public Guid AccountTypeId { get; init; }
+    /// <example>Commission</example>
+    public PartnerAccountTypeEnum PartnerAccountType { get; init; }
 }

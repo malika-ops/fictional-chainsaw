@@ -18,7 +18,9 @@ public class UpdatePartnerAccountCommandValidator : AbstractValidator<UpdatePart
         RuleFor(x => x.BankId)
             .NotEmpty().WithMessage("Bank ID is required");
 
-        RuleFor(x => x.AccountTypeId)
-           .NotEmpty().WithMessage("Account type ID is required");
+        RuleFor(x => x.PartnerAccountType)
+            .NotEmpty()
+            .IsInEnum()
+            .WithMessage("Partner Account Type must be in Enum.");
     }
 }

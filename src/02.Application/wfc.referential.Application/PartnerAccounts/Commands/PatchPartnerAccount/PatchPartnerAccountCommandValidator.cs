@@ -28,9 +28,11 @@ public class PatchPartnerAccountCommandValidator : AbstractValidator<PatchPartne
         });
 
         // If AccountTypeId is provided, check not empty
-        When(x => x.AccountTypeId.HasValue, () => {
-            RuleFor(x => x.AccountTypeId!.Value)
-                .NotEqual(Guid.Empty).WithMessage("AccountTypeId cannot be empty if provided");
+        When(x => x.PartnerAccountType.HasValue, () => {
+            RuleFor(x => x.PartnerAccountType)
+            .NotEmpty()
+            .IsInEnum()
+            .WithMessage("Partner Account Type must be in Enum.");
         });
     }
 }

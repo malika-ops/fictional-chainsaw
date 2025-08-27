@@ -17,8 +17,6 @@ public class PartnerAccountMappings
             .Map(d => d.PartnerAccountId, s => s.Id.Value)
             .Map(d => d.BankId, s => s.BankId.Value)
             .Map(d => d.BankName, s => s.Bank.Name)
-            .Map(d => d.BankCode, s => s.Bank.Code)
-            .Map(d => d.AccountTypeId, s => s.AccountTypeId.Value)
-            .Map(d => d.AccountTypeName, s => s.AccountType.Value);
+            .Map(d => d.BankCode, s => s.Bank.Code);
     }
 }

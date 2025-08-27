@@ -240,7 +240,7 @@ public static class DbInitializer
                         "WCS",
                         50000.00m,
                         banks.First(b => b.Code == "AWB"),
-                        activityParamType
+                        PartnerAccountTypeEnum.Activité
                     ),
                     PartnerAccount.Create(
                         new PartnerAccountId(Guid.NewGuid()),
@@ -251,7 +251,7 @@ public static class DbInitializer
                         "TE",
                         75000.00m,
                         banks.First(b => b.Code == "BMCE"),
-                        commissionParamType
+                        PartnerAccountTypeEnum.Activité
                     )
                 };
 

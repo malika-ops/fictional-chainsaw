@@ -3,7 +3,6 @@ using BuildingBlocks.Core.Abstraction.Domain;
 using BuildingBlocks.Core.Exceptions;
 using wfc.referential.Application.Interfaces;
 using wfc.referential.Domain.BankAggregate;
-using wfc.referential.Domain.ParamTypeAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate;
 using wfc.referential.Domain.PartnerAccountAggregate.Exceptions;
 
@@ -13,16 +12,14 @@ public class UpdatePartnerAccountCommandHandler : ICommandHandler<UpdatePartnerA
 {
     private readonly IPartnerAccountRepository _partnerAccountRepository;
     private readonly IBankRepository _bankRepository;
-    private readonly IParamTypeRepository _paramTypeRepository;
 
     public UpdatePartnerAccountCommandHandler(
         IPartnerAccountRepository partnerAccountRepository,
-        IBankRepository bankRepository,
-        IParamTypeRepository paramTypeRepository)
+        IBankRepository bankRepository
+        )
     {
         _partnerAccountRepository = partnerAccountRepository;
         _bankRepository = bankRepository;
-        _paramTypeRepository = paramTypeRepository;
     }
 
     public async Task<Result<bool>> Handle(UpdatePartnerAccountCommand cmd, CancellationToken ct)
@@ -52,11 +49,6 @@ public class UpdatePartnerAccountCommandHandler : ICommandHandler<UpdatePartnerA
         if (bank is null)
             throw new BusinessException($"Bank with ID {cmd.BankId} not found");
 
-        // Validate AccountType exists  
-        var accountType = await _paramTypeRepository.GetByIdAsync(ParamTypeId.Of(cmd.AccountTypeId), ct);
-        if (accountType is null)
-            throw new BusinessException($"Account Type with ID {cmd.AccountTypeId} not found");
-
         partnerAccount.Update(
             cmd.AccountNumber,
             cmd.RIB,
@@ -65,7 +57,7 @@ public class UpdatePartnerAccountCommandHandler : ICommandHandler<UpdatePartnerA
             cmd.ShortName,
             cmd.AccountBalance,
             bank,
-            accountType);
+            cmd.PartnerAccountType);
 
         // Handle enabled status through domain methods
         if (cmd.IsEnabled && !partnerAccount.IsEnabled)

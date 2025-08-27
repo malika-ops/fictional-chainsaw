@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.PartnerAccounts.Dtos;
+﻿using wfc.referential.Domain.PartnerAccountAggregate;
+
+namespace wfc.referential.Application.PartnerAccounts.Dtos;
 
 public record PatchPartnerAccountRequest
 {
@@ -54,7 +56,7 @@ public record PatchPartnerAccountRequest
     /// If provided, updates the account type. If omitted, account type remains unchanged.
     /// </summary>
     /// <example>4a583b69-6e16-5b2c-9c8f-69627ee725d4</example>
-    public Guid? AccountTypeId { get; init; }
+    public PartnerAccountTypeEnum? PartnerAccountType { get; init; }
 
     /// <summary>
     /// If provided, updates the enabled status. If omitted, enabled status remains unchanged.

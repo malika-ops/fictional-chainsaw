@@ -1,5 +1,6 @@
 ﻿using BuildingBlocks.Core.Abstraction.CQRS;
 using BuildingBlocks.Core.Abstraction.Domain;
+using wfc.referential.Domain.PartnerAccountAggregate;
 
 namespace wfc.referential.Application.PartnerAccounts.Commands.CreatePartnerAccount;
 
@@ -12,5 +13,5 @@ public record CreatePartnerAccountCommand : ICommand<Result<Guid>>
     public string? ShortName { get; init; }
     public decimal AccountBalance { get; init; }
     public Guid BankId { get; init; }
-    public Guid AccountTypeId { get; init; }
+    public PartnerAccountTypeEnum PartnerAccountType { get; init; }
 }

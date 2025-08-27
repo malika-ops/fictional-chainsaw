@@ -1,4 +1,6 @@
-﻿namespace wfc.referential.Application.PartnerAccounts.Dtos;
+﻿using wfc.referential.Domain.PartnerAccountAggregate;
+
+namespace wfc.referential.Application.PartnerAccounts.Dtos;
 
 public record UpdatePartnerAccountRequest
 {
@@ -48,7 +50,7 @@ public record UpdatePartnerAccountRequest
     /// The ID of the Account Type (from ParamType).
     /// </summary>
     /// <example>5a583b69-6e16-5b2c-9c8f-69627ee725d4</example>
-    public Guid AccountTypeId { get; init; }
+    public PartnerAccountTypeEnum PartnerAccountType { get; init; }
 
     /// <summary>
     /// Whether the account is enabled or disabled.
